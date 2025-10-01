@@ -95,6 +95,7 @@ python-dotenv = ">=1.1.0"
 
 [tool.pixi.tasks]
 mcp_server="PYTHONPATH=src python -m studio.main"
+vscode = "code ."
 
 # Activation env
 [tool.pixi.activation.env]
