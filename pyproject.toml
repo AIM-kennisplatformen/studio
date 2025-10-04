@@ -34,7 +34,8 @@ dynamic = ["version"]
 dependencies = [
     "fastmcp==2.10.3",
     "httpx",
-    "typedb-driver==2.29.2"
+    "typedb-driver==2.29.2",
+    "langfuse"
 ]
 
 # -----------------------------

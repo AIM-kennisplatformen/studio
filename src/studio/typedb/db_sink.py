@@ -15,7 +15,7 @@ class TypeDBSink:
 from typing import List, Dict, Any, Optional
 
 class TypeDBSink:
-    def __init__(self, host: str = "studio-typedb:1729", database: str = "knowledgeplatform") -> None:
+    def __init__(self, host: str = "knowledgeplatform-typedb:1729", database: str = "knowledgeplatform") -> None:
         self.driver = TypeDB.core_driver(host)
         self.database = database
 

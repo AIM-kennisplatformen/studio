@@ -3,6 +3,7 @@ from mcp.server.fastmcp import FastMCP
 from studio.typedb.db_sink import TypeDBSink  # <-- your real TypeDB data-access layer
 from collections import defaultdict
 import datetime
+from langfuse import Langfuse, observe
 # -------------------------------
 # Real datasink
 # -------------------------------
@@ -13,7 +14,14 @@ datasink = TypeDBSink(database="knowledgeplatform")
 # -------------------------------
 mcp = FastMCP("typedb")
 
+langfuse = Langfuse(
+    public_key="",
+    secret_key="",
+    host="http://host.docker.internal:3000"
+)
+
 @mcp.tool()
+@observe(name="get_weekly_summary") 
 async def get_weekly_summary(email: str, year: int) -> str:
     """
     Geef een wekelijkse samenvatting van alle uren (per project en urensoort)
@@ -45,6 +53,7 @@ async def get_weekly_summary(email: str, year: int) -> str:
     return "\n".join(regels)
 
 @mcp.tool()
+@observe(name="get_weekly_hours")
 async def get_weekly_hours(email: str, year: int) -> str:
     """
     Geef de wekelijkse uren (budgeted, projected, remaining) per project in een bepaald jaar.
@@ -80,7 +89,9 @@ async def get_weekly_hours(email: str, year: int) -> str:
     return "\n".join(regels)
 
 
+
 @mcp.tool()
+@observe(name="get_totaal_uren")
 async def get_totaal_uren(email: str) -> str:
     """
     Geef het totaal aantal (billable + niet-billable) uren voor een medewerker.
