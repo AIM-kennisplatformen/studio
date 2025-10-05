@@ -104,9 +104,9 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
-      LANGFUSE_PUBLIC_KEY: pk-lf-1ecd6744-ac54-469c-9580-f5d4e6495342
-      LANGFUSE_SECRET_KEY: sk-lf-cddb3ab7-67ef-4228-b704-cde9c64e50b2
-      LANGFUSE_HOST: http://145.38.190.150:3000 
+      LANGFUSE_PUBLIC_KEY: dev-public-key
+      LANGFUSE_SECRET_KEY: dev-secret-key
+      LANGFUSE_HOST: http://host.docker.internal:3000
     tty: true
     networks:
       - containers_knowledgeplatform

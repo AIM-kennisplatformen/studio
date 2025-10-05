@@ -15,9 +15,9 @@ datasink = TypeDBSink(database="knowledgeplatform")
 mcp = FastMCP("typedb")
 
 langfuse = Langfuse(
-    public_key="",
-    secret_key="",
-    host="http://host.docker.internal:3000"
+  secret_key="dev-secret-key", # change in production
+  public_key="dev-public-key", # change in production
+  host="http://host.docker.internal:3000" # change in production
 )
 
 @mcp.tool()
