@@ -1,35 +1,53 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useRef } from "react";
+import Graph from "./components/graph/graph.jsx";
+import Chat from "./components/chat/chat.jsx";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [leftWidth, setLeftWidth] = useState(66.6); // start ~2/3
+  const containerRef = useRef(null);
+
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = leftWidth;
+
+    const onMouseMove = (e) => {
+      if (!containerRef.current) return;
+      const containerWidth = containerRef.current.offsetWidth;
+      const newWidth = ((startWidth / 100) * containerWidth + (e.clientX - startX)) / containerWidth * 100;
+      if (newWidth > 10 && newWidth < 90) {
+        setLeftWidth(newWidth);
+      }
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div ref={containerRef} className="flex h-screen w-screen overflow-hidden">
+      <div
+        className="h-full bg-gray-100"
+        style={{ width: `${leftWidth}%` }}
+      >
+        <Graph />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
+
+      <div
+        className="w-1 bg-gray-400 cursor-col-resize hover:bg-gray-600"
+        onMouseDown={handleMouseDown}
+      />
+
+      <div className="flex-1 h-full bg-gray-50">
+        <Chat />
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </div>
+  );
 }
 
-export default App
+export default App;
