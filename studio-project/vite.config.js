@@ -17,8 +17,12 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(__dirname, "./studio-project/src"),
     },
   },
 });
+
+console.log('VITE CONFIG __dirname:', __dirname);
+console.log('Resolved alias @ ->', path.resolve(__dirname, './src')); // adjust path you think is correct
+
 
