@@ -10,6 +10,8 @@ export default defineConfig({
     alias: {
       // eslint-disable-next-line no-undef
       "@": path.resolve(__dirname, "./src"),
+      "@repo/shadcn-ui/lib/utils": path.resolve("src/lib/utils.js"),
+      "@repo/shadcn-ui/components": path.resolve("src/components"),
     },
   },
 })
