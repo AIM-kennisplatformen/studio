@@ -1,7 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-
-@custom-variant dark (&:is(.dark *));
+@import "tw-forms";
+@import "tw-radix";
+@import "tw-shadcn-ui";
 
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
