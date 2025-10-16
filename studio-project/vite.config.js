@@ -1,28 +1,15 @@
+import path from "path"
+import tailwindcss from "@tailwindcss/vite"
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react-swc'
-import tailwindcss from '@tailwindcss/vite'
-import path from "path";
-import { fileURLToPath } from "url";
-
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
+import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss()
-  ],
+  plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./studio-project/src"),
+      // eslint-disable-next-line no-undef
+      "@": path.resolve(__dirname, "./src"),
     },
   },
-});
-
-console.log('VITE CONFIG __dirname:', __dirname);
-console.log('Resolved alias @ ->', path.resolve(__dirname, './src')); // adjust path you think is correct
-
-
+})
