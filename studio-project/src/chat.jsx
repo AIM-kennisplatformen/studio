@@ -1,6 +1,5 @@
 import {useState} from "react";
 import { Button } from "@/components/ui/button"
-
 export function Chat() {
     const [message, setMessage] = useState('');
 
@@ -27,7 +26,7 @@ export function Chat() {
 
     return (
         <div className="p-4">
-                  <Button>Button</Button>
+            <Button>Button</Button>    
             <form onSubmit={handleSubmit} className="flex gap-2">
                 <input
                     type="text"

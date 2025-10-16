@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
-import Graph from "./graph.jsx";import { Chat } from "./chat.jsx";
-;
+import Graph from "./graph.jsx";
+import {ChatAI} from "./ChatAI.jsx";
+
 function App() {
   const [leftWidth, setLeftWidth] = useState(66.6); // start ~2/3
   const containerRef = useRef(null);
@@ -43,7 +44,7 @@ function App() {
       />
 
       <div className="flex-1 h-full bg-gray-50">
-        <Chat />
+        <ChatAI />
       </div>
     </div>
   );
