@@ -1,23 +1,32 @@
-"use client"
+"use client";
 
 import {
   PromptInput,
-
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputToolbar,
-} from '@/components/shadcn-io/ai/prompt-input';
+} from "@/components/shadcn-io/ai/prompt-input";
 
-import { Message, MessageContent, MessageAvatar } from "@/components/shadcn-io/ai/message";
-import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/shadcn-io/ai/conversation";
+import {
+  Message,
+  MessageContent,
+  MessageAvatar,
+} from "@/components/shadcn-io/ai/message";
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from "@/components/shadcn-io/ai/conversation";
 import { avatars } from "./data/avatars";
-import { useAtom, useAtomValue } from "jotai";
-import { useEffect, useRef } from 'react';
-import { messagesAtom, textAtom, textStatusAtom, timerAtom } from "./data/atoms";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import {
+  messagesAtom,
+  textAtom,
+  textStatusAtom,
+  timerAtom,
+} from "./data/atoms";
 
-  
-export default function Chat(){
-  
+export default function Chat() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* messages area grows and scrolls; add bottom padding to avoid being hidden by the sticky input */}
@@ -30,69 +39,71 @@ export default function Chat(){
       </div>
     </div>
   );
-
 }
 
 function InputArea() {
   const [text, setText] = useAtom(textAtom);
   const [status, setStatus] = useAtom(textStatusAtom);
-  const [messages, setMessages] = useAtom(messagesAtom);
-  const [timers, setTimers] = useAtom(timerAtom);
-  const containerRef = useRef(null);
+  const setMessages = useSetAtom(messagesAtom);
+  const [responseTimeoutId, setResponseTimeoutId] = useAtom(timerAtom);
 
   const standardChatbotResponse = {
-    value: 'I\'ll look it up!',
-    name: 'chatbot'
-  }
-  const clearTimers = () => {
-    if (timers.stream) clearTimeout(timers.stream);
-    if (timers.response) clearTimeout(timers.response);
-    setTimers({ stream: null, response: null });
-  }
+    value: "I'll look it up!",
+    name: "chatbot",
+  };
+
+  const handleCancel = () => {
+    // Clear the pending response timeout, preventing the chatbot message from appearing
+    if (responseTimeoutId) clearTimeout(responseTimeoutId);
+
+    // Remove the user's message
+    setMessages((prev) => prev.filter((m) => m.key !== prev.length));
+
+    // Reset status and timeout ID
+    setStatus("ready");
+    setResponseTimeoutId(null);
+  };
+
+  const handleSubmission = () => {
+    // Send user's message
+    setMessages((prev) => [
+      ...prev,
+      { key: prev.length + 1, value: text, name: "user" },
+    ]);
+    setStatus("submitted");
+    setTimeout(() => setStatus("streaming"), 200);
+
+    // Simulate chatbot response after a delay
+    const newTimeoutId = setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        { key: prev.length + 1, ...standardChatbotResponse },
+      ]);
+
+      // Reset states
+      setText("");
+      setStatus("ready");
+      setResponseTimeoutId(null);
+      // Clear the ID variable after completion
+    }, 2000);
+    setResponseTimeoutId(newTimeoutId);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     // If no input → ignore
     if (!text) return;
 
-    // If currently streaming → stop
+    // If currently streaming and user presses stop button
     if (status === "streaming") {
-      clearTimers();
-      setMessages((prev) => prev.filter((m) => m.key !== prev.length));
-      setStatus("ready");
-      return;
+      handleCancel();
+    } else {
+      handleSubmission();
     }
-
-
-
-    // Send new message
-    clearTimers();
-    setMessages((prev) => [...prev, { key: prev.length+1, value: text, name: "user" }]);
-    setStatus("submitted");
-    const streamTimer = setTimeout(() => setStatus("streaming"), 200);
-    const responseTimer = setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        { key: prev.length+1, ...standardChatbotResponse },
-      ]);
-      setText("");
-      setStatus("ready");
-      clearTimers();
-    }, 2000);
-
-    setTimers({ stream: streamTimer, response: responseTimer });
   };
 
-  useEffect(() => clearTimers, []);
-
-   useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollTop = containerRef.current.scrollHeight;
-    }
-  }, [messages]);
-
   return (
-    <div className='p-4 w-full'>
+    <div className="p-4 w-full">
       <PromptInput onSubmit={handleSubmit} className="flex items-center">
         <PromptInputTextarea
           onChange={(e) => setText(e.target.value)}
@@ -106,29 +117,28 @@ function InputArea() {
       </PromptInput>
     </div>
   );
-  
 }
 
 function Messages() {
   const messages = useAtomValue(messagesAtom);
-  const data = messages.map(msg => {
-    const avatar = avatars.find(a => a.name == msg.name);
+  const data = messages.map((msg) => {
+    const avatar = avatars.find((a) => a.name == msg.name);
     return {
-        ...msg,
-        avatar: avatar ? avatar.link: null
+      ...msg,
+      avatar: avatar ? avatar.link : null,
     };
-  })
+  });
   return (
-<Conversation >
+    <Conversation>
       <ConversationContent>
-        {data.map(({key, value, name, avatar}) => (
-          <Message from={name === 'chatbot' ? 'chatbot' : 'user'} key={key}>
+        {data.map(({ key, value, name, avatar }) => (
+          <Message from={name === "chatbot" ? "chatbot" : "user"} key={key}>
             <MessageContent>{value}</MessageContent>
             <MessageAvatar name={name} src={avatar} />
           </Message>
         ))}
       </ConversationContent>
       <ConversationScrollButton className=" text-white hover:text-white" />
-    </Conversation>)
-  ;
+    </Conversation>
+  );
 }
