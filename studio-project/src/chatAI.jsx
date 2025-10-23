@@ -1,56 +1,123 @@
 "use client"
 
 import { useState } from "react"
+import {
+  PromptInput,
 
-import { Conversation } from "@/components/shadcn-io/ai/conversation";
-import { Message } from "@/components/shadcn-io/ai/message";
-import { PromptInput } from "@/components/shadcn-io/ai/prompt-input";
-import {Response} from "@/components/shadcn-io/ai/response";
-export  function ChatAI() {
-  const [messages, setMessages] = useState([])
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputToolbar,
+} from '@/components/shadcn-io/ai/prompt-input';
 
-  const handleSend = (prompt) => {
-    if (!prompt.trim()) return
+import { Message, MessageContent, MessageAvatar } from "@/components/shadcn-io/ai/message";
+import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/shadcn-io/ai/conversation";
+import { avatars } from "./avatars";
 
-    const userMessage = {
-      id: Date.now() + "-u",
-      role: "user",
-      content: prompt,
-    }
-
-    const botMessage = {
-      id: Date.now() + "-b",
-      role: "assistant",
-      content: "🤖 This is a fake bot response — no AI used!",
-    }
-
-    setMessages((prev) => [...prev, userMessage, botMessage])
-  }
-  console.log({ Conversation, Message, Response, PromptInput })
+export default function Chat(){
 
   return (
     <>
-    <div className="text-red-500 text-2xl">Hello Tailwind!</div>
-      <div className="flex-1 overflow-hidden">
-        <Conversation>
-          {messages.map((msg) =>
-            msg.role === "user" ? (
-              <Message key={msg.id} from="user">
-                {msg.content}
-              </Message>
-            ) : (
-              <Message key={msg.id} from="assistant">
-                <Response>{msg.content}</Response>
-              </Message>
-            )
-          )}
-        </Conversation>
-      </div>
-
-      <PromptInput
-        placeholder="Type your message..."
-        onSubmit={(value) => handleSend(value)}
-      />
+      <Messages />
+      <InputArea />
     </>
-  )
+  );
+
+}
+
+function InputArea() {
+  const [text, setText] = useState('');
+  const [status, setStatus] = useState('ready');
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    if (!text) {
+      return;
+    }
+
+    setStatus('submitted');
+
+    setTimeout(() => {
+      setStatus('streaming');
+    }, 200);
+
+    setTimeout(() => {
+      setStatus('ready');
+      setText('');
+    }, 2000);
+  };
+
+  return (
+    <div className='p-8 w-full'>
+    <PromptInput onSubmit={handleSubmit} className="flex items-center">
+      <PromptInputTextarea
+        onChange={(e) => setText(e.target.value)}
+        value={text}
+        placeholder="Type your message..."
+                className="flex-1"
+      />
+      <PromptInputToolbar className="ml-2">
+        <PromptInputSubmit disabled={!text} status={status} />
+      </PromptInputToolbar>
+    </PromptInput></div>);
+  
+}
+
+
+function Messages() {
+    const messages =
+  [
+    {
+      key: 1,
+      value: 'Hello! How can I help you today?',
+      name: 'chatbot',
+    },
+    {
+      key: 2,
+      value: "I'd like to learn about React hooks.",
+      name: 'user',
+    },
+    {
+      key: 3,
+      value: 'Great topic! Which hook interests you most?',
+      name: 'chatbot',
+    },
+    {
+      key: 4,
+      value: 'useState and useEffect are the most common ones.',
+      name: 'user',
+    },
+    {
+      key: 5,
+      value: 'Perfect! Let me show you some examples.',
+      name: 'chatbot',
+    },
+    {
+      key: 6,
+      value: 'That would be really helpful, thanks!',
+      name: 'user',
+    },
+  ];
+
+  const data = messages.map(msg => {
+    const avatar = avatars.find(a => a.name == msg.name);
+    return {
+        ...msg,
+        avatar: avatar ? avatar.link: null
+    };
+  })
+  return (
+<Conversation >
+      <ConversationContent>
+        {data.map(({ key, value, name, avatar}, index) => (
+            
+          <Message from={index % 2 === 0 ? 'chatbot' : 'user'} key={key}>
+            <MessageContent>{value}</MessageContent>
+            <MessageAvatar name={name} src={avatar} />
+          </Message>
+        ))}
+      </ConversationContent>
+      <ConversationScrollButton />
+    </Conversation>)
+  ;
 }
