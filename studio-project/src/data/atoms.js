@@ -14,3 +14,4 @@ export const messagesAtom = atom([
 export const textStatusAtom = atom('ready');
 
 export const textAtom = atom('');
+export const timerAtom = atom({ stream: null, response: null });

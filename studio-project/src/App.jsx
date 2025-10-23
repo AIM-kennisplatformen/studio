@@ -30,9 +30,9 @@ function App() {
   };
 
   return (
-    <div ref={containerRef} className="flex h-screen w-screen overflow-hidden">
+    <div ref={containerRef} className="flex h-screen w-screen">
       <div
-        className="h-full bg-gray-100"
+        className="h-full bg-gray-100 overflow-hidden "
         style={{ width: `${leftWidth}%` }}
       >
         <Graph />
@@ -43,7 +43,7 @@ function App() {
         onMouseDown={handleMouseDown}
       />
 
-      <div className="flex-1 h-full bg-gray-50">
+      <div className="flex-1 h-full bg-gray-50 flex flex-col">
         <Chat />
       </div>
     </div>
