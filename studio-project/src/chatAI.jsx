@@ -7,6 +7,8 @@ import {
   PromptInputToolbar,
 } from "@/components/shadcn-io/ai/prompt-input";
 
+import { Response } from "@/components/shadcn-io/ai/response";
+
 import {
   Message,
   MessageContent,
@@ -48,7 +50,13 @@ function InputArea() {
   const [responseTimeoutId, setResponseTimeoutId] = useAtom(timerAtom);
 
   const standardChatbotResponse = {
-    value: "I'll look it up!",
+    value: `Here's some code:
+  
+\`\`\`javascript
+const greeting = "Hello, world!";
+console.log(greeting);
+\`\`\`
+`,
     name: "chatbot",
   };
 
@@ -131,12 +139,19 @@ function Messages() {
   return (
     <Conversation>
       <ConversationContent>
-        {data.map(({ key, value, name, avatar }) => (
-          <Message from={name === "chatbot" ? "chatbot" : "user"} key={key}>
-            <MessageContent>{value}</MessageContent>
-            <MessageAvatar name={name} src={avatar} />
-          </Message>
-        ))}
+        {data.map(({ key, value, name, avatar }) =>
+          name === "chatbot" ? (
+            <div key={key} className="flex items-start gap-2">
+              <MessageAvatar name={name} src={avatar} />
+              <Response>{value}</Response>
+            </div>
+          ) : (
+            <Message from="user" key={key}>
+              <MessageContent>{value}</MessageContent>
+              <MessageAvatar name={name} src={avatar} />
+            </Message>
+          )
+        )}
       </ConversationContent>
       <ConversationScrollButton className=" text-white hover:text-white" />
     </Conversation>

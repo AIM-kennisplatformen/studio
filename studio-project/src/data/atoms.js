@@ -4,7 +4,7 @@ import { atom } from "jotai";
 export const messagesAtom = atom([
     {
       key: 1,
-      value: 'Hello! How can I help you today?',
+      value: '## Hello! \n **How can I help you today?**',
       name: 'chatbot',
     },
 ]);
