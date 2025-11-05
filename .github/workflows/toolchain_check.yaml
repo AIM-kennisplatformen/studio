@@ -1,0 +1,17 @@
+name: Toolchain check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch: {}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Install Pixi
+        uses: prefix-dev/setup-pixi@v0.8.3
