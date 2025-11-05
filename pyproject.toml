@@ -36,7 +36,7 @@ dependencies = [
     "httpx",
     "typedb-driver==2.29.2",
     "langfuse"
-]
+, "qdrant-client>=1.15.1,<2", "sentence-transformers>=5.1.2,<6", "pyzotero>=1.7.3,<2"]
 
 # -----------------------------
 # Testing
@@ -93,6 +93,7 @@ pkg-config = ">=0.29.2"
 python = "3.12.*"
 # Dotenv is for reading .env files
 python-dotenv = ">=1.1.0"
+loguru = ">=0.7.3,<0.8"
 
 [tool.pixi.tasks]
 mcp_server="PYTHONPATH=src python -m studio.main"
