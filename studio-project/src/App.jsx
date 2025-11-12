@@ -1,7 +1,10 @@
 import { useState, useRef } from "react";
 import Graph from "./graph.jsx";
 import "./index.css";
-import Chat from "./chatAI.jsx";
+import Chat from "./chat.jsx";
+import './App.css'
+
+
 function App() {
   const [leftWidth, setLeftWidth] = useState(66.6); // start ~2/3
   const containerRef = useRef(null);
