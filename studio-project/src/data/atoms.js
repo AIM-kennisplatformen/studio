@@ -12,6 +12,5 @@ export const messagesAtom = atom([
 
 //Atoms for the InputArea component
 export const textStatusAtom = atom('ready');
-
 export const textAtom = atom('');
 export const timerAtom = atom(null);

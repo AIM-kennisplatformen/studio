@@ -4,7 +4,7 @@ function Graph() {
   return (
     <>
       <div className="text-x l  ">
-        hi 
+        Er is geen grafiek beschikbaar op dit moment.
       </div>
     </>
   )
