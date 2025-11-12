@@ -1,4 +1,4 @@
-import { atom } from "jotai";
+import { atom, focusAtom } from "jotai";
 
 //Atom for the chat Component
 export const messagesAtom = atom([
@@ -14,3 +14,16 @@ export const messagesAtom = atom([
 export const textStatusAtom = atom('ready');
 export const textAtom = atom('');
 export const timerAtom = atom(null);
+
+//Atom for the knowledge graph component
+export const graphDataAtom = atom({
+    nodes: [],
+    edges: [],
+    draggingNodeId:null,
+    selectedNodeId:null,
+
+});
+
+export const graphStructureAtom = focusAtom(graphDataAtom, (optic) =>
+  optic.pick("nodes", "edges")
+);
