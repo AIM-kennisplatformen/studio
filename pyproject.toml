@@ -35,7 +35,11 @@ dependencies = [
     "fastmcp==2.10.3",
     "httpx",
     "typedb-driver==2.29.2",
-    "langfuse"
+    "langfuse",
+    "fastapi",
+    "uvicorn",
+    "passlib",
+    "sqlalchemy"
 ]
 
 # -----------------------------
@@ -97,6 +101,7 @@ python-dotenv = ">=1.1.0"
 [tool.pixi.tasks]
 mcp_server="PYTHONPATH=src python -m studio.main"
 vscode = "code ."
+run_auth = "PYTHONPATH=src uvicorn studio.auth.main:app --reload"
 
 # Activation env
 [tool.pixi.activation.env]
