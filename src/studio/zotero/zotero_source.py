@@ -1,10 +1,10 @@
-from typing import Any, Final
+import os
+from typing import Any
 
 from dotenv import load_dotenv
 from loguru import logger
-
 from pyzotero import zotero
-import os
+
 
 # pylint: disable-next=too-few-public-methods
 class ZoteroSource:
@@ -12,22 +12,22 @@ class ZoteroSource:
         load_dotenv()
         self.zotero = zotero.Zotero(
             library_id=os.getenv("ZOTERO_LIBRARY_ID"),
-            library_type="user",
+            library_type="group",
             api_key=os.getenv("ZOTERO_API_KEY"),
-            local=True,
         )
+
     async def get_all_collection_items(
         self,
         *,
         collection_name: str,
     ) -> list[dict[str, Any]]:
-        result = self._zotero.zotero.collections(q=collection_name)
+        result = self.zotero.collections(q=collection_name)
         if not result:
             return []
 
         collection_id = result[0]["key"]
-        collection_items = self._zotero.zotero.everything(
-            self._zotero.zotero.collection_items_top(collection_id, limit=None)
+        collection_items = self.zotero.everything(
+            self.zotero.collection_items_top(collection_id, limit=None)
         )
         return collection_items
 
@@ -45,7 +45,11 @@ class ZoteroSource:
             metadata or Zotero errors
         """
         logger.debug("Fetching metadata from zotero for documents (query: {})", query)
-        results = self.zotero.items(q=query)
+        key_info = self.zotero.key_info()
+        print(key_info)
+        results = self.zotero.collection_items_top(
+            collection=os.getenv("ZOTERO_COLLECTION_ID"), tag=query, limit=1024
+        )
         logger.debug("Zotero results: {}", len(results))
 
         """
@@ -67,7 +71,7 @@ class ZoteroSource:
         path: str,
     ) -> None:
         logger.debug("Fetching File: %s", item_id)
-        children = self._zotero.zotero.children(item_id)
+        children = self.zotero.children(item_id)
 
         if not children:
             logger.warning("No child attachments found for item %s", item_id)
@@ -91,7 +95,7 @@ class ZoteroSource:
             return
 
         print(file_path)
-        self._zotero.zotero.dump(
+        self.zotero.dump(
             itemkey=attachment["key"],
             filename=f"{item_id}.pdf",
             path=path,
@@ -111,17 +115,17 @@ class ZoteroSource:
             metadata or Zotero errors
         """
         logger.debug("Fetching metadata from zotero for documents (query: {})", query)
-        results = self._zotero.zotero.items(q=query)
+        results = self.zotero.items(tag=query)
         logger.debug("Zotero results: {}", len(results))
 
-        '''
+        """
         for item in results:
             title = item['data'].get('title', 'No title')
             item_type = item['data'].get('itemType', 'Unknown type')
             date = item['data'].get('date', 'No date')
             item_id = item['data'].get('key', 'No ID')
-        ''' 
+        """
 
-        #todo fetch forbidden UserNotAuthorisedError
+        # todo fetch forbidden UserNotAuthorisedError
 
         return results

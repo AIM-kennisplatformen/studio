@@ -69,6 +69,11 @@ python-dotenv = ">=1.1.0"
 loguru = ">=0.7.3,<0.8"
 lefthook = ">=1.11.13,<2"
 lychee = ">=0.15.1,<0.16"
+einops = ">=0.8.1,<0.9"
+ruff = ">=0.11.13,<0.12"
+isort = ">=6.0.1,<7"
+mypy = ">=1.16.0,<2"
+typing_extensions = ">=4.14.0,<5"
 
 [tool.pixi.tasks]
 mcp_server="PYTHONPATH=src python -m studio.main"

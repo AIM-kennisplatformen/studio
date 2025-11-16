@@ -1,45 +1,75 @@
-from typing import Dict, Any
+from langfuse import observe
 from mcp.server.fastmcp import FastMCP
-from langfuse import Langfuse, observe
-from studio.zotero.zotero_source import ZoteroSource
+
 from studio.qdrant.qdrant_source import QdrantSource
+from studio.zotero.zotero_source import ZoteroSource
 
 # -------------------------------
 # MCP server init
 # -------------------------------
 mcp = FastMCP("paper_search")
 
-langfuse = Langfuse(
-  secret_key="dev-secret-key", # change in production
-  public_key="dev-public-key", # change in production
-  host="http://host.docker.internal:3000" # change in production
-)
+# langfuse = Langfuse(
+#   secret_key="dev-secret-key", # change in production
+#   public_key="dev-public-key", # change in production
+#   host="http://host.docker.internal:3000" # change in production
+# )
 
 zotero_source = ZoteroSource()
 qdrant_source = QdrantSource("127.0.0.1", 6333, "knowledgeplatform")
 
 
 @mcp.tool()
-@observe(name="get_more_information_about_literature")
-async def get_more_information_about_literature() -> str:
-    """Summarizes the key literature topics in the energy politics corpus."""
-    papers = zotero_source.list_all_items(limit=50)
-    if not papers:
-        return "No literature found in the Zotero library."
-    topics = zotero_source.extract_topics(papers)
-    return f"The current literature collection includes research on {', '.join(topics)}."
-
-@mcp.tool()
 @observe(name="get_literature_supported_knowledge_sources")
-async def get_literature_supported_knowledge(full_question: str, keywords_related_to_question: str) -> list[Dict[str, Any]]:
-    """Return citations from papers stored in the knowledge set based on question and related keywords."""
-    related_sources = zotero_source.extract_zotero_metadata(keywords_related_to_question)
+async def get_literature_supported_knowledge(
+    full_question: str, keywords_related_to_question: str
+) -> str:
+    """
+    Geef een menselijk leesbare samenvatting van relevante literatuur
+    waarin Zotero-titels worden gekoppeld aan Qdrant-resultaten.
+    """
+
+    # 1. Haal Zotero metadata op
+    related_sources = await zotero_source.extract_zotero_metadata(
+        query=keywords_related_to_question
+    )
+
     if not related_sources:
-        return [{"message": "No related sources found for the given keywords."}]
+        return (
+            "Geen relevante literatuur gevonden op basis van de opgegeven zoekwoorden."
+        )
 
-    hashes = [s["hash"] for s in related_sources if "hash" in s]
+    # 2. Verzamel Zotero keys (hashes)
+    hashes = [s.get("key") for s in related_sources if "key" in s]
     if not hashes:
-        return [{"message": "No valid hashes found in Zotero metadata."}]
+        return "Geen geldige Zotero-referenties gevonden."
 
-    qdrant_sources = qdrant_source.query_on_subset(full_question, hashes)
-    return qdrant_sources or [{"message": "No relevant literature found in Qdrant."}]
+    # 3. Maak lookup tabel: {hash -> title}
+    title_lookup = {
+        src["key"]: src["data"].get("title", "Onbekende titel")
+        for src in related_sources
+        if "key" in src and "data" in src
+    }
+
+    # 4. Query Qdrant
+    qdrant_results = qdrant_source.query_on_subset(full_question, hashes)
+
+    if not qdrant_results:
+        return "Er zijn geen relevante tekstfragmenten gevonden in de kennisbank."
+
+    # 5. Bouw nette samenvatting
+    lines = ["Relevante gevonden literatuur:\n"]
+
+    for item in qdrant_results:
+        hash_key = item.get("zotero_hash")
+        title = title_lookup.get(hash_key, "Onbekende titel")
+        score = item.get("score", 0)
+        snippet = item.get("text", "").strip()
+
+        # Snippet inkorten
+        if len(snippet) > 500:
+            snippet = snippet[:500].rsplit(" ", 1)[0] + "..."
+
+        lines.append(f"— Score {score:.2f}\n  Titel: {title}\n  Bron: {snippet}\n")
+
+    return "\n".join(lines)
