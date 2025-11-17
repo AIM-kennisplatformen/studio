@@ -1,7 +1,7 @@
 /* Copied from PoC-Robert-React-Flow */
-import knowledgeGraph from '../data/knowledgeGraph.json';
 
-// Function to transform knowledge graph data into nodes and edges
+import knowledgeGraph from '../knowledge-graph/example-data.json'
+
 export function transformKnowledgeGraph() {
 const nuggetMap = new Map(knowledgeGraph.nuggets.map(n => [n.id, n]));
     

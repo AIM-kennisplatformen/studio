@@ -3,10 +3,13 @@ import Graph from "./graph.jsx";
 import "./index.css";
 import Chat from "./chat.jsx";
 import './App.css'
+import { ReactFlow, ReactFlowProvider } from "@xyflow/react";
+import { useDataToGraphTransformer } from "./hooks/useGraphTransformer.js";
 
 
 function App() {
   const [leftWidth, setLeftWidth] = useState(66.6); // start ~2/3
+  const data = useDataToGraphTransformer();
   const containerRef = useRef(null);
 
   const handleMouseDown = (e) => {
@@ -38,7 +41,9 @@ function App() {
         className="h-full bg-gray-100 overflow-hidden "
         style={{ width: `${leftWidth}%` }}
       >
-        <Graph />
+        <ReactFlowProvider>
+        <Graph data= {data} width={100-leftWidth} />
+        </ReactFlowProvider>
       </div>
 
       <div

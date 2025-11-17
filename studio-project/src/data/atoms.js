@@ -1,4 +1,4 @@
-import { atom, focusAtom } from "jotai";
+import { atom, selectAtom } from "jotai";
 
 //Atom for the chat Component
 export const messagesAtom = atom([
@@ -24,6 +24,10 @@ export const graphDataAtom = atom({
 
 });
 
-export const graphStructureAtom = focusAtom(graphDataAtom, (optic) =>
-  optic.pick("nodes", "edges")
-);
+export const nodesAtom = selectAtom(graphDataAtom, (u) => u?.nodes ?? []);
+
+export const edgesAtom = selectAtom(graphDataAtom, (u) => u?.edges ?? []);
+
+export const selectedNodeAtom = selectAtom(graphDataAtom, (u) => u?.selectedNodeAtom ?? null);
+
+export const draggingNodeIdAtom = selectAtom(graphDataAtom, (u) => u?.draggingNodeId ?? null);
