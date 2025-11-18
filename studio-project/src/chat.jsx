@@ -62,7 +62,7 @@ function InputArea() {
     setResponseTimeoutId(null);
   };
 
-  const handleSubmission = () => {
+  const handleSubmission = async () => {
     // Send user's message
     setMessages((prev) => [
       ...prev,
@@ -72,10 +72,11 @@ function InputArea() {
     setTimeout(() => setStatus("streaming"), 200);
 
     // Simulate chatbot response after a delay
-    const newTimeoutId = setTimeout(() => {
+    const newTimeoutId = setTimeout(async () => {
+      const singleMessage = await fetchAnswer("1", text);
       setMessages((prev) => [
         ...prev,
-        { key: prev.length + 1, ...fetchAnswer("1", text) },
+        { key: prev.length + 1, ...singleMessage },
       ]);
 
       // Reset states
@@ -87,7 +88,7 @@ function InputArea() {
     setResponseTimeoutId(newTimeoutId);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     // If no input → ignore
     if (!text) return;

@@ -1,12 +1,12 @@
 import { useState, useRef } from "react";
 import "./index.css";
-import './App.css'
 import Chat from "./chat.jsx";
 /*
 import Graph from "./graph.jsx";
 import { ReactFlowProvider } from "@xyflow/react";
 import { transformKnowledgeGraph } from "./data/knowledgeGraphData.js";
 */
+
 
 export default function App() {
   const [leftWidth, setLeftWidth] = useState(66.6); // start ~2/3
