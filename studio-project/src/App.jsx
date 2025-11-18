@@ -6,8 +6,6 @@ import Graph from "./graph.jsx";
 import { ReactFlowProvider } from "@xyflow/react";
 import { transformKnowledgeGraph } from "./data/knowledgeGraphData.js";
 */
-
-
 export default function App() {
   const [leftWidth, setLeftWidth] = useState(66.6); // start ~2/3
   //const data = transformKnowledgeGraph();
