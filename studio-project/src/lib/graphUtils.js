@@ -72,18 +72,8 @@ export function getEdgeHandles(
 // Helper function to get emoji and color based on entity type
 export const getEntityStyle = (type) => {
   switch (type) {
-    case "musician":
-      return { emoji: "👤", color: "#4CAF50", bgColor: "#E8F5E9" };
-    case "band":
-      return { emoji: "🎸", color: "#FF5722", bgColor: "#FFEBE9" };
-    case "song":
-      return { emoji: "🎵", color: "#2196F3", bgColor: "#E3F2FD" };
-    case "genre":
-      return { emoji: "🎼", color: "#9C27B0", bgColor: "#F3E5F5" };
-    case "instrument":
-      return { emoji: "🎹", color: "#FF9800", bgColor: "#FFF3E0" };
     default:
-      return { emoji: "⭐", color: "#607D8B", bgColor: "#ECEFF1" };
+      return { emoji: "🖹", color: "#607D8B", bgColor: "#ECEFF1" };
   }
 };
 
