@@ -1,7 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { ReactFlow, applyEdgeChanges, addEdge, useReactFlow } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import './App.css';
 import { Button } from './components/ui/button';
 import { CustomNode } from './components/CustomNode';
 import { getEntityStyle, getEdgeHandles } from './lib/graphUtils';
@@ -18,8 +17,8 @@ const [nodes, setNodes] = useAtom(nodesAtom);
   const [edges, setEdges] = useAtom(edgesAtom);
   const [draggingNodeId, setDraggingNodeId] = useAtom(draggingNodeIdAtom);
   const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom);
-  const { setViewport, getViewport, updateNodeInternals } = useReactFlow();
-  
+  const { setViewport, getViewport } = useReactFlow();
+
   // Convert knowledge graph data to React Flow nodes and edges
   useEffect(() => {
     if (!data || !data.allNodes || !data.allEdges) return;
@@ -219,11 +218,7 @@ const [nodes, setNodes] = useAtom(nodesAtom);
         });
         
         // Update React Flow's internal node measurements after state update
-        setTimeout(() => {
-          nodesNeedingUpdate.forEach(nodeId => {
-            updateNodeInternals(nodeId);
-          });
-        }, 50);
+      
         
         return updatedNodes;
       });
@@ -270,17 +265,12 @@ const [nodes, setNodes] = useAtom(nodesAtom);
           }));
         });
         
-        // Update React Flow's internal node measurements after state update
-        setTimeout(() => {
-          nodesNeedingUpdate.forEach(nodeId => {
-            updateNodeInternals(nodeId);
-          });
-        }, 50);
+      
         
         return resetNodes;
       });
     }
-  }, [selectedNode, updateEdgePositions, updateNodeInternals]);
+  }, [selectedNode, updateEdgePositions]);
 
   // Use the custom animation hook
   const { randomizePositions, applyAvsdfPositions, applyColaPositions, applyFcosePositions, isAnimating } = useFlowAnimation(nodes, edges, setNodes, setEdges, updateEdgePositions);
@@ -460,14 +450,6 @@ const [nodes, setNodes] = useAtom(nodesAtom);
           attributionPosition="bottom-left"
           proOptions={{ hideAttribution: true }}
         />
-      </div>
-      <div>
-        <span>👤 Musician</span>
-        <span>👥 Collaborators</span>
-        <span>🎸 Bands</span>
-        <span>🎵 Songs</span>
-        <span>🎹 Instruments</span>
-        <span>🎼 Genres</span>
       </div>
     </div>
   );
