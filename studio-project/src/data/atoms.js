@@ -2,12 +2,17 @@ import { atom } from "jotai";
 
 //Atom for the chat Component
 export const messagesAtom = atom([
-    {
-      key: 1,
-      value: '## Hello! \n **How can I help you today?**',
-      name: 'chatbot',
-    },
+  {
+    key: 1,
+    value: `Welcome to the knowledge platform for Energy Poverty Intervention Strategies!\n
+Discover expert insights on tackling energy poverty, drawn from scientific research, policy reports, and real-world best practices across Europe.  
+
+What would you like to explore today?`,
+    name: 'chatbot',
+  },
 ]);
+
+
 
 
 //Atoms for the InputArea component

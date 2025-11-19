@@ -9,17 +9,12 @@ import {
 
 import { Response } from "@/components/shadcn-io/ai/response";
 
-import {
-  Message,
-  MessageContent,
-  MessageAvatar,
-} from "@/components/shadcn-io/ai/message";
+import { Message, MessageContent } from "@/components/shadcn-io/ai/message";
 import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
 } from "@/components/shadcn-io/ai/conversation";
-import { avatars } from "./data/avatars";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
   messagesAtom,
@@ -111,7 +106,11 @@ function InputArea() {
           className="flex-1"
         />
         <PromptInputToolbar className="ml-2">
-          <PromptInputSubmit disabled={!text} status={status} />
+          <PromptInputSubmit
+            disabled={!text}
+            status={status}
+            style={{ backgroundColor: "#038061", color: "white" }}
+          />
         </PromptInputToolbar>
       </PromptInput>
     </div>
@@ -120,26 +119,24 @@ function InputArea() {
 
 function Messages() {
   const messages = useAtomValue(messagesAtom);
-  const data = messages.map((msg) => {
-    const avatar = avatars.find((a) => a.name == msg.name);
-    return {
-      ...msg,
-      avatar: avatar ? avatar.link : null,
-    };
-  });
   return (
     <Conversation>
       <ConversationContent>
-        {data.map(({ key, value, name, avatar }) =>
+        {messages.map(({ key, value, name }) =>
           name === "chatbot" ? (
             <div key={key} className="flex items-start gap-2">
-              <MessageAvatar name={name} src={avatar} />
-              <Response>{value}</Response>
+              <Response className="border border-gray-200 rounded-lg p-2 bg-gray-50  w-fit break-all">
+                {value}
+              </Response>
             </div>
           ) : (
             <Message from="user" key={key}>
-              <MessageContent>{value}</MessageContent>
-              <MessageAvatar name={name} src={avatar} />
+              <MessageContent
+                className="break-all"
+                style={{ backgroundColor: "#038061", color: "#ffffff" }}
+              >
+                {value}
+              </MessageContent>
             </Message>
           )
         )}
