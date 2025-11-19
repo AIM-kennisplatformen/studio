@@ -43,6 +43,10 @@ dependencies = [
     "uvicorn",
     "passlib",
     "sqlalchemy"
+    "langfuse", 
+	"qdrant-client>=1.15.1", 
+	"sentence-transformers>=5.1.2", 
+	"pyzotero>=1.7.3"
 ]
 
 # -----------------------------
@@ -51,33 +55,6 @@ dependencies = [
 [tool.pytest.ini_options]
 pythonpath = ["client", "server"]
 addopts = ["--import-mode=importlib"]
-
-# -----------------------------
-# Mypy
-# -----------------------------
-[tool.mypy]
-allow_redefinition = true
-disable_error_code = [
-    "call-arg",        # unexpected keyword arguments
-    "import-untyped",  # missing stubs like requests
-    "import-not-found",
-    "call-overload",
-    "arg-type",
-    "misc",
-]
-pretty = true
-exclude = [
-    "^\\.pixi/",  # ignore the .pixi folder at repo root
-]
-
-# -----------------------------
-# Ruff
-# -----------------------------
-[tool.ruff.lint]
-select = ["E4", "E7", "E9", "F", "C4", "PT"]
-
-[tool.ruff]
-exclude = [".pixi", "tests"]
 
 # -----------------------------
 # Pixi (Conda) — merged here for clarity
@@ -98,13 +75,23 @@ pkg-config = ">=0.29.2"
 # Conda-side runtime dependencies
 [tool.pixi.dependencies]
 python = "3.12.*"
-# Dotenv is for reading .env files
 python-dotenv = ">=1.1.0"
+loguru = ">=0.7.3,<0.8"
+lefthook = ">=1.11.13,<2"
+lychee = ">=0.15.1,<0.16"
+einops = ">=0.8.1,<0.9"
+ruff = ">=0.11.13,<0.12"
+isort = ">=6.0.1,<7"
+mypy = ">=1.16.0,<2"
+typing_extensions = ">=4.14.0,<5"
 
 [tool.pixi.tasks]
 mcp_server="PYTHONPATH=src python -m studio.main"
-vscode = "code ."
 run_auth = "PYTHONPATH=src uvicorn studio.auth.main:app --reload"
+vscode = "code ."
+lint = "ruff check"
+typecheck = "mypy ."
+test = "pytest -q"
 
 # Activation env
 [tool.pixi.activation.env]
@@ -115,3 +102,31 @@ LD_LIBRARY_PATH = "$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 [tool.pixi.target.linux-64.dependencies]
 python-devtools = ">=0.12.2"         # Optional but useful
 # cuda-toolkit = "12.9.0.*"   # For use with CUDA
+
+# -----------------------------
+# Mypy
+# -----------------------------
+[tool.mypy]
+allow_redefinition = true
+disable_error_code = [
+    "call-arg",        # unexpected keyword arguments
+    "import-untyped",  # missing stubs like requests
+    "import-not-found",
+    "call-overload",
+    "arg-type",
+    "misc",
+]
+pretty = true
+exclude = [
+    "^\\.pixi/",  # ignore the .pixi folder at repo root
+    "^\\studio-project/"
+]
+
+# -----------------------------
+# Ruff
+# -----------------------------
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "C4", "PT"]
+
+[tool.ruff]
+exclude = [".pixi", "tests", "studio-project"]

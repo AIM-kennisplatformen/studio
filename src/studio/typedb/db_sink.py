@@ -1,17 +1,5 @@
 from typedb.driver import TypeDB, SessionType, TransactionType
-from typing import List, Dict, Any
-
-
-class TypeDBSink:
-    """
-    Data-access layer for fetching timesheet data from TypeDB.
-    """
-
-    def __init__(self, host: str = "localhost:1729", database: str = "knowledgeplatform") -> None:
-        self.driver = TypeDB.core_driver(host)
-        self.database = database
-
-    from datetime import datetime
+from datetime import datetime
 from typing import List, Dict, Any, Optional
 
 class TypeDBSink:
