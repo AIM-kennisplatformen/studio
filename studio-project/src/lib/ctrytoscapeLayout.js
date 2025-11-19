@@ -113,48 +113,77 @@ export function updateNodePositions(nodes, newPositions) {
  * Cola is a continuous/iterative layout that runs all iterations synchronously when animate is false
  * @param {Array} nodes - React Flow nodes
  * @param {Array} edges - React Flow edges
- * @param {Object} options - Layout options (optional)
+ * @param {Object|null} options - Layout options (optional)
+ * @param {string|null} centerNodeId - ID of the node to fix in the center
+ * @param {Object} centerPosition - {x, y} coordinates for the center node
  * @returns {Object} Map of node IDs to new positions
  */
-export function applyColaLayout(nodes, edges, options = {}) {
+export function applyColaLayout(
+  nodes,
+  edges,
+  options = {},
+  centerNodeId = null,
+  centerPosition = { x: 400, y: 300 }
+) {
+  // Ensure options is always an object
+  options = options || {};
+
+  // Destructure with defaults
+  const {
+    maxSimulationTime = 4000,
+    edgeLength = 100,
+    nodeSpacing = 100,
+    convergenceThreshold = 0.01,
+    ...restOptions
+  } = options;
+
   // Create headless cytoscape instance
   const cy = cytoscape({
     headless: true,
     elements: reactFlowToCytoscape(nodes, edges)
   });
-  
+
+  // Prepare constraints if a center node is specified
+  const constraints = [];
+  if (centerNodeId) {
+    constraints.push({
+      axis: 'x',
+      left: centerPosition.x,
+      nodes: [centerNodeId]
+    });
+    constraints.push({
+      axis: 'y',
+      left: centerPosition.y,
+      nodes: [centerNodeId]
+    });
+  }
+
   // Run cola layout with options
   const layout = cy.layout({
     name: 'cola',
-    // Disable animations - this makes cola run all iterations synchronously
-    animate: false,
-    // Default options for cola
-    maxSimulationTime: options.maxSimulationTime || 4000, // Max time for layout
+    animate: false, // Run synchronously
+    maxSimulationTime,
+    edgeLength,
+    nodeSpacing,
+    convergenceThreshold,
     ungrabifyWhileSimulating: false,
     fit: true,
-    // Edge length and node spacing
-    edgeLength: options.edgeLength || 100,
-    nodeSpacing: options.nodeSpacing || 50,
-    // Convergence parameters
-    convergenceThreshold: options.convergenceThreshold || 0.01,
-    ...options
+    constraints,
+    ...restOptions
   });
-  
-  // Run the layout synchronously - all iterations complete before returning
+
   layout.run();
-  
+
   // Extract new positions
   const newPositions = {};
   cy.nodes().forEach(node => {
     const pos = node.position();
-    newPositions[node.id()] = {
-      x: pos.x,
-      y: pos.y
-    };
+    newPositions[node.id()] = { x: pos.x, y: pos.y };
   });
-  
+
   return newPositions;
 }
+
 
 /**
  * Apply fcose layout using cytoscape.js in headless mode

@@ -17,7 +17,7 @@ import {
 } from "./data/atoms";
 import { applyNodeChanges } from "@xyflow/react";
 import { calculateNodeDistances } from "./lib/graphUtils";
-import { applyFcoseLayout } from "./lib/ctrytoscapeLayout";
+import { applyColaLayout } from "./lib/ctrytoscapeLayout";
 
 export default function Graph({ data, width }) {
   const [nodes, setNodes] = useAtom(nodesAtom);
@@ -100,7 +100,7 @@ export default function Graph({ data, width }) {
     });
 
     // Apply fCoSE layout to get initial positions
-    const fcosePositions = applyFcoseLayout(newNodes, newEdges, {
+    const fcosePositions = applyColaLayout(newNodes, newEdges, selectedNode, {
       quality: "proof",
       nodeSeparation: 200,
       idealEdgeLength: 300,
@@ -112,7 +112,7 @@ export default function Graph({ data, width }) {
       tile: true,
       tilingPaddingVertical: 20,
       tilingPaddingHorizontal: 20,
-    });
+    }, {x: containerRef.current.clientWidth, y: containerRef.current.clientHeight});
 
     // Apply fCoSE positions to nodes
     const nodesWithPositions = newNodes.map((node) => ({
