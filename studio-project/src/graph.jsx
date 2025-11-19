@@ -7,7 +7,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { CustomNode } from "./components/CustomNode";
-import { getEntityStyle, getEdgeHandles } from "./lib/graphUtils";
+import {  getEdgeHandles } from "./lib/graphUtils";
 import { useAtom } from "jotai";
 import {
   nodesAtom,
@@ -36,7 +36,9 @@ export default function Graph({ data, width }) {
     // Create nodes from all entities with placeholder positioning
     const nodeMap = new Map();
     data.allNodes.forEach((node) => {
-      const style = getEntityStyle(node.type);
+      const centerNodeId = selectedNode?.id ?? 1;
+      const isCenter = node.id === centerNodeId;
+      console.log("Center Node ID:", centerNodeId);
 
       const reactFlowNode = {
         id: String(node.id),
@@ -46,9 +48,9 @@ export default function Graph({ data, width }) {
           label: `${node.title}\n${
             node.released !== "N/A" ? `(${node.released})` : ""
           }`,
-          background: style.bgColor,
-          color: "#333",
-          border: `2px solid ${style.color}`,
+          background:  isCenter ? "#038061" : "#ffffff",
+          color: isCenter ? "#ffffff" : "#038061",
+          border: `2px solid #038061`,
           borderRadius: "8px",
           padding: "8px",
           fontSize: "12px",
