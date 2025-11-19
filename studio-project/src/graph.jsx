@@ -36,9 +36,8 @@ export default function Graph({ data, width }) {
     // Create nodes from all entities with placeholder positioning
     const nodeMap = new Map();
     data.allNodes.forEach((node) => {
-      const centerNodeId = selectedNode?.id ?? 1;
+      const centerNodeId = 1;
       const isCenter = node.id === centerNodeId;
-      console.log("Center Node ID:", centerNodeId);
 
       const reactFlowNode = {
         id: String(node.id),
@@ -102,7 +101,7 @@ export default function Graph({ data, width }) {
     });
 
     // Apply fCoSE layout to get initial positions
-    const fcosePositions = applyColaLayout(newNodes, newEdges, selectedNode, {
+    const fcosePositions = applyColaLayout(newNodes, newEdges, 1, {
       quality: "proof",
       nodeSeparation: 200,
       idealEdgeLength: 300,
@@ -142,13 +141,10 @@ export default function Graph({ data, width }) {
   const nodeCenterX = nodeToSelect.position.x + nodeWidth / 2;
   const nodeCenterY = nodeToSelect.position.y + nodeHeight / 2;
 
-  const { zoom } = getViewport();
-
   setViewport(
     {
-      x: containerWidth / 2 - nodeCenterX * zoom,
-      y: containerHeight / 2 - nodeCenterY * zoom,
-      zoom,
+      x: containerWidth / 2 - nodeCenterX ,
+      y: containerHeight / 2 - nodeCenterY,
     },
     { duration: 500, easing: t => t * (2 - t) }
   );

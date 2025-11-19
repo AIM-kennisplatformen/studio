@@ -169,6 +169,13 @@ export function applyColaLayout(
     ungrabifyWhileSimulating: false,
     fit: true,
     constraints,
+      boundingBox: {
+    x1: 0,
+    y1: 0,
+    x2: centerPosition.x, 
+    y2: centerPosition.y
+  },
+    
     ...restOptions
   });
 
