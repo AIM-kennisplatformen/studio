@@ -12,7 +12,14 @@ packages = ["src/studio"]
 # Dependency groups (PEP 735)
 # -----------------------------
 [dependency-groups]
-dev = ["nest_asyncio"]
+dev = [
+    "isort>=7.0.0",
+    "mypy>=1.18.2",
+    "nest-asyncio",
+    "ruff>=0.14.5",
+    "toml-sort>=0.24.3",
+    "typing-extensions>=4.15.0",
+]
 
 # -----------------------------
 # Project metadata + PyPI runtime deps
@@ -42,7 +49,7 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "passlib",
-    "sqlalchemy"
+    "sqlalchemy",
     "langfuse", 
 	"qdrant-client>=1.15.1", 
 	"sentence-transformers>=5.1.2", 
