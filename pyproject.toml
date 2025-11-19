@@ -3,7 +3,10 @@
 # -----------------------------
 [build-system]
 build-backend = "hatchling.build"
-requires = ["hatchling==1.27.0"]
+requires = ["hatchling"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/studio"]
 
 # -----------------------------
 # Dependency groups (PEP 735)
@@ -29,7 +32,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
 ]
 requires-python = ">=3.12"
-dynamic = ["version"]
+version = "0.1.0"
 
 dependencies = [
     "fastmcp==2.10.3",
@@ -112,4 +115,3 @@ LD_LIBRARY_PATH = "$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 [tool.pixi.target.linux-64.dependencies]
 python-devtools = ">=0.12.2"         # Optional but useful
 # cuda-toolkit = "12.9.0.*"   # For use with CUDA
-
