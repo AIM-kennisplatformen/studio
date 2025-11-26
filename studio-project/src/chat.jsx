@@ -124,15 +124,15 @@ function Messages() {
       <ConversationContent>
         {messages.map(({ key, value, name }) =>
           name === "chatbot" ? (
-            <div key={key} className="flex items-start gap-2">
-              <Response className="border border-gray-200 rounded-lg p-2 bg-gray-50  w-fit break-all">
+            <div key={key} className="flex items-start gap-2 justify-start pr-20">
+              <Response className="max-w-prose text-sm border border-gray-200 rounded-lg p-2 bg-gray-50  w-fit break-words">
                 {value}
               </Response>
             </div>
           ) : (
-            <Message from="user" key={key}>
+            <Message from="user" key={key} className="flex justify-end pl-20">
               <MessageContent
-                className="break-all"
+                className="max-w-prose break-words"
                 style={{ backgroundColor: "#038061", color: "#ffffff" }}
               >
                 {value}
