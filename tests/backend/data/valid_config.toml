@@ -1,0 +1,4 @@
+[llm]
+client_type = "ollama"
+model_type = "llama3.1"
+max_tokens = 1000
