@@ -23,22 +23,24 @@ class LLMClient:
         registry = ToolRegistry()
         all_tools = ToolCollection(registry.available_tools)
 
-        # Filter tools per LLMclient based on config
+        allowed: ToolCollection
+
         if self.allowed_tools is None:
-            tools: ToolCollection = all_tools
-            logger.debug(f"All tools allowed: {tools.tool_names}")
+            allowed = all_tools
+            logger.debug(f"All tools allowed: {allowed.tool_names}")
         else:
-            # Validate requested tools exist
             unknown = set(self.allowed_tools) - registry.available_tools
             if unknown:
                 raise ValueError(f"Unknown tools requested: {unknown}")
 
-            # Get all tools except those not in allowed_tools
             excluded = registry.available_tools - set(self.allowed_tools)
             logger.debug(f"Excluded tools: {excluded}")
-            tools: ToolCollection = all_tools - excluded
-            logger.debug(f"Allowed tools: {tools}")
-        return tools
+
+            allowed = all_tools - excluded
+            logger.debug(f"Allowed tools: {allowed}")
+
+        return allowed
+
 
     def _initialize_client(self):
         if self.config.client_type == ClientType.ANTHROPIC:

@@ -3,6 +3,10 @@ from studio.typedb.db_sink import TypeDBSink  # <-- your real TypeDB data-access
 from collections import defaultdict
 import datetime
 from langfuse import Langfuse, observe
+from typing import DefaultDict, Dict, Tuple
+
+
+
 # -------------------------------
 # Real datasink
 # -------------------------------
@@ -31,7 +35,7 @@ async def get_weekly_summary(email: str, year: int) -> str:
     if not records:
         return f"Geen uren gevonden voor {email} in {year}."
 
-    weekly = defaultdict(float)
+    weekly: DefaultDict[Tuple[int, str, str], float] = defaultdict(float)
 
     for rec in records:
         date = rec["date"]
@@ -60,7 +64,14 @@ async def get_weekly_hours(email: str, year: int) -> str:
     records = datasink.fetch_person_timesheets(email, year=year, limit=10000)
 
     # structuur: {(week, project): {"budgeted": x, "projected": y, "remaining": z}}
-    per_week_project = defaultdict(lambda: {"budgeted": 0.0, "projected": 0.0, "remaining": 0.0})
+    per_week_project: DefaultDict[
+        Tuple[int, str],
+        Dict[str, float]
+    ] = defaultdict(lambda: {
+        "budgeted": 0.0,
+        "projected": 0.0,
+        "remaining": 0.0,
+    })
 
     for rec in records:
         week = rec["week_number"]

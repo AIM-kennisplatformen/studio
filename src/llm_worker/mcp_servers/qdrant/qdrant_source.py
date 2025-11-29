@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from qdrant_client import QdrantClient
 from qdrant_client.models import FieldCondition, Filter, MatchAny
 from sentence_transformers import SentenceTransformer
+from typing import Any, Dict, List
 
 
 class QdrantSource:
@@ -23,7 +24,7 @@ class QdrantSource:
         self.collection = qdrant_collection
         pass
 
-    def query_all(self, query_text: str, limit: int = 50) -> str:
+    def query_all(self, query_text: str, limit: int = 50) -> List[Dict[str, Any]]:
         """Retrieve semantically similar chunks from Qdrant using local Jina embeddings."""
         with torch.no_grad():
             embedding = self.embedding_model.encode(
@@ -34,7 +35,8 @@ class QdrantSource:
                 query_vector=embedding.tolist(),
                 limit=limit,
             )
-            return [r.payload | {"score": float(r.score)} for r in results]
+            return [
+        (r.payload or {}) | {"score": float(r.score)} for r in results ]
 
     def query_on_subset(
         self, question: str, subset: list[str], limit: int = 30
@@ -60,4 +62,5 @@ class QdrantSource:
             query_filter=filt,
         )
 
-        return [r.payload | {"score": float(r.score)} for r in results]
+        return [ (r.payload or {}) | {"score": float(r.score)}   for r in results ]
+

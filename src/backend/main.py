@@ -4,10 +4,13 @@ from fastapi.responses import RedirectResponse, FileResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional, TypedDict
 import os
 from authlib.integrations.starlette_client import OAuth
-
+from collections import defaultdict
+import asyncio
+import time
+from typing import DefaultDict
 from .models import ContextResponse
 from .data_loader import load_knowledge_graph, KnowledgeGraphData
 import httpx
@@ -215,18 +218,24 @@ app.include_router(frontend)
 class ChatMessage(BaseModel):
     message: str
 
+class Session(TypedDict):
+    history: List[dict]
+    last_seen: int
+    last_topic: str | None   # ← maak nullable
+    
+user_sessions: DefaultDict[str, Session] = defaultdict(
+    lambda: {
+        "history": [],
+        "last_seen": 0,
+        "last_topic": None,
+    }
+)
+user_locks: DefaultDict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
 
-from collections import defaultdict
-import asyncio
-import time
+user_last_request: DefaultDict[str, float] = defaultdict(lambda: 0.0)
 
-user_sessions = defaultdict(lambda: {
-    "last_topic": None,
-    "history": []
-})
-user_locks = defaultdict(asyncio.Lock)
-user_last_request = defaultdict(lambda: 0)
 RATE_LIMIT_SECONDS = 3
+
 
 @app.post("/chats/{chat_id}/messages")
 async def send_chat_message(chat_id: str, payload: ChatMessage, user=Depends(get_current_user)):

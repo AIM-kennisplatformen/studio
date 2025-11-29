@@ -87,8 +87,8 @@ itsdangerous = ">=2.2.0,<3"
 
 [tool.pixi.tasks]
 backend="docker compose up"
-mcp_server="PYTHONPATH=src/llm-worker python src/llm-worker/mcp_servers/main.py"
-llm_worker="PYTHONPATH=src python src/llm-worker/main.py"
+mcp_server="PYTHONPATH=src/llm_worker python src/llm_worker/mcp_servers/main.py"
+llm_worker="PYTHONPATH=src python src/llm_worker/main.py"
 vscode = "code ."
 lint = "ruff check"
 typecheck = "mypy ."

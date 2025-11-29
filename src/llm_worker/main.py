@@ -4,9 +4,10 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from loguru import logger
 
+
 # ---- Imports from your project ----
-from lib import ModelConfig, ClientType, LLMClient, MCPToolLoader
-from lib.schemagenerators import AnthropicAdapter, LlamaAdapter
+from lib import ModelConfig, LLMClient, MCPToolLoader
+from lib.schemagenerators import LlamaAdapter
 
 
 logger.remove()
@@ -69,10 +70,7 @@ async def startup_event():
 # ------------------------------------------------------------
 # SELECT ADAPTER
 # ------------------------------------------------------------
-adapter = AnthropicAdapter
-if config.client_type == ClientType.OLLAMA:
-    adapter = LlamaAdapter
-
+adapter = LlamaAdapter
 
 # ------------------------------------------------------------
 # PIPELINE FUNCTION (LLM ONLY)
@@ -115,4 +113,4 @@ async def ask_worker(payload: WorkerQuery):
 if __name__ == "__main__":
     import uvicorn
     print("Starting Worker on http://localhost:7000")
-    uvicorn.run("llm-worker.main:app", host="0.0.0.0", port=7000, reload=True)
+    uvicorn.run("llm_worker.main:app", host="0.0.0.0", port=7000, reload=True)

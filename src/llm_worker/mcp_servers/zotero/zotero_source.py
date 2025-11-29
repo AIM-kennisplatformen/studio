@@ -31,39 +31,6 @@ class ZoteroSource:
         )
         return collection_items
 
-    async def extract_zotero_metadata(
-        self,
-        *,
-        query: str,
-    ) -> list[str] | None:
-        """Extract metadata for a document title
-
-        Args:
-            `title`: The title of the document for which the metadata needs to be extracted
-
-        Returns:
-            metadata or Zotero errors
-        """
-        logger.debug("Fetching metadata from zotero for documents (query: {})", query)
-        key_info = self.zotero.key_info()
-        print(key_info)
-        results = self.zotero.collection_items_top(
-            collection=os.getenv("ZOTERO_COLLECTION_ID"), tag=query, limit=1024
-        )
-        logger.debug("Zotero results: {}", len(results))
-
-        """
-        for item in results:
-            title = item['data'].get('title', 'No title')
-            item_type = item['data'].get('itemType', 'Unknown type')
-            date = item['data'].get('date', 'No date')
-            item_id = item['data'].get('key', 'No ID')
-        """
-
-        # todo fetch forbidden UserNotAuthorisedError
-
-        return results
-
     async def download_zotero_item(
         self,
         *,

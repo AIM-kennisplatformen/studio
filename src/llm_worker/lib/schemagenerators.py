@@ -21,7 +21,6 @@ from typing import (
 from loguru import logger
 from pydantic import BaseModel
 
-from lib.settings import ClientType
 
 if TYPE_CHECKING:
     from lib.llm import LLMClient
@@ -393,11 +392,7 @@ class LLMSchemaGenerator(SchemaGenerator):
                 return basic_schema
 
             try:
-                adapter = None
-                if self.llm.config.client_type == ClientType.ANTHROPIC:
-                    adapter = AnthropicAdapter
-                elif self.llm.config.client_type == ClientType.OLLAMA:
-                    adapter = LlamaAdapter
+                adapter = LlamaAdapter
                 if adapter is None:
                     raise ValueError(
                         f"Unsupported client type: {self.llm.config.client_type}"
