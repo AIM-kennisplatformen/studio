@@ -35,4 +35,4 @@ ENV PORT=9000
 
 EXPOSE 9000
 
-CMD ["pixi", "run", "python", "-m", "uvicorn", "src.backend.endpoints:app", "--host", "0.0.0.0", "--port", "9000"]
+CMD ["pixi", "run", "python", "-m", "uvicorn", "src.backend.main:app", "--host", "0.0.0.0", "--port", "9000"]

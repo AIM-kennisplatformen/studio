@@ -67,6 +67,7 @@ services:
       - internal
     extra_hosts:
     - "auth.localhost:172.19.0.5"   # IP of authentik-server container
+    - "host.docker.internal:host-gateway"
 
   ####################################################
   # NGINX Reverse Proxy

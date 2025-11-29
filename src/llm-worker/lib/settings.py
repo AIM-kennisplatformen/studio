@@ -14,10 +14,10 @@ class ClientType(str, Enum):
 class ModelType(str, Enum):
     HAIKU = "claude-3-haiku-20240307"
     LLAMA31 = "llama3.1"
-    QWEN2 = "qwen2.5:7b-instruct-fp16"
+    QWEN2 = "qwen2.5:7b"
     QWEN3 = "qwen3:8b-q8_0"
     CODELLAMA34B = "codellama:34b"
-    PHI3 = "phi3:latest"
+    PHI4 = "phi4"
 
 
 class ModelConfig(BaseModel):
