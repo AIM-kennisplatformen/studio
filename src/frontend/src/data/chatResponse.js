@@ -4,14 +4,16 @@ const standardChatbotResponse = {
 };
 
 export async function fetchAnswer(chatId = "1", message) {
-  const url = `http://localhost:9000/chats/${chatId}/messages`;
+  const url = `http://kg.localhost:8090/chats/${chatId}/messages`;
 
   try {
     const response = await fetch(url, {
       method: "POST",
+      credentials: "include",   // <-- REQUIRED for cookie-based Auth!
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message }),
     });
+    
 
     if (!response.ok) {
       // Backend returned an error status

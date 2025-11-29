@@ -83,6 +83,7 @@ isort = ">=6.0.1"
 mypy = ">=1.16.0"
 typing_extensions = ">=4.14.0"
 nodejs = ">=22.13.0,<22.14"
+itsdangerous = ">=2.2.0,<3"
 
 [tool.pixi.tasks]
 mcp_server="PYTHONPATH=src python -m studio.main"
