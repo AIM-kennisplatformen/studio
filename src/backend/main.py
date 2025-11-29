@@ -6,11 +6,9 @@ from starlette.middleware.sessions import SessionMiddleware
 from pydantic import BaseModel
 from typing import Optional
 import os
-import random
-from starlette.responses import JSONResponse
 from authlib.integrations.starlette_client import OAuth
 
-from .models import Node, Edge, Source, ChatResponse, ContextResponse
+from .models import ContextResponse
 from .data_loader import load_knowledge_graph, KnowledgeGraphData
 import httpx
 

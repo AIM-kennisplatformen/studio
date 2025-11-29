@@ -3,10 +3,7 @@ MCP Tool Loader
 Factory for loading tools from MCP servers using the fastmcp connection manager.
 """
 
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Set, Union
 
-from loguru import logger
 
 from lib.models import ToolCollection
 

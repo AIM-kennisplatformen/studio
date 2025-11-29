@@ -1,7 +1,6 @@
 """Data loader for knowledge graph example data and QnA questions."""
 
 import json
-from pathlib import Path
 from typing import Dict, List, Any
 from .models import Node, Edge
 

@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Optional, Set, Union
 
 from dataclasses import dataclass
-from fastmcp import Client  # The new high-level client
 from loguru import logger
 
 from lib.schemagenerators import ParameterSchema, ToolSchema

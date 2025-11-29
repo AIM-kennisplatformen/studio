@@ -1,4 +1,3 @@
-from typing import Dict
 from mcp.server.fastmcp import FastMCP
 from studio.typedb.db_sink import TypeDBSink  # <-- your real TypeDB data-access layer
 from collections import defaultdict
