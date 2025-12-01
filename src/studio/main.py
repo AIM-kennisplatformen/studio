@@ -1,9 +1,6 @@
-from collections import defaultdict
-from fastmcp import FastMCP
-from studio.mcp.employee_hours import mcp
-import datetime
-
+from studio.mcp.scepa.paper_search import mcp
 
 if __name__ == "__main__":
-    mcp.settings.host="0.0.0.0"
+    # asyncio.run(main())
+    mcp.settings.host = "0.0.0.0"
     mcp.run(transport="sse")
