@@ -38,23 +38,23 @@ classifiers = [
   "Framework :: FastAPI",
   "Programming Language :: Python :: 3.12",
 ]
-requires-python = ">=3.12"
-version = "0.1.0"
+requires-python = ">=3.11"
+dynamic = ["version"]
 
 dependencies = [
-    "fastmcp==2.10.3",
+    "fastmcp>=2.10.1",
+    "fastapi",
     "httpx",
     "typedb-driver==2.29.2",
-    "langfuse",
-    "fastapi",
-    "uvicorn",
-    "passlib",
-    "sqlalchemy",
     "langfuse", 
-	"qdrant-client>=1.15.1", 
-	"sentence-transformers>=5.1.2", 
-	"pyzotero>=1.7.3"
-]
+    "anthropic>=0.42.0",
+    "loguru>=0.7.3",
+    "ollama>=0.4.5",
+    "python-dotenv>=1.0.1",
+    "qdrant-client>=1.15.1", 
+    "sentence-transformers>=5.1.2", 
+    "pyzotero>=1.7.3"
+    ]
 
 # -----------------------------
 # Testing
@@ -84,17 +84,20 @@ pkg-config = ">=0.29.2"
 python = "3.12.*"
 python-dotenv = ">=1.1.0"
 loguru = ">=0.7.3,<0.8"
-lefthook = ">=1.11.13,<2"
-lychee = ">=0.15.1,<0.16"
-einops = ">=0.8.1,<0.9"
-ruff = ">=0.11.13,<0.12"
-isort = ">=6.0.1,<7"
-mypy = ">=1.16.0,<2"
-typing_extensions = ">=4.14.0,<5"
+lefthook = ">=1.11.13"
+lychee = ">=0.15.1"
+einops = ">=0.8.1"
+ruff = ">=0.11.13"
+isort = ">=6.0.1"
+mypy = ">=1.16.0"
+typing_extensions = ">=4.14.0"
+nodejs = ">=22.13.0,<22.14"
+itsdangerous = ">=2.2.0,<3"
 
 [tool.pixi.tasks]
-mcp_server="PYTHONPATH=src python -m studio.main"
-run_auth = "PYTHONPATH=src uvicorn studio.auth.main:app --reload"
+backend="docker compose up"
+mcp_server="PYTHONPATH=src/llm_worker python src/llm_worker/mcp_servers/main.py"
+llm_worker="PYTHONPATH=src python src/llm_worker/main.py"
 vscode = "code ."
 lint = "ruff check"
 typecheck = "mypy ."
