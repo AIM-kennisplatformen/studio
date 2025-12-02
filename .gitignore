@@ -213,3 +213,4 @@ uploads/
 client/
 data/*
 ollama/
+.DS_Store
