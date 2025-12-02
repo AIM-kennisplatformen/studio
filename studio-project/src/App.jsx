@@ -1,12 +1,14 @@
 import { useState, useRef } from "react";
-import Graph from "./graph.jsx";
 import "./index.css";
 import Chat from "./chat.jsx";
-import './App.css'
 
+import Graph from "./graph.jsx";
+import { ReactFlowProvider } from "@xyflow/react";
+import { transformKnowledgeGraph } from "./data/knowledgeGraphData.js";
 
-function App() {
+export default function App() {
   const [leftWidth, setLeftWidth] = useState(66.6); // start ~2/3
+  const data = transformKnowledgeGraph();
   const containerRef = useRef(null);
 
   const handleMouseDown = (e) => {
@@ -34,13 +36,16 @@ function App() {
 
   return (
     <div ref={containerRef} className="flex h-screen w-screen">
+      
       <div
         className="h-full bg-gray-100 overflow-hidden "
         style={{ width: `${leftWidth}%` }}
       >
-        <Graph />
+        <ReactFlowProvider>
+        <Graph data= {data} width={leftWidth} />
+        </ReactFlowProvider>
       </div>
-
+  
       <div
         className="w-1 bg-gray-400 cursor-col-resize hover:bg-gray-600"
         onMouseDown={handleMouseDown}
@@ -53,4 +58,3 @@ function App() {
   );
 }
 
-export default App;

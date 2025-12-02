@@ -9,17 +9,12 @@ import {
 
 import { Response } from "@/components/shadcn-io/ai/response";
 
-import {
-  Message,
-  MessageContent,
-  MessageAvatar,
-} from "@/components/shadcn-io/ai/message";
+import { Message, MessageContent } from "@/components/shadcn-io/ai/message";
 import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
 } from "@/components/shadcn-io/ai/conversation";
-import { avatars } from "./data/avatars";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
   messagesAtom,
@@ -33,7 +28,7 @@ export default function Chat() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* messages area grows and scrolls; add bottom padding to avoid being hidden by the sticky input */}
-      <div className="flex-1 flex flex-col overflow-y-auto">
+      <div className="flex flex-col overflow-y-auto justify-end p-4 flex-1 pb-5">
         <Messages />
       </div>
       {/* sticky input bar pinned to bottom of the viewport */}
@@ -62,20 +57,21 @@ function InputArea() {
     setResponseTimeoutId(null);
   };
 
-  const handleSubmission = () => {
+  const handleSubmission = async () => {
     // Send user's message
     setMessages((prev) => [
-      ...prev,
-      { key: prev.length + 1, value: text, name: "user" },
+      
+      { key: prev.length + 1, value: text, name: "user" }, ...prev,
     ]);
     setStatus("submitted");
     setTimeout(() => setStatus("streaming"), 200);
 
     // Simulate chatbot response after a delay
-    const newTimeoutId = setTimeout(() => {
+    const newTimeoutId = setTimeout(async () => {
+      const singleMessage = await fetchAnswer("1", text);
       setMessages((prev) => [
-        ...prev,
-        { key: prev.length + 1, ...fetchAnswer("1", text) },
+        
+        { key: prev.length + 1, ...singleMessage },...prev,
       ]);
 
       // Reset states
@@ -87,7 +83,7 @@ function InputArea() {
     setResponseTimeoutId(newTimeoutId);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     // If no input → ignore
     if (!text) return;
@@ -110,7 +106,11 @@ function InputArea() {
           className="flex-1"
         />
         <PromptInputToolbar className="ml-2">
-          <PromptInputSubmit disabled={!text} status={status} />
+          <PromptInputSubmit
+            disabled={!text}
+            status={status}
+            style={{ backgroundColor: "#038061", color: "white" }}
+          />
         </PromptInputToolbar>
       </PromptInput>
     </div>
@@ -119,31 +119,31 @@ function InputArea() {
 
 function Messages() {
   const messages = useAtomValue(messagesAtom);
-  const data = messages.map((msg) => {
-    const avatar = avatars.find((a) => a.name == msg.name);
-    return {
-      ...msg,
-      avatar: avatar ? avatar.link : null,
-    };
-  });
   return (
-    <Conversation>
-      <ConversationContent>
-        {data.map(({ key, value, name, avatar }) =>
+        <div className="flex flex-cole">
+    <Conversation >
+      <ConversationContent className="flex flex-col-reverse">
+        {messages.map(({ key, value, name }) =>
           name === "chatbot" ? (
-            <div key={key} className="flex items-start gap-2">
-              <MessageAvatar name={name} src={avatar} />
-              <Response>{value}</Response>
+            <div key={key} className="flex items-start gap-2 justify-start pr-20">
+              <Response className="max-w-prose text-sm border border-gray-200 rounded-lg p-2 bg-gray-50  w-fit break-words">
+                {value}
+              </Response>
             </div>
           ) : (
-            <Message from="user" key={key}>
-              <MessageContent>{value}</MessageContent>
-              <MessageAvatar name={name} src={avatar} />
+            <Message from="user" key={key} className="flex justify-end pl-20">
+              <MessageContent
+                className="max-w-prose break-words"
+                style={{ backgroundColor: "#038061", color: "#ffffff" }}
+              >
+                {value}
+              </MessageContent>
             </Message>
           )
         )}
       </ConversationContent>
       <ConversationScrollButton className=" text-white hover:text-white" />
     </Conversation>
+    </div>
   );
 }
