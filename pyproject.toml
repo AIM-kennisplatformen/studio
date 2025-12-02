@@ -3,13 +3,23 @@
 # -----------------------------
 [build-system]
 build-backend = "hatchling.build"
-requires = ["hatchling==1.27.0"]
+requires = ["hatchling"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/studio"]
 
 # -----------------------------
 # Dependency groups (PEP 735)
 # -----------------------------
 [dependency-groups]
-dev = ["nest_asyncio"]
+dev = [
+    "isort>=7.0.0",
+    "mypy>=1.18.2",
+    "nest-asyncio",
+    "ruff>=0.14.5",
+    "toml-sort>=0.24.3",
+    "typing-extensions>=4.15.0",
+]
 
 # -----------------------------
 # Project metadata + PyPI runtime deps
@@ -72,7 +82,6 @@ pkg-config = ">=0.29.2"
 # Conda-side runtime dependencies
 [tool.pixi.dependencies]
 python = "3.12.*"
-# Dotenv is for reading .env files
 python-dotenv = ">=1.1.0"
 loguru = ">=0.7.3,<0.8"
 lefthook = ">=1.11.13"
@@ -103,7 +112,6 @@ LD_LIBRARY_PATH = "$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 [tool.pixi.target.linux-64.dependencies]
 python-devtools = ">=0.12.2"         # Optional but useful
 # cuda-toolkit = "12.9.0.*"   # For use with CUDA
-
 
 # -----------------------------
 # Mypy

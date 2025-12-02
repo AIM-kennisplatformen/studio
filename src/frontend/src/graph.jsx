@@ -5,7 +5,6 @@ import {
   addEdge,
   useReactFlow,
 } from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
 import { CustomNode } from "./components/CustomNode";
 import {  getEdgeHandles } from "./lib/graphUtils";
 import { useAtom } from "jotai";
@@ -17,7 +16,7 @@ import {
 } from "./data/atoms";
 import { applyNodeChanges } from "@xyflow/react";
 import { calculateNodeDistances } from "./lib/graphUtils";
-import { applyColaLayout } from "./lib/ctrytoscapeLayout";
+import { applyColaLayout, applyAvsdfLayout, applyFcoseLayout } from "./lib/ctrytoscapeLayout";
 
 export default function Graph({ data, width }) {
   const [nodes, setNodes] = useAtom(nodesAtom);
@@ -81,14 +80,15 @@ export default function Graph({ data, width }) {
           target: String(edge.target),
           label: edge.label_forward,
           type: "default",
-          animated: false,
           sourceHandle,
           targetHandle,
-          markerEnd: {
-            type: "arrowclosed",
-            color: "#999",
-          },
-          style: { stroke: "#999", strokeWidth: 1.5 },
+          style: {
+    stroke: "#000", // your line color
+    strokeWidth: 10,    // thickness of line
+    strokeDasharray: "0", // ensures solid line
+  },
+        
+          
           labelStyle: {
             fill: "#666",
             fontSize: "10px",
@@ -101,7 +101,7 @@ export default function Graph({ data, width }) {
     });
 
     // Apply fCoSE layout to get initial positions
-    const fcosePositions = applyColaLayout(newNodes, newEdges, 1, {
+    const fcosePositions = applyAvsdfLayout(newNodes, newEdges, {
       quality: "proof",
       nodeSeparation: 200,
       idealEdgeLength: 300,
