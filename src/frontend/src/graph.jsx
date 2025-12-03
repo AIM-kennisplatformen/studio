@@ -5,6 +5,7 @@ import {
   addEdge,
   useReactFlow,
 } from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 import { CustomNode } from "./components/CustomNode";
 import {  getEdgeHandles } from "./lib/graphUtils";
 import { useAtom } from "jotai";
@@ -16,7 +17,7 @@ import {
 } from "./data/atoms";
 import { applyNodeChanges } from "@xyflow/react";
 import { calculateNodeDistances } from "./lib/graphUtils";
-import { applyColaLayout, applyAvsdfLayout, applyFcoseLayout } from "./lib/ctrytoscapeLayout";
+import { applyColaLayout } from "./lib/ctrytoscapeLayout";
 import { sendNodeSelection } from "./data/api";
 
 export default function Graph({ data, width }) {
@@ -81,15 +82,14 @@ export default function Graph({ data, width }) {
           target: String(edge.target),
           label: edge.label_forward,
           type: "default",
+          animated: false,
           sourceHandle,
           targetHandle,
-          style: {
-    stroke: "#000", // your line color
-    strokeWidth: 10,    // thickness of line
-    strokeDasharray: "0", // ensures solid line
-  },
-        
-          
+          markerEnd: {
+            type: "arrowclosed",
+            color: "#999",
+          },
+          style: { stroke: "#999", strokeWidth: 1.5 },
           labelStyle: {
             fill: "#666",
             fontSize: "10px",
@@ -102,7 +102,7 @@ export default function Graph({ data, width }) {
     });
 
     // Apply fCoSE layout to get initial positions
-    const fcosePositions = applyAvsdfLayout(newNodes, newEdges, {
+    const fcosePositions = applyColaLayout(newNodes, newEdges, 1, {
       quality: "proof",
       nodeSeparation: 200,
       idealEdgeLength: 300,
@@ -376,7 +376,7 @@ export default function Graph({ data, width }) {
           if (newSelectedNode) {
             // Update selected node state
             setSelectedNode(newSelectedNode);
-
+            
             // Notify backend of node selection
             sendNodeSelection(newSelectedNode.id).then((context) => {
               if (context) {

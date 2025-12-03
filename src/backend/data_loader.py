@@ -1,6 +1,7 @@
 """Data loader for knowledge graph example data and QnA questions."""
 
 import json
+from pathlib import Path
 from typing import Dict, List, Any
 from .models import Node, Edge
 
@@ -13,7 +14,7 @@ class KnowledgeGraphData:
         self.relations: Dict[int, Edge] = {}
         self.questions: List[Dict[str, Any]] = []
     
-    def load_from_files(self, data_path: str, questions_path: str):
+    def load_from_files(self, data_path: str):
         """Load data from JSON files."""
         # Load example data
         with open(data_path, 'r', encoding='utf-8') as f:
@@ -58,10 +59,7 @@ class KnowledgeGraphData:
             )
             
             self.relations[rel_id] = edge
-        
-        # Load QnA questions
-        with open(questions_path, 'r', encoding='utf-8') as f:
-            self.questions = json.load(f)
+
     
     def get_entity(self, entity_id: int) -> Node | None:
         """Get entity by ID."""
@@ -90,5 +88,9 @@ class KnowledgeGraphData:
 def load_knowledge_graph() -> KnowledgeGraphData:
     """Load knowledge graph data from JSON files."""
     kg_data = KnowledgeGraphData()
-
+    # Get paths relative to this file
+    base_path = Path(__file__).parent.parent
+    data_path = base_path / 'frontend' / 'src' / 'knowledge-graph' / 'example-data.json'
+    
+    kg_data.load_from_files(str(data_path))
     return kg_data

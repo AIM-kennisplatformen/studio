@@ -33,10 +33,10 @@ app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
 # ------------------------------------------------------
 # OAuth / Authentik Setup
 # ------------------------------------------------------
-BASE_URL = os.getenv("BASE_URL", "http://kg.localhost")
-DISCOVERY_URL = os.getenv("OAUTH_DISCOVERY_URL")
-CLIENT_ID = os.getenv("OAUTH_CLIENT_ID")
-CLIENT_SECRET = os.getenv("OAUTH_CLIENT_SECRET")
+BASE_URL = os.getenv("BASE_URL", "http://localhost:10090")
+DISCOVERY_URL = os.getenv("OAUTH_DISCOVERY_URL", "http://auth.localhost:9000/application/o/kg/.well-known/openid-configuration")
+CLIENT_ID = os.getenv("OAUTH_CLIENT_ID","rkuclih8uzm44nTUvwasexioUKFk5aG1zhG8jcJX")
+CLIENT_SECRET = os.getenv("OAUTH_CLIENT_SECRET","NEb0sAcMc2kTTdvfJMctLYE35Fp0GqyqFp4oOVrstxsevnVMJutiIhvb6TzwPrkbphAh1EiI74oRRO79xRCoZTh1suFYTV9J0tmRJBIFIF4znDYwNyDp3IzUQlESvaS0")
 
 oauth = OAuth()
 oauth.register(
@@ -78,7 +78,7 @@ async def startup_event():
 # )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://kg.localhost:8090"],  # exact domain only
+    allow_origins=["http://localhost:10090"],  # exact domain only
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -290,13 +290,42 @@ async def send_chat_message(chat_id: str, payload: ChatMessage, user=Depends(get
 
 
 @app.post("/nodes/{node_id}/context", response_model=ContextResponse)
-async def get_node_context(node_id: str, user=Depends(get_current_user)):
+async def get_node_context(node_id: int, user=Depends(get_current_user)):
+
+    # Get node
+    node = kg_data.entities.get(node_id)
+    if not node:
+        return ContextResponse(
+            message=f"Node '{node_id}' not found",
+            nodes=[],
+            edges=[],
+            sources=[],
+            error="not_found"
+        )
+
+    # Get all edges referencing this node
+    edges = [
+        rel for rel in kg_data.relations.values()
+        if int(rel.sourceId) == node_id or int(rel.targetId) == node_id
+    ]
+
+    # Collect neighbor nodes
+    neighbor_ids = {
+        int(rel.sourceId) for rel in edges
+    } | {
+        int(rel.targetId) for rel in edges
+    }
+
+    neighbor_nodes = [
+        kg_data.entities[nid] for nid in neighbor_ids if nid in kg_data.entities
+    ]
+
     return ContextResponse(
-        message="",
-        nodes=[],
-        edges=[],
+        message=f"Context for node {node_id}",
+        nodes=neighbor_nodes,
+        edges=edges,
         sources=[],
-        error="Not implemented yet",
+        error=None
     )
 
 

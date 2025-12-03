@@ -1,4 +1,4 @@
-const BASE_URL = "http://kg.localhost:8090";
+const BASE_URL = "http://localhost:10090";
 
 const errorResponse = {
   value: "Sorry, I couldn't reach the server. Please try again later.",
