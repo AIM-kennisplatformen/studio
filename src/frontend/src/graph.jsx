@@ -17,6 +17,7 @@ import {
 import { applyNodeChanges } from "@xyflow/react";
 import { calculateNodeDistances } from "./lib/graphUtils";
 import { applyColaLayout, applyAvsdfLayout, applyFcoseLayout } from "./lib/ctrytoscapeLayout";
+import { sendNodeSelection } from "./data/api";
 
 export default function Graph({ data, width }) {
   const [nodes, setNodes] = useAtom(nodesAtom);
@@ -375,6 +376,13 @@ export default function Graph({ data, width }) {
           if (newSelectedNode) {
             // Update selected node state
             setSelectedNode(newSelectedNode);
+
+            // Notify backend of node selection
+            sendNodeSelection(newSelectedNode.id).then((context) => {
+              if (context) {
+                console.log("Node context:", context);
+              }
+            });
 
             const currentViewport = getViewport();
 

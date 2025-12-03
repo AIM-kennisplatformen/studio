@@ -1,4 +1,17 @@
 import { atom } from "jotai";
+import { customAlphabet } from "nanoid";
+
+// Generate chat ID: 20 chars grouped in 5s with hyphens (xxxxx-xxxxx-xxxxx-xxxxx)
+const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+const nanoid = customAlphabet(alphabet, 20);
+
+function generateChatId() {
+  const id = nanoid();
+  return `${id.slice(0, 5)}-${id.slice(5, 10)}-${id.slice(10, 15)}-${id.slice(15, 20)}`;
+}
+
+// Atom for the chat ID - initialized once on app load
+export const chatIdAtom = atom(generateChatId());
 
 //Atom for the chat Component
 export const messagesAtom = atom([

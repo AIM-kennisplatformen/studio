@@ -17,12 +17,13 @@ import {
 } from "@/components/shadcn-io/ai/conversation";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
+  chatIdAtom,
   messagesAtom,
   textAtom,
   textStatusAtom,
   timerAtom,
 } from "./data/atoms";
-import { fetchAnswer } from "./data/chatResponse";
+import { sendChatMessage } from "./data/api";
 
 export default function Chat() {
   return (
@@ -40,6 +41,7 @@ export default function Chat() {
 }
 
 function InputArea() {
+  const chatId = useAtomValue(chatIdAtom);
   const [text, setText] = useAtom(textAtom);
   const [status, setStatus] = useAtom(textStatusAtom);
   const setMessages = useSetAtom(messagesAtom);
@@ -68,7 +70,7 @@ function InputArea() {
 
     // Simulate chatbot response after a delay
     const newTimeoutId = setTimeout(async () => {
-      const singleMessage = await fetchAnswer("1", text);
+      const singleMessage = await sendChatMessage(chatId, text);
       setMessages((prev) => [
         
         { key: prev.length + 1, ...singleMessage },...prev,

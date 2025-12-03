@@ -289,7 +289,7 @@ async def send_chat_message(chat_id: str, payload: ChatMessage, user=Depends(get
         }
 
 
-@app.get("/nodes/{node_id}/context", response_model=ContextResponse)
+@app.post("/nodes/{node_id}/context", response_model=ContextResponse)
 async def get_node_context(node_id: str, user=Depends(get_current_user)):
     return ContextResponse(
         message="",
