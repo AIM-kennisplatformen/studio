@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, FileResponse
 from starlette.middleware.sessions import SessionMiddleware
 
+import json
 from pydantic import BaseModel
 from typing import List, Optional, TypedDict
 import os
@@ -14,8 +15,9 @@ from typing import DefaultDict
 from .models import ContextResponse
 from .data_loader import load_knowledge_graph, KnowledgeGraphData
 import httpx
+from fastapi import WebSocket, WebSocketDisconnect
 
-WORKER_URL = "http://host.docker.internal:7000"
+WORKER_URL = "http://localhost:7000"
 
 # ------------------------------------------------------
 # App Setup
@@ -235,6 +237,133 @@ user_locks: DefaultDict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
 user_last_request: DefaultDict[str, float] = defaultdict(lambda: 0.0)
 
 RATE_LIMIT_SECONDS = 3
+@app.websocket("/ws/chat")
+async def chat_websocket(websocket: WebSocket):
+    """
+    Protected WebSocket endpoint that:
+    - validates the session cookie
+    - forwards user messages to the LLM worker
+    - streams tokens back to the frontend
+    - emits a final { type: "done" } event
+    """
+
+    # 1) Authenticate user
+    session = websocket.session
+    user = session.get("user")
+
+    if not user:
+        await websocket.accept()
+        await websocket.send_json({"type": "error", "message": "Authentication required"})
+        await websocket.close()
+        return
+
+    user_id = user["sub"]
+
+    await websocket.accept()
+    print(f"✓ WebSocket connected: {user_id}")
+
+    try:
+        while True:
+            # -------------------------------------------------------
+            # Receive user message
+            # -------------------------------------------------------
+            incoming = await websocket.receive_text()
+            parsed = json.loads(incoming)
+            user_msg = parsed.get("message", "")
+
+            session_data = user_sessions[user_id]
+
+            # Add user message to history
+            session_data["history"].append({
+                "role": "user",
+                "message": user_msg
+            })
+
+            # -------------------------------------------------------
+            # Send to worker /ask_stream
+            # -------------------------------------------------------
+            async with httpx.AsyncClient(timeout=httpx.Timeout(300)) as client:
+                resp = await client.post(
+                    f"{WORKER_URL}/ask_stream",
+                    json={
+                        "chat_id": "default",
+                        "message": user_msg,
+                        "history": session_data["history"],
+                        "topic": session_data["last_topic"],
+                        "user_id": user_id,
+                    }
+                )
+
+            if resp.status_code != 200:
+                await websocket.send_json({
+                    "type": "message",
+                    "role": "chatbot",
+                    "content": "Error: worker service unavailable"
+                })
+                continue
+
+            # -------------------------------------------------------
+            # STREAM RESPONSE FROM WORKER
+            # -------------------------------------------------------
+            full_response_text = ""
+
+            async for chunk in resp.aiter_lines():
+                if not chunk.strip():
+                    continue
+
+                try:
+                    payload = json.loads(chunk)
+                except:
+                    continue
+
+                # -----------------------------
+                # Case 1 — Streamed token
+                # -----------------------------
+                if "token" in payload:
+                    token = payload["token"]
+                    full_response_text += token
+
+                    await websocket.send_json({
+                        "type": "message",
+                        "role": "chatbot",
+                        "content": token
+                    })
+                    continue
+
+                # -----------------------------
+                # Case 2 — Topic updates
+                # -----------------------------
+                if "topic" in payload:
+                    session_data["last_topic"] = payload["topic"]
+
+                # -----------------------------
+                # Case 3 — End of entire stream
+                # -----------------------------
+                if payload.get("done"):
+                    await websocket.send_json({
+                        "type": "done",
+                        "full_response": full_response_text
+                    })
+                    break
+
+            # -------------------------------------------------------
+            # Store full assistant message
+            # -------------------------------------------------------
+            if full_response_text:
+                session_data["history"].append({
+                    "role": "assistant",
+                    "message": full_response_text
+                })
+
+    except WebSocketDisconnect:
+        print(f"⚠ WebSocket disconnected: {user_id}")
+
+    except Exception as e:
+        print("WS error:", e)
+        try:
+            await websocket.close()
+        except:
+            pass
 
 
 @app.post("/chats/{chat_id}/messages")
@@ -291,6 +420,7 @@ async def send_chat_message(chat_id: str, payload: ChatMessage, user=Depends(get
 
 @app.post("/nodes/{node_id}/context", response_model=ContextResponse)
 async def get_node_context(node_id: int, user=Depends(get_current_user)):
+    user_id = user["sub"]
 
     # Get node
     node = kg_data.entities.get(node_id)

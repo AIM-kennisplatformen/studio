@@ -54,7 +54,7 @@ dependencies = [
     "qdrant-client>=1.15.1", 
     "sentence-transformers>=5.1.2", 
     "pyzotero>=1.7.3"
-    ]
+    , "uvicorn[standard]>=0.38.0,<0.39"]
 
 # -----------------------------
 # Testing

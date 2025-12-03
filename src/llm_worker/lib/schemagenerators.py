@@ -220,6 +220,25 @@ class AnthropicAdapter(LLMAdapter):
 
 class LlamaAdapter(LLMAdapter):
     @classmethod
+    def build_response(cls, text: str):
+        """
+        Build a fake LLM response object that mimics the structure returned by
+        Ollama's non-streaming API, so that extract_tool_calls() works.
+        """
+
+        class FakeMessage:
+            def __init__(self, content):
+                self.content = content
+                self.tool_calls = []   # Streaming mode never contains structured calls
+
+        class FakeResponse:
+            def __init__(self, content):
+                self.message = FakeMessage(content)
+
+        return FakeResponse(text)
+
+
+    @classmethod
     def format_schema(cls, toolschema: ToolSchema) -> Dict[str, Any]:
         return {
             "type": "function",

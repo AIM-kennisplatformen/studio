@@ -28,7 +28,7 @@ async def get_literature_supported_knowledge(
     Geef een menselijk leesbare samenvatting van relevante literatuur
     waarin Zotero-titels worden gekoppeld aan Qdrant-resultaten.
     """
-
+    print("tool_call, full_question: "+full_question+" keywords: "+keywords_related_to_question)
     # 1. Haal Zotero metadata op
     related_sources = await zotero_source.extract_zotero_metadata(
         query=keywords_related_to_question

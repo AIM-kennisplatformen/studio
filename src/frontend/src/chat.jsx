@@ -8,31 +8,34 @@ import {
 } from "@/components/shadcn-io/ai/prompt-input";
 
 import { Response } from "@/components/shadcn-io/ai/response";
-
 import { Message, MessageContent } from "@/components/shadcn-io/ai/message";
+
 import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
 } from "@/components/shadcn-io/ai/conversation";
+
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
   chatIdAtom,
   messagesAtom,
   textAtom,
   textStatusAtom,
-  timerAtom,
 } from "./data/atoms";
-import { sendChatMessage } from "./data/api";
+
+import { useChatWebSocket } from "./data/chatWebsocket";
+import { useRef, useEffect } from "react";
 
 export default function Chat() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      {/* messages area grows and scrolls; add bottom padding to avoid being hidden by the sticky input */}
+      {/* Messages container */}
       <div className="flex flex-col overflow-y-auto justify-end p-4 flex-1 pb-5">
         <Messages />
       </div>
-      {/* sticky input bar pinned to bottom of the viewport */}
+
+      {/* Sticky bottom input bar */}
       <div className="w-full bg-white border-t sticky bottom-0 z-10">
         <InputArea />
       </div>
@@ -41,61 +44,32 @@ export default function Chat() {
 }
 
 function InputArea() {
-  const chatId = useAtomValue(chatIdAtom);
+  const chatId = useAtomValue(chatIdAtom);  // preserved if you need it
   const [text, setText] = useAtom(textAtom);
   const [status, setStatus] = useAtom(textStatusAtom);
   const setMessages = useSetAtom(messagesAtom);
-  const [responseTimeoutId, setResponseTimeoutId] = useAtom(timerAtom);
 
-  const handleCancel = () => {
-    // Clear the pending response timeout, preventing the chatbot message from appearing
-    if (responseTimeoutId) clearTimeout(responseTimeoutId);
+  // WebSocket connection
+  const { send } = useChatWebSocket(setStatus);
 
-    // Remove the user's message
-    setMessages((prev) => prev.filter((m) => m.key !== prev.length));
-
-    // Reset status and timeout ID
-    setStatus("ready");
-    setResponseTimeoutId(null);
-  };
-
-  const handleSubmission = async () => {
-    // Send user's message
-    setMessages((prev) => [
-      
-      { key: prev.length + 1, value: text, name: "user" }, ...prev,
-    ]);
-    setStatus("submitted");
-    setTimeout(() => setStatus("streaming"), 200);
-
-    // Simulate chatbot response after a delay
-    const newTimeoutId = setTimeout(async () => {
-      const singleMessage = await sendChatMessage(chatId, text);
-      setMessages((prev) => [
-        
-        { key: prev.length + 1, ...singleMessage },...prev,
-      ]);
-
-      // Reset states
-      setText("");
-      setStatus("ready");
-      setResponseTimeoutId(null);
-      // Clear the ID variable after completion
-    }, 2000);
-    setResponseTimeoutId(newTimeoutId);
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    // If no input → ignore
     if (!text) return;
 
-    // If currently streaming and user presses stop button
-    if (status === "streaming") {
-      handleCancel();
-    } else {
-      handleSubmission();
-    }
+    // Add user message instantly
+    setMessages((prev) => [
+      { key: prev.length + 1, value: text, name: "user" },
+      ...prev,
+    ]);
+
+    // Update UI state
+    setStatus("streaming");
+
+    // Send to WebSocket server
+    send(text);
+
+    // Clear input
+    setText("");
   };
 
   return (
@@ -107,6 +81,7 @@ function InputArea() {
           placeholder="Type your message..."
           className="flex-1"
         />
+
         <PromptInputToolbar className="ml-2">
           <PromptInputSubmit
             disabled={!text}
@@ -121,19 +96,28 @@ function InputArea() {
 
 function Messages() {
   const messages = useAtomValue(messagesAtom);
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   return (
-        <div className="flex flex-cole">
-    <Conversation >
-      <ConversationContent className="flex flex-col-reverse">
-        {messages.map(({ key, value, name }) =>
+    <Conversation>
+      <ConversationContent className="flex flex-col overflow-y-auto">
+        {[...messages].reverse().map(({ key, value, name }) =>
           name === "chatbot" ? (
             <div key={key} className="flex items-start gap-2 justify-start pr-20">
-              <Response className="max-w-prose text-sm border border-gray-200 rounded-lg p-2 bg-gray-50  w-fit break-words">
+              <Response className="max-w-prose text-sm border border-gray-200 rounded-lg p-2 bg-gray-50 w-fit break-words">
                 {value}
               </Response>
             </div>
           ) : (
-            <Message from="user" key={key} className="flex justify-end pl-20">
+            <Message
+              from="user"
+              key={key}
+              className="flex justify-end pl-20"
+            >
               <MessageContent
                 className="max-w-prose break-words"
                 style={{ backgroundColor: "#038061", color: "#ffffff" }}
@@ -143,9 +127,11 @@ function Messages() {
             </Message>
           )
         )}
+
+        <div ref={bottomRef} />
       </ConversationContent>
-      <ConversationScrollButton className=" text-white hover:text-white" />
+
+      <ConversationScrollButton className="text-white hover:text-white" />
     </Conversation>
-    </div>
   );
 }
