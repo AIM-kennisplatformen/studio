@@ -36,9 +36,15 @@ app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
 # OAuth / Authentik Setup
 # ------------------------------------------------------
 BASE_URL = os.getenv("BASE_URL", "http://localhost:10090")
-DISCOVERY_URL = os.getenv("OAUTH_DISCOVERY_URL", "http://auth.localhost:9000/application/o/kg/.well-known/openid-configuration")
-CLIENT_ID = os.getenv("OAUTH_CLIENT_ID","rkuclih8uzm44nTUvwasexioUKFk5aG1zhG8jcJX")
-CLIENT_SECRET = os.getenv("OAUTH_CLIENT_SECRET","NEb0sAcMc2kTTdvfJMctLYE35Fp0GqyqFp4oOVrstxsevnVMJutiIhvb6TzwPrkbphAh1EiI74oRRO79xRCoZTh1suFYTV9J0tmRJBIFIF4znDYwNyDp3IzUQlESvaS0")
+DISCOVERY_URL = os.getenv(
+    "OAUTH_DISCOVERY_URL",
+    "http://auth.localhost:9000/application/o/kg/.well-known/openid-configuration"
+)
+CLIENT_ID = os.getenv("OAUTH_CLIENT_ID", "rkuclih8uzm44nTUvwasexioUKFk5aG1zhG8jcJX")
+CLIENT_SECRET = os.getenv(
+    "OAUTH_CLIENT_SECRET",
+    "NEb0sAcMc2kTTdvfJMctLYE35Fp0GqyqFp4oOVrstxsevnVMJutiIhvb6TzwPrkbphAh1EiI74oRRO79xRCoZTh1suFYTV9J0tmRJBIFIF4znDYwNyDp3IzUQlESvaS0"
+)
 
 oauth = OAuth()
 oauth.register(
@@ -56,6 +62,43 @@ oauth.register(
 kg_data: Optional[KnowledgeGraphData] = None
 
 
+def detect_frontend_dir():
+    POSSIBLE_FRONTEND_DIRS = [
+        "kg/app",
+        "kg/frontend/dist",
+        "kg/build",
+        "kg",
+        "app",
+        "frontend/dist",
+        "build",
+        "dist"
+    ]
+
+    # Primary detection: must contain assets/
+    for d in POSSIBLE_FRONTEND_DIRS:
+        index_path = os.path.join(d, "index.html")
+        assets_path = os.path.join(d, "assets")
+        if os.path.exists(index_path) and os.path.isdir(assets_path):
+            return d
+
+    # Fallback: any folder with index.html
+    for d in POSSIBLE_FRONTEND_DIRS:
+        if os.path.exists(os.path.join(d, "index.html")):
+            return d
+
+    return None
+
+
+def get_index_html():
+    d = detect_frontend_dir()
+    if not d:
+        raise HTTPException(
+            500,
+            "Frontend build missing — index.html not found in any expected locations."
+        )
+    return os.path.join(d, "index.html")
+
+
 @app.on_event("startup")
 async def startup_event():
     global kg_data
@@ -71,13 +114,6 @@ async def startup_event():
 # ------------------------------------------------------
 # CORS
 # ------------------------------------------------------
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],  # restrict in prod
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:10090"],  # exact domain only
@@ -135,44 +171,6 @@ async def me(user=Depends(get_current_user)):
 # ------------------------------------------------------
 frontend = APIRouter()
 
-POSSIBLE_FRONTEND_DIRS = [
-    "kg/app",
-    "kg/frontend/dist",
-    "kg/build",
-    "kg",
-    "app",
-    "frontend/dist",
-    "build",
-    "dist"
-]
-
-def detect_frontend_dir():
-    """
-    Detect a folder that contains BOTH index.html AND assets/ folder.
-    This is required for Vite/React/Vue/etc.
-    """
-    # Primary detection: must contain assets/
-    for d in POSSIBLE_FRONTEND_DIRS:
-        index_path = os.path.join(d, "index.html")
-        assets_path = os.path.join(d, "assets")
-        if os.path.exists(index_path) and os.path.isdir(assets_path):
-            return d
-
-    # Fallback: any folder with index.html
-    for d in POSSIBLE_FRONTEND_DIRS:
-        if os.path.exists(os.path.join(d, "index.html")):
-            return d
-
-    return None
-
-def get_index_html():
-    d = detect_frontend_dir()
-    if not d:
-        raise HTTPException(
-            500,
-            "Frontend build missing — index.html not found in any expected locations."
-        )
-    return os.path.join(d, "index.html")
 
 @frontend.get("/app/{path:path}")
 async def serve_frontend(path: str, user=Depends(get_current_user)):
@@ -198,6 +196,7 @@ async def serve_frontend(path: str, user=Depends(get_current_user)):
 async def app_root():
     return RedirectResponse("/app/")
 
+
 @frontend.get("/assets/{path:path}")
 async def serve_assets(path: str, user=Depends(get_current_user)):
     d = detect_frontend_dir()
@@ -215,16 +214,18 @@ app.include_router(frontend)
 
 
 # ------------------------------------------------------
-# API Routes (Protected)
+# Chat + Sessions
 # ------------------------------------------------------
 class ChatMessage(BaseModel):
     message: str
 
+
 class Session(TypedDict):
     history: List[dict]
     last_seen: int
-    last_topic: str | None   # ← maak nullable
-    
+    last_topic: str | None
+
+
 user_sessions: DefaultDict[str, Session] = defaultdict(
     lambda: {
         "history": [],
@@ -233,10 +234,112 @@ user_sessions: DefaultDict[str, Session] = defaultdict(
     }
 )
 user_locks: DefaultDict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
-
 user_last_request: DefaultDict[str, float] = defaultdict(lambda: 0.0)
 
 RATE_LIMIT_SECONDS = 3
+
+
+# ------------------------------------------------------
+# Graph Context Tracking + WebSocket registry (NEW)
+# ------------------------------------------------------
+
+# Map concrete node IDs to "subnode names" as used for LLM routing
+SUBNODE_MAP = {
+    2: "Best practices",
+    3: "Target groups",
+    4: "Strategic overview",
+}
+SUBNODES = list(SUBNODE_MAP.values())
+
+# Per-user graph/LLM context
+user_graph_contexts: DefaultDict[str, dict] = defaultdict(
+    lambda: {
+        "selected_subnode": None,   # None = root (node 1), otherwise one of SUBNODES
+        "latest_question": None,
+        "latest_keywords": [],
+        "prefetched": {},           # { subnode_name: llm_answer }
+        "pending": {},              # { subnode_name: asyncio.Task }
+    }
+)
+
+# Keep track of active websockets so background tasks can push messages into chat
+active_websockets: dict[str, Optional[WebSocket]] = {}
+
+
+async def push_chat_message(user_id: str, text: str):
+    """
+    Push an assistant-style message into the user's chat over WebSocket,
+    if there is an active connection.
+    """
+    ws = active_websockets.get(user_id)
+    if not ws:
+        return
+
+    try:
+        # Stream as a single "message" + "done" pair
+        await ws.send_json({
+            "type": "message",
+            "role": "chatbot",
+            "content": text,
+        })
+        await ws.send_json({
+            "type": "done",
+            "full_response": text,
+        })
+    except Exception as e:
+        # If sending fails, we just drop it; connection may have closed
+        print(f"Failed to push chat message for user {user_id}: {e}")
+
+
+
+async def prefetch_subnode(user_id: str, question: str, subnode: str):
+    """
+    Prefetch using /ask.
+    The ONLY keywords passed are the 3 subnodes joined with OR.
+    Subnode DOES NOT appear in the LLM prompt.
+    """
+    try:
+        keywords = subnode
+
+        synthetic_prompt = (
+            "SYSTEM META-INSTRUCTION:\n"
+            "If relevant, use the `paper_search` MCP tool to identify scientific "
+            "literature or studies relevant to the question.\n\n"
+            "Don't alter question and keywords below, insert them straight into tool\n"
+            f"full_question:\n\"{question}\"\n\n"
+            f"keywords_related_to_question=\"{keywords}\" "
+            "Provide an evidence-informed explanation when possible.\n"
+        )
+
+        async with httpx.AsyncClient(timeout=httpx.Timeout(200)) as client:
+            resp = await client.post(
+                f"{WORKER_URL}/ask",
+                json={
+                    "chat_id": "prefetch",
+                    "message": synthetic_prompt,
+                }
+            )
+
+        resp.raise_for_status()
+        answer = resp.json().get("llm", "")
+
+        ctx = user_graph_contexts[user_id]
+        ctx["prefetched"][subnode] = answer
+
+        # If user is currently viewing this subnode, push to chat now
+        if ctx["selected_subnode"] == subnode:
+            await push_chat_message(user_id, answer)
+
+    except Exception as e:
+        print(f"Prefetch failed for {subnode}: {e}")
+
+    finally:
+        user_graph_contexts[user_id]["pending"].pop(subnode, None)
+
+
+# ------------------------------------------------------
+# WebSocket Chat
+# ------------------------------------------------------
 @app.websocket("/ws/chat")
 async def chat_websocket(websocket: WebSocket):
     """
@@ -245,9 +348,11 @@ async def chat_websocket(websocket: WebSocket):
     - forwards user messages to the LLM worker
     - streams tokens back to the frontend
     - emits a final { type: "done" } event
-    """
 
-    # 1) Authenticate user
+    Additionally:
+    - Tracks per-user graph context
+    - On root context (node 1), triggers background prefetch for all three subnodes
+    """
     session = websocket.session
     user = session.get("user")
 
@@ -258,20 +363,24 @@ async def chat_websocket(websocket: WebSocket):
         return
 
     user_id = user["sub"]
-
     await websocket.accept()
+    active_websockets[user_id] = websocket
+
     print(f"✓ WebSocket connected: {user_id}")
 
     try:
         while True:
-            # -------------------------------------------------------
             # Receive user message
-            # -------------------------------------------------------
             incoming = await websocket.receive_text()
             parsed = json.loads(incoming)
             user_msg = parsed.get("message", "")
 
             session_data = user_sessions[user_id]
+            ctx = user_graph_contexts[user_id]
+
+            # Track question and (optionally) keywords
+            ctx["latest_question"] = user_msg
+            ctx["latest_keywords"] = []  # TODO: plug in keyword extractor if needed
 
             # Add user message to history
             session_data["history"].append({
@@ -279,17 +388,36 @@ async def chat_websocket(websocket: WebSocket):
                 "message": user_msg
             })
 
-            # -------------------------------------------------------
-            # Send to worker /ask_stream
-            # -------------------------------------------------------
+            # If we're in root context (no subnode explicitly selected),
+            # trigger background prefetch for all subnodes based on this question.
+            if ctx["selected_subnode"] is None:
+                for subnode in SUBNODES:
+                    if subnode not in ctx["pending"]:
+                        ctx["pending"][subnode] = asyncio.create_task(
+                            prefetch_subnode(
+                                user_id=user_id,
+                                question=user_msg,
+                                subnode=subnode,
+                            )
+                        )
+
+
+
+            synthetic_prompt = (
+                "SYSTEM META-INSTRUCTION:\n"
+                "use the `paper_search` MCP tool to identify sources relevant to the question.\n\n"
+                "Don't alter question and keywords below, insert them straight into tool\n"
+                f"full_question:\n\"{user_msg}\"\n\n"
+                f"keywords_related_to_question=\"Best practices || Target groups || Strategic overview\" "
+                "Provide an evidence-informed explanation when possible.\n"
+            )
+            # Send to worker /ask_stream (existing behavior)
             async with httpx.AsyncClient(timeout=httpx.Timeout(300)) as client:
                 resp = await client.post(
                     f"{WORKER_URL}/ask_stream",
                     json={
                         "chat_id": "default",
-                        "message": user_msg,
-                        "history": session_data["history"],
-                        "topic": session_data["last_topic"],
+                        "message": synthetic_prompt,
                         "user_id": user_id,
                     }
                 )
@@ -302,9 +430,7 @@ async def chat_websocket(websocket: WebSocket):
                 })
                 continue
 
-            # -------------------------------------------------------
-            # STREAM RESPONSE FROM WORKER
-            # -------------------------------------------------------
+            # Stream response from worker
             full_response_text = ""
 
             async for chunk in resp.aiter_lines():
@@ -313,12 +439,10 @@ async def chat_websocket(websocket: WebSocket):
 
                 try:
                     payload = json.loads(chunk)
-                except:
+                except Exception:
                     continue
 
-                # -----------------------------
-                # Case 1 — Streamed token
-                # -----------------------------
+                # Streamed token
                 if "token" in payload:
                     token = payload["token"]
                     full_response_text += token
@@ -330,15 +454,11 @@ async def chat_websocket(websocket: WebSocket):
                     })
                     continue
 
-                # -----------------------------
-                # Case 2 — Topic updates
-                # -----------------------------
+                # Topic updates
                 if "topic" in payload:
                     session_data["last_topic"] = payload["topic"]
 
-                # -----------------------------
-                # Case 3 — End of entire stream
-                # -----------------------------
+                # End of stream
                 if payload.get("done"):
                     await websocket.send_json({
                         "type": "done",
@@ -346,10 +466,9 @@ async def chat_websocket(websocket: WebSocket):
                     })
                     break
 
-            # -------------------------------------------------------
             # Store full assistant message
-            # -------------------------------------------------------
             if full_response_text:
+                ctx["prefetched"]["root"] = full_response_text
                 session_data["history"].append({
                     "role": "assistant",
                     "message": full_response_text
@@ -357,15 +476,21 @@ async def chat_websocket(websocket: WebSocket):
 
     except WebSocketDisconnect:
         print(f"⚠ WebSocket disconnected: {user_id}")
-
+        if active_websockets.get(user_id) is websocket:
+            active_websockets[user_id] = None
     except Exception as e:
         print("WS error:", e)
         try:
             await websocket.close()
-        except:
+        except Exception:
             pass
+        if active_websockets.get(user_id) is websocket:
+            active_websockets[user_id] = None
 
 
+# ------------------------------------------------------
+# HTTP Chat Endpoint (unchanged, no prefetch here)
+# ------------------------------------------------------
 @app.post("/chats/{chat_id}/messages")
 async def send_chat_message(chat_id: str, payload: ChatMessage, user=Depends(get_current_user)):
 
@@ -418,12 +543,55 @@ async def send_chat_message(chat_id: str, payload: ChatMessage, user=Depends(get
         }
 
 
+# ------------------------------------------------------
+# Node Context Endpoint (selection + original behavior)
+# ------------------------------------------------------
 @app.post("/nodes/{node_id}/context", response_model=ContextResponse)
 async def get_node_context(node_id: int, user=Depends(get_current_user)):
+    """
+    Existing endpoint used by the frontend on graph node click.
+
+    NEW behavior:
+    - Updates user_graph_contexts[user_id]["selected_subnode"]
+    - If an LLM answer was already prefetched for that subnode,
+      it is pushed into the chat over WebSocket.
+
+    OLD behavior preserved:
+    - Returns the KG node + neighbor context as before.
+    """
     user_id = user["sub"]
+    ctx = user_graph_contexts[user_id]
+
+    # Track selection based on node_id
+    if node_id == 1:
+        ctx["selected_subnode"] = "root"
+
+        # Push prefetched root message if available
+        if "root" in ctx["prefetched"]:
+            await push_chat_message(user_id, ctx["prefetched"]["root"])
+
+    elif node_id in SUBNODE_MAP:
+        selected = SUBNODE_MAP[node_id]
+        ctx["selected_subnode"] = selected
+
+        # If we already have a prefetched LLM answer for this subnode,
+        # push it into the chat immediately.
+        if selected in ctx["prefetched"]:
+            await push_chat_message(user_id, ctx["prefetched"][selected])
+
+    # --- Original KG context logic below ---
+
+    if kg_data is None:
+        return ContextResponse(
+            message="Knowledge graph data not loaded",
+            nodes=[],
+            edges=[],
+            sources=[],
+            error="not_loaded"
+        )
 
     # Get node
-    node = kg_data.entities.get(node_id)
+    node = kg_data.get_entity(node_id)
     if not node:
         return ContextResponse(
             message=f"Node '{node_id}' not found",
