@@ -6,6 +6,7 @@ import {
   useReactFlow,
 } from "@xyflow/react";
 import { CustomNode } from "./components/CustomNode";
+import { SolidEdge } from "./components/CustomEdge";
 import {  getEdgeHandles } from "./lib/graphUtils";
 import { useAtom } from "jotai";
 import {
@@ -16,7 +17,7 @@ import {
 } from "./data/atoms";
 import { applyNodeChanges } from "@xyflow/react";
 import { calculateNodeDistances } from "./lib/graphUtils";
-import { applyColaLayout, applyAvsdfLayout, applyFcoseLayout } from "./lib/ctrytoscapeLayout";
+import { applyFcoseLayout } from "./lib/ctrytoscapeLayout";
 
 export default function Graph({ data, width }) {
   const [nodes, setNodes] = useAtom(nodesAtom);
@@ -79,7 +80,7 @@ export default function Graph({ data, width }) {
           source: String(edge.source),
           target: String(edge.target),
           label: edge.label_forward,
-          type: "default",
+          type: "solid",
           sourceHandle,
           targetHandle,
           style: {
@@ -101,7 +102,7 @@ export default function Graph({ data, width }) {
     });
 
     // Apply fCoSE layout to get initial positions
-    const fcosePositions = applyAvsdfLayout(newNodes, newEdges, {
+    const fcosePositions = applyFcoseLayout(newNodes, newEdges, {
       quality: "proof",
       nodeSeparation: 200,
       idealEdgeLength: 300,
@@ -541,6 +542,7 @@ const { nodes: visibleNodes, edges: visibleEdges } = getVisibleNodesAndEdges(
           nodes={visibleNodes}
           edges={visibleEdges}
           nodeTypes={{ custom: CustomNode }}
+          edgeTypes={{ solid: SolidEdge }}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
