@@ -1,43 +1,54 @@
-import responsesFromId from "./graphMockData.js";
+import { responsesFromId } from "./graphMockData.js";
 
-function getMockData(nodeId){
-  return responsesFromId[nodeId] || [];
+
+/**
+ * Return mock data for a nodeId
+ */
+function getMockData(nodeId) {
+  const resp = responsesFromId[nodeId] ?? responsesFromId[String(nodeId)];
+  return {
+    nodes: resp?.nodes ?? [],
+    edges: resp?.edges ?? [],
+  };
 }
-   
 
-
-export async function fetchGraphAnswer(nodeId) {
+/**
+ * Fetch graph nodes & edges for a given nodeId.
+ * Uses backend if reachable, otherwise returns mock data.
+ */
+export async function fetchGraphAnswer(nodeId = "1") {
   const url = `http://kg.localhost:8090/nodes/${nodeId}/context`;
 
   try {
     const response = await fetch(url, {
       method: "GET",
-      credentials: "include",   // <-- REQUIRED for cookie-based Auth!
+      credentials: "include", // required for cookie auth
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nodeId }),
     });
-    
 
     if (!response.ok) {
-      // Backend returned an error status
-      console.error("Failed to fetch graph nodes:", response.statusText);
+      // Backend returned error status → fallback
+      return getMockData(nodeId) ;
     }
 
     const data = await response.json();
 
-    if (!data.nodes && !data.edges) {
-        // If the response doesn't have nodes or edges, return mock data
-        return getMockData(nodeId);
+    // If backend returns nodes/edges, normalize them
+    if (data && (data.nodes || data.edges)) {
+      return {
+        nodes: data.nodes ?? [],
+        edges: data.edges ?? [],
+      };
     }
 
-    console.log("Fetched graph nodes:", data);
-    return data;
+    // Backend returned empty data → fallback
+    return getMockData(nodeId);
 
   } catch (err) {
-    // Network error, server not running, etc.
-    console.error("Failed to fetch graph nodes:", err);
+    // Network error, backend not running, CORS, etc.
+    console.warn("Failed to fetch graph, using mock data:", err);
+    console.log("Fetch graph for nodeId:", nodeId);
+    console.log("Returning mock data:", getMockData(nodeId));
+    return getMockData(nodeId);
   }
 }
-
-
-

@@ -1,15 +1,35 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import "./index.css";
 import Chat from "./chat.jsx";
-
 import Graph from "./graph.jsx";
 import { ReactFlowProvider } from "@xyflow/react";
-import { transformKnowledgeGraph } from "./data/knowledgeGraphData.js";
+import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
+import { useAtom } from "jotai";
+import { centerNodeAtom } from "./data/atoms";
 
 export default function App() {
-  const [leftWidth, setLeftWidth] = useState(66.6); // start ~2/3
-  const data = transformKnowledgeGraph();
+  const [leftWidth, setLeftWidth] = useState(66.6);
   const containerRef = useRef(null);
+  const [data, setData] = useState(null);
+  const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom);
+
+  // Load graph once on mount or when center node changes for the first time
+  useEffect(() => {
+    let mounted = true;
+    if (!centerNodeId) setCenterNodeId(1);
+
+    (async () => {
+      try {
+        const resp = await fetchAnswer(centerNodeId);
+        if (!mounted) return;
+        setData(resp);
+      } catch (err) {
+        console.warn("Failed to load graph data", err);
+      }
+    })();
+
+    return () => (mounted = false);
+  }, [centerNodeId, setCenterNodeId]);
 
   const handleMouseDown = (e) => {
     e.preventDefault();
@@ -19,10 +39,11 @@ export default function App() {
     const onMouseMove = (e) => {
       if (!containerRef.current) return;
       const containerWidth = containerRef.current.offsetWidth;
-      const newWidth = ((startWidth / 100) * containerWidth + (e.clientX - startX)) / containerWidth * 100;
-      if (newWidth > 10 && newWidth < 90) {
-        setLeftWidth(newWidth);
-      }
+      const newWidth =
+        ((startWidth / 100) * containerWidth + (e.clientX - startX)) /
+        containerWidth *
+        100;
+      if (newWidth > 10 && newWidth < 90) setLeftWidth(newWidth);
     };
 
     const onMouseUp = () => {
@@ -36,16 +57,12 @@ export default function App() {
 
   return (
     <div ref={containerRef} className="flex h-screen w-screen">
-      
-      <div
-        className="h-full bg-gray-100 overflow-hidden "
-        style={{ width: `${leftWidth}%` }}
-      >
+      <div className="h-full bg-gray-100 overflow-hidden" style={{ width: `${leftWidth}%` }}>
         <ReactFlowProvider>
-        <Graph data= {data} width={leftWidth} />
+          <Graph data={data} width={leftWidth} />
         </ReactFlowProvider>
       </div>
-  
+
       <div
         className="w-1 bg-gray-400 cursor-col-resize hover:bg-gray-600"
         onMouseDown={handleMouseDown}
@@ -57,4 +74,3 @@ export default function App() {
     </div>
   );
 }
-

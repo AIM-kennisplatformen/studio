@@ -7,13 +7,14 @@ import {
 } from "@xyflow/react";
 import { CustomNode } from "./components/CustomNode";
 import { SolidEdge } from "./components/CustomEdge";
-import {  getEdgeHandles } from "./lib/graphUtils";
+import { getEdgeHandles } from "./lib/graphUtils";
 import { useAtom } from "jotai";
 import {
   nodesAtom,
   edgesAtom,
   draggingNodeIdAtom,
   selectedNodeAtom,
+  centerNodeAtom,
 } from "./data/atoms";
 import { applyNodeChanges } from "@xyflow/react";
 import { calculateNodeDistances } from "./lib/graphUtils";
@@ -26,28 +27,26 @@ export default function Graph({ data, width }) {
   const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom);
   const { setViewport, getViewport, fitView } = useReactFlow();
   const containerRef = useRef(null);
+  const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom);
   // Convert knowledge graph data to React Flow nodes and edges
   useEffect(() => {
-    if (!data || !data.allNodes || !data.allEdges) return;
+    if (!data || !data.nodes || !data.edges) return;
 
     const newNodes = [];
     const newEdges = [];
 
     // Create nodes from all entities with placeholder positioning
     const nodeMap = new Map();
-    data.allNodes.forEach((node) => {
-      const centerNodeId = 1;
-      const isCenter = node.id === centerNodeId;
+    data.nodes.forEach((node) => {
+      const isCenter = node.id === 1;
 
       const reactFlowNode = {
         id: String(node.id),
         type: "custom",
         position: { x: 0, y: 0 }, // Placeholder - will be set by fCoSE
         data: {
-          label: `${node.title}\n${
-            node.released !== "N/A" ? `(${node.released})` : ""
-          }`,
-          background:  isCenter ? "#038061" : "#ffffff",
+          label: `${node.title}`,
+          background: isCenter ? "#038061" : "#ffffff",
           color: isCenter ? "#ffffff" : "#038061",
           border: `2px solid #038061`,
           borderRadius: "8px",
@@ -61,11 +60,11 @@ export default function Graph({ data, width }) {
       newNodes.push(reactFlowNode);
       nodeMap.set(reactFlowNode.id, reactFlowNode);
     });
-
+    console.log("data edges", data.edges);
     // Create edges from all relationships with smart handle positioning
-    data.allEdges.forEach((edge) => {
-      const sourceNode = nodeMap.get(String(edge.source));
-      const targetNode = nodeMap.get(String(edge.target));
+    data.edges.forEach((edge) => {
+      const sourceNode = nodeMap.get(String(edge.source_id));
+      const targetNode = nodeMap.get(String(edge.target_id));
 
       if (sourceNode && targetNode) {
         const { sourceHandle, targetHandle } = getEdgeHandles(
@@ -77,19 +76,12 @@ export default function Graph({ data, width }) {
 
         const reactFlowEdge = {
           id: String(edge.id),
-          source: String(edge.source),
-          target: String(edge.target),
+          source: String(edge.source_id),
+          target: String(edge.target_id),
           label: edge.label_forward,
           type: "solid",
           sourceHandle,
           targetHandle,
-          style: {
-    stroke: "#000", // your line color
-    strokeWidth: 10,    // thickness of line
-    strokeDasharray: "0", // ensures solid line
-  },
-        
-          
           labelStyle: {
             fill: "#666",
             fontSize: "10px",
@@ -114,7 +106,7 @@ export default function Graph({ data, width }) {
       tile: true,
       tilingPaddingVertical: 20,
       tilingPaddingHorizontal: 20,
-    }, {x: containerRef.current.clientWidth, y: containerRef.current.clientHeight});
+    });
 
     // Apply fCoSE positions to nodes
     const nodesWithPositions = newNodes.map((node) => ({
@@ -126,73 +118,78 @@ export default function Graph({ data, width }) {
     setNodes(nodesWithPositions);
     setEdges(newEdges);
 
+    const nodeToSelect = newNodes.find((n) => n.id === 1);
+    if (!nodeToSelect) return;
 
-    const nodeToSelect = newNodes.find(n => n.id === "1");
-  if (!nodeToSelect) return;
+    const container = containerRef.current;
+    if (!container) return;
 
-  const container = containerRef.current;
-  if (!container) return;
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
 
-  const containerWidth = container.clientWidth;
-  const containerHeight = container.clientHeight;
+    const nodeWidth = nodeToSelect.data?.width || 160;
+    const nodeHeight = 80;
 
-  const nodeWidth = nodeToSelect.data?.width || 160;
-  const nodeHeight = 80;
+    const nodeCenterX = nodeToSelect.position.x + nodeWidth / 2;
+    const nodeCenterY = nodeToSelect.position.y + nodeHeight / 2;
 
-  const nodeCenterX = nodeToSelect.position.x + nodeWidth / 2;
-  const nodeCenterY = nodeToSelect.position.y + nodeHeight / 2;
-
-  setViewport(
-    {
-      x: containerWidth / 2 - nodeCenterX ,
-      y: containerHeight / 2 - nodeCenterY,
-    },
-    { duration: 500, easing: t => t * (2 - t) }
-  );
-
-  setSelectedNode(nodeToSelect);
-
-  // Optionally update distances and edges like your other selection logic
-  const distances = calculateNodeDistances(nodeToSelect.id, newNodes, newEdges);
-  setNodes(currentNodes =>
-    currentNodes.map(node => ({
-      ...node,
-      data: {
-        ...node.data,
-        distance: distances.get(node.id) ?? Infinity,
+    setViewport(
+      {
+        x: containerWidth / 2 - nodeCenterX,
+        y: containerHeight / 2 - nodeCenterY,
       },
-    }))
-  );
-  setEdges(currentEdges =>
-    currentEdges.map(edge => {
-      const sourceDistance = distances.get(edge.source) ?? Infinity;
-      const targetDistance = distances.get(edge.target) ?? Infinity;
+      { duration: 500, easing: (t) => t * (2 - t) }
+    );
 
-      const isConnected = sourceDistance === 0 || targetDistance === 0;
-      const bothDistant = sourceDistance > 1 && targetDistance > 1;
+    setSelectedNode(nodeToSelect);
 
-      return {
-        ...edge,
-        animated: isConnected,
-        style: {
-          ...edge.style,
-          stroke: isConnected ? "#1a73e8" : bothDistant ? "var(--distant-edge-color)" : "#999",
-          strokeWidth: isConnected ? 2.5 : 1.5,
+    // Optionally update distances and edges like your other selection logic
+    const distances = calculateNodeDistances(
+      nodeToSelect.id,
+      newNodes,
+      newEdges
+    );
+    setNodes((currentNodes) =>
+      currentNodes.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          distance: distances.get(node.id) ?? Infinity,
         },
-        labelStyle: {
-          ...edge.labelStyle,
-          opacity: bothDistant ? 0 : 1,
-        },
-        labelBgStyle: {
-          ...edge.labelBgStyle,
-          fillOpacity: bothDistant ? 0 : 0.8,
-        },
-      };
-    })
-  );
+      }))
+    );
+    setEdges((currentEdges) =>
+      currentEdges.map((edge) => {
+        const sourceDistance = distances.get(edge.source) ?? Infinity;
+        const targetDistance = distances.get(edge.target) ?? Infinity;
+
+        const isConnected = sourceDistance === 0 || targetDistance === 0;
+        const bothDistant = sourceDistance > 1 && targetDistance > 1;
+
+        return {
+          ...edge,
+          animated: isConnected,
+          style: {
+            ...edge.style,
+            stroke: isConnected
+              ? "#1a73e8"
+              : bothDistant
+              ? "var(--distant-edge-color)"
+              : "#999",
+            strokeWidth: isConnected ? 2.5 : 1.5,
+          },
+          labelStyle: {
+            ...edge.labelStyle,
+            opacity: bothDistant ? 0 : 1,
+          },
+          labelBgStyle: {
+            ...edge.labelBgStyle,
+            fillOpacity: bothDistant ? 0 : 0.8,
+          },
+        };
+      })
+    );
   }, [data]);
-
-  
 
   // Function to update edge handles based on node positions
   const updateEdgePositions = useCallback((currentNodes, currentEdges) => {
@@ -200,8 +197,8 @@ export default function Graph({ data, width }) {
     const nodeMap = new Map(currentNodes.map((n) => [n.id, n]));
 
     return currentEdges.map((edge) => {
-      const sourceNode = nodeMap.get(edge.source);
-      const targetNode = nodeMap.get(edge.target);
+      const sourceNode = nodeMap.get(String(edge.source_id));
+      const targetNode = nodeMap.get(String(edge.target_id));
 
       if (!sourceNode || !targetNode) return edge;
 
@@ -498,49 +495,21 @@ export default function Graph({ data, width }) {
   }, [fitView, width]);
 
 
-  const getVisibleNodesAndEdges = (allNodes, allEdges, selectedNode) => {
-  if (!selectedNode) {
-    // If no node is selected, show all
-    return { nodes: allNodes, edges: allEdges };
-  }
-
-
-  // Find all nodes connected to the selected node
-  const connectedNodeIds = new Set([selectedNode.id]);
-  allEdges.forEach(edge => {
-    if (edge.source === selectedNode.id) connectedNodeIds.add(edge.target);
-    if (edge.target === selectedNode.id) connectedNodeIds.add(edge.source);
-  });
-
-  // Filter nodes
-  const nodes = allNodes.filter(n => connectedNodeIds.has(n.id));
-
-  // Filter edges
-  const edges = allEdges.filter(
-    e =>
-      connectedNodeIds.has(e.source) &&
-      connectedNodeIds.has(e.target)
-  );
-
-  return { nodes, edges };
-};
-
-
-
-const { nodes: visibleNodes, edges: visibleEdges } = getVisibleNodesAndEdges(
-  nodes,
-  edges,
-  selectedNode
+  const onNodeClick = useCallback(
+  (event, node) => {
+    setCenterNodeId(Number(node.id)); // update center node
+  },
+  [setCenterNodeId, setSelectedNode]
 );
 
+console.log(centerNodeId);
   return (
     <div>
-      <div>
-      </div>
-      <div ref={containerRef} style={{ height: "100vh", width: { width } }}>
+      <div></div>
+      <div ref={containerRef} style={{ height: "100vh", width: `${width}vw` }}>
         <ReactFlow
-          nodes={visibleNodes}
-          edges={visibleEdges}
+          nodes={nodes}
+          edges={edges}
           nodeTypes={{ custom: CustomNode }}
           edgeTypes={{ solid: SolidEdge }}
           onNodesChange={onNodesChange}
@@ -548,6 +517,7 @@ const { nodes: visibleNodes, edges: visibleEdges } = getVisibleNodesAndEdges(
           onConnect={onConnect}
           onNodeDragStart={onNodeDragStart}
           onNodeDragStop={onNodeDragStop}
+          onNodeClick={onNodeClick}
           selectNodesOnDrag={false}
           fitView
           attributionPosition="bottom-left"

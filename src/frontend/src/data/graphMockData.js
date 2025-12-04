@@ -2,6 +2,11 @@ export const responsesFromId = {
   1: {
     nodes: [
       {
+        id: 1,
+        type: "text",
+        title: "Energy Poverty: Intervention strategies",
+      },
+      {
         id: 2,
         type: "text",
         title: "Best practices",
