@@ -26,13 +26,14 @@ RUN pixi install --locked
 # 3. Copy backend code + static files
 # ==========================================================
 COPY src/backend ./src/backend
+COPY src/frontend ./src/frontend
 COPY kg ./kg    
 
 # ==========================================================
 # 4. Expose port + run FastAPI
 # ==========================================================
-ENV PORT=9000
+ENV PORT=10090
 
-EXPOSE 9000
+EXPOSE 10090
 
-CMD ["pixi", "run", "python", "-m", "uvicorn", "src.backend.main:app", "--host", "0.0.0.0", "--port", "9000"]
+CMD ["pixi", "run", "python", "-m", "uvicorn", "src.backend.main:app", "--host", "0.0.0.0", "--port", "10090"]

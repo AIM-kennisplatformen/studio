@@ -48,13 +48,14 @@ dependencies = [
     "typedb-driver==2.29.2",
     "langfuse", 
     "anthropic>=0.42.0",
+    "openai",
     "loguru>=0.7.3",
     "ollama>=0.4.5",
     "python-dotenv>=1.0.1",
     "qdrant-client>=1.15.1", 
     "sentence-transformers>=5.1.2", 
     "pyzotero>=1.7.3"
-    ]
+    , "uvicorn[standard]>=0.38.0,<0.39"]
 
 # -----------------------------
 # Testing
@@ -95,8 +96,10 @@ nodejs = ">=22.13.0,<22.14"
 itsdangerous = ">=2.2.0,<3"
 
 [tool.pixi.tasks]
+frontend_build="rm -r kg && cd src/frontend && npm install && npm run build && mv dist ../../kg"
+backend_no_docker="BASE_URL=http://localhost:10090 PYTHONPATH=src python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090  --reload"
 backend="docker compose up"
-mcp_server="PYTHONPATH=src/llm_worker python src/llm_worker/mcp_servers/main.py"
+mcp_server="PYTHONPATH=src python src/mcp_servers/main.py"
 llm_worker="PYTHONPATH=src python src/llm_worker/main.py"
 vscode = "code ."
 lint = "ruff check"

@@ -219,48 +219,69 @@ class AnthropicAdapter(LLMAdapter):
 
 
 class LlamaAdapter(LLMAdapter):
-    @classmethod
-    def format_schema(cls, toolschema: ToolSchema) -> Dict[str, Any]:
-        return {
-            "type": "function",
-            "function": {
-                "name": toolschema.name,
-                "description": toolschema.description,
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        p.name: cls.format_parameter(p) for p in toolschema.parameters
-                    },
-                    "required": toolschema.required,
-                },
-            },
-        }
 
     @classmethod
-    def format_parameter(cls, parameter: ParameterSchema) -> Dict[str, Any]:
-        param_dict: Dict[str, Any] = {"type": parameter.param_type}
-        if parameter.description:
-            param_dict["description"] = parameter.description
-        if parameter.enum:
-            param_dict["enum"] = parameter.enum
-        if parameter.nullable:
-            param_dict["nullable"] = parameter.nullable
-        return param_dict
+    def build_response(cls, text: str):
+        class FakeMessage:
+            def __init__(self, content):
+                self.role = "assistant"
+                self.content = content
+                self.tool_calls = []
 
+        class FakeResponse:
+            def __init__(self, content):
+                self.message = FakeMessage(content)
+
+        return FakeResponse(text)
+
+    # -------------------------
+    # INTERNAL NORMALIZATION
+    # -------------------------
+    @staticmethod
+    def _unwrap(response):
+        """
+        Normalize both Anthropic-style: response.message
+        and OpenAI-style: ChatCompletionMessage
+        """
+        # Anthropic style
+        if hasattr(response, "message"):
+            return response.message
+        
+        # OpenAI / Langfuse style
+        if hasattr(response, "content") and hasattr(response, "role"):
+            return response
+        
+        raise ValueError("Unknown response format in LlamaAdapter")
+
+    # -------------------------
+    # MESSAGE APPENDING
+    # -------------------------
     @classmethod
     def append_message(cls, messages: List, response) -> List:
-        messages.append(response.message)
+        msg = cls._unwrap(response)
+
+        messages.append({
+            "role": msg.role,
+            "content": msg.content,
+            "tool_calls": getattr(msg, "tool_calls", None)
+        })
         return messages
 
+    # -------------------------
+    # CONTENT EXTRACTION
+    # -------------------------
     @classmethod
     def get_content(cls, response) -> str:
-        return response.message.content
+        msg = cls._unwrap(response)
+        return msg.content
 
+    # -------------------------
+    # TOOL CALL EXTRACTION
+    # -------------------------
     @classmethod
     def extract_tool_calls(cls, response) -> List:
-        if hasattr(response.message, "tool_calls") and response.message.tool_calls:
-            return response.message.tool_calls
-        return []
+        msg = cls._unwrap(response)
+        return getattr(msg, "tool_calls", []) or []
 
     @classmethod
     def parse_tool_call(cls, tool) -> dict[str, Any]:
@@ -276,6 +297,30 @@ class LlamaAdapter(LLMAdapter):
             "content": str(output),
             "name": toolcall["name"],
         }
+
+    @staticmethod
+    def _unwrap(response):
+        """
+        Normalize:
+        1. Anthropic format → response.message
+        2. OpenAI ChatCompletionMessage → response.role/content
+        3. OpenAI ChatCompletion → response.choices[0].message
+        """
+
+        # --- 1. Anthropic-style ---
+        if hasattr(response, "message"):
+            return response.message
+
+        # --- 2. OpenAI-style message ---
+        if hasattr(response, "role") and hasattr(response, "content"):
+            return response
+
+        # --- 3. Raw ChatCompletion (OpenAI/Ollama/Langfuse) ---
+        if hasattr(response, "choices") and len(response.choices) > 0:
+            first = response.choices[0].message
+            return first
+
+        raise ValueError(f"Unknown response format in LlamaAdapter: {type(response)}")
 
 
 class SchemaGenerator(ABC):

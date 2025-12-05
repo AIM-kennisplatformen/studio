@@ -27,8 +27,6 @@ services:
       AUTHENTIK_POSTGRESQL__USER: authentik
       AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
       AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
-      AUTHENTIK_HOST: http://auth.localhost:9000
-      AUTHENTIK_HOST_BROWSER: http://auth.localhost:9000
     networks:
       - internal
     ports:
@@ -59,14 +57,14 @@ services:
       context: .
       dockerfile: dockerfiles/Dockerfile
     environment:
-      OAUTH_CLIENT_ID: rkuclih8uzm44nTUvwasexioUKFk5aG1zhG8jcJX
-      OAUTH_CLIENT_SECRET: NEb0sAcMc2kTTdvfJMctLYE35Fp0GqyqFp4oOVrstxsevnVMJutiIhvb6TzwPrkbphAh1EiI74oRRO79xRCoZTh1suFYTV9J0tmRJBIFIF4znDYwNyDp3IzUQlESvaS0
-      OAUTH_DISCOVERY_URL: http://auth.localhost:9000/application/o/kg/.well-known/openid-configuration
-      BASE_URL: http://kg.localhost:8090
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH_DISCOVERY_URL: ${OAUTH_DISCOVERY_URL}
+      BASE_URL: ${BACKEND_BASE_URL}
     networks:
       - internal
     extra_hosts:
-    - "auth.localhost:172.19.0.5"   # IP of authentik-server container
+    - "auth.localhost:172.26.0.5"   # IP of authentik-server container
     - "host.docker.internal:host-gateway"
 
   ####################################################
