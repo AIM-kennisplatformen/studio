@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 from typing import Dict, List, Any
-from .models import Node, Edge
+from backend.graph_helpers.models import Node, Edge
 
 
 class KnowledgeGraphData:
@@ -89,7 +89,7 @@ def load_knowledge_graph() -> KnowledgeGraphData:
     """Load knowledge graph data from JSON files."""
     kg_data = KnowledgeGraphData()
     # Get paths relative to this file
-    base_path = Path(__file__).parent.parent
+    base_path = Path(__file__).parent.parent.parent
     data_path = base_path / 'frontend' / 'src' / 'knowledge-graph' / 'example-data.json'
     
     kg_data.load_from_files(str(data_path))
