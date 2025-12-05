@@ -2,7 +2,7 @@ from backend.endpoints.auth import get_current_user
 from backend.endpoints.graph import kg_data
 
 import os
-from fastapi import APIRouter, HTTPException, Depends, APIRouter
+from fastapi import HTTPException, Depends, APIRouter
 from fastapi.responses import RedirectResponse, FileResponse
 
 

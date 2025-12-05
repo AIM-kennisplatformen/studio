@@ -1,7 +1,6 @@
 import re
 import tomllib
 from pydantic import BaseModel
-from llm_worker.lib.llm import LlamaAdapter
 from llm_worker.lib import ModelConfig, LLMClient, MCPToolLoader
 from llm_worker.lib.schemagenerators import LlamaAdapter
 

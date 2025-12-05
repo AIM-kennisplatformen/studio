@@ -1,12 +1,11 @@
-from backend.endpoints.auth import get_current_user
 from backend.endpoints.graph import user_graph_contexts, SUBNODES, prefetch_subnode
 from backend.utility.chat_util import active_websockets
 from backend.config import LLM_WORKER_URL
 
 from pydantic import BaseModel
-from typing import List, Optional, TypedDict, DefaultDict
+from typing import List, TypedDict, DefaultDict
 from collections import defaultdict
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Depends
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import httpx
 import asyncio
 import json

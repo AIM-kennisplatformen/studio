@@ -235,25 +235,6 @@ class LlamaAdapter(LLMAdapter):
         return FakeResponse(text)
 
     # -------------------------
-    # INTERNAL NORMALIZATION
-    # -------------------------
-    @staticmethod
-    def _unwrap(response):
-        """
-        Normalize both Anthropic-style: response.message
-        and OpenAI-style: ChatCompletionMessage
-        """
-        # Anthropic style
-        if hasattr(response, "message"):
-            return response.message
-        
-        # OpenAI / Langfuse style
-        if hasattr(response, "content") and hasattr(response, "role"):
-            return response
-        
-        raise ValueError("Unknown response format in LlamaAdapter")
-
-    # -------------------------
     # MESSAGE APPENDING
     # -------------------------
     @classmethod

@@ -1,4 +1,4 @@
-from typing import Any, List, Dict
+from typing import Any
 
 from anthropic import Anthropic
 from loguru import logger
@@ -6,14 +6,6 @@ from loguru import logger
 from lib.schemagenerators import AnthropicAdapter, LlamaAdapter
 from lib.settings import ClientType, ModelConfig
 from lib.models import ToolCollection, ToolRegistry
-from dotenv import load_dotenv
-
-load_dotenv()
-import os
-print("Langfuse Host:", os.getenv("LANGFUSE_HOST"))
-print("Langfuse Public:", os.getenv("LANGFUSE_PUBLIC_KEY"))
-print("Langfuse Secret:", os.getenv("LANGFUSE_SECRET_KEY"))
-
 from langfuse.openai import OpenAI
 
 class LLMClient:
