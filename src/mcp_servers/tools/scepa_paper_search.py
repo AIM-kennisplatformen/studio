@@ -1,19 +1,13 @@
 from langfuse import observe
 from mcp.server.fastmcp import FastMCP
 
-from mcp_servers.qdrant.qdrant_source import QdrantSource
-from mcp_servers.zotero.zotero_source import ZoteroSource
+from mcp_servers.lib.qdrant.qdrant_source import QdrantSource
+from mcp_servers.lib.zotero.zotero_source import ZoteroSource
 
 # -------------------------------
 # MCP server init
 # -------------------------------
 mcp = FastMCP("paper_search")
-
-# langfuse = Langfuse(
-#   secret_key="dev-secret-key", # change in production
-#   public_key="dev-public-key", # change in production
-#   host="http://host.docker.internal:3000" # change in production
-# )
 
 zotero_source = ZoteroSource()
 qdrant_source = QdrantSource("127.0.0.1", 6333, "knowledgeplatform")

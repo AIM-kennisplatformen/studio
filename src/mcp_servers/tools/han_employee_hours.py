@@ -1,11 +1,9 @@
 from mcp.server.fastmcp import FastMCP
-from studio.typedb.db_sink import TypeDBSink  # <-- your real TypeDB data-access layer
+from mcp_servers.lib.typedb.db_sink import TypeDBSink  # <-- your real TypeDB data-access layer
 from collections import defaultdict
 import datetime
 from langfuse import Langfuse, observe
 from typing import DefaultDict, Dict, Tuple
-
-
 
 # -------------------------------
 # Real datasink
