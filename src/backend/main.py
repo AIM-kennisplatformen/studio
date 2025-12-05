@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from backend.config import SESSION_SECRET
+from backend.config import SESSION_SECRET, BASE_URL
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -21,7 +21,7 @@ app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:10090"],
+    allow_origins=[BASE_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -2,13 +2,19 @@ from typing import Any, List, Dict
 
 from anthropic import Anthropic
 from loguru import logger
-from ollama import Client as OllamaClient
 
 from lib.schemagenerators import AnthropicAdapter, LlamaAdapter
 from lib.settings import ClientType, ModelConfig
 from lib.models import ToolCollection, ToolRegistry
+from dotenv import load_dotenv
 
+load_dotenv()
+import os
+print("Langfuse Host:", os.getenv("LANGFUSE_HOST"))
+print("Langfuse Public:", os.getenv("LANGFUSE_PUBLIC_KEY"))
+print("Langfuse Secret:", os.getenv("LANGFUSE_SECRET_KEY"))
 
+from langfuse.openai import OpenAI
 
 class LLMClient:
     def __init__(self, config: ModelConfig):
@@ -18,6 +24,16 @@ class LLMClient:
 
     def __repr__(self) -> str:
         return f"LLMClient(model={self.config.model_type.value})"
+    def _normalize_response(self, response):
+        # Anthropics return .message
+        if hasattr(response, "message"):
+            return response.message
+        
+        # OpenAI/Ollama return choices[0].message
+        if hasattr(response, "choices"):
+            return response.choices[0].message
+
+        raise ValueError("Unknown response format")
 
     # ------------------------------------------------------
     # TOOL COLLECTION
@@ -55,7 +71,7 @@ class LLMClient:
             if not self.config.host:
                 raise ValueError("host required for Ollama")
             logger.debug(f"Connecting to Ollama at {self.config.host}")
-            return OllamaClient(host=str(self.config.host))
+            return OpenAI(base_url=str(self.config.host), api_key=str(self.config.api_key))
 
         else:
             raise ValueError(f"Unsupported client type: {self.config.client_type}")
@@ -73,15 +89,27 @@ class LLMClient:
         )
 
     def _ollama_call(self, messages, **kwargs) -> Any:
-        """Standard non-streaming call (unchanged)."""
-        assert isinstance(self.client, OllamaClient)
+        """Standard non-streaming call with tool sanitization."""
+        assert isinstance(self.client, OpenAI)
         logger.debug(f"Calling Ollama: {self.config.model_type}")
-        return self.client.chat(
+
+        # --- FIX: clean tools list ---
+        tools = kwargs.get("tools")
+        if tools is not None:
+            # Remove None or invalid entries
+            cleaned_tools = [t for t in tools if isinstance(t, dict)]
+            kwargs["tools"] = cleaned_tools if cleaned_tools else None
+
+        # Optional: log what tools are being used
+        logger.debug(f"Tools passed to model: {kwargs.get('tools')}")
+
+        return self.client.chat.completions.create(
             model=self.config.model_type,
             messages=messages,
             stream=False,
             **kwargs,
         )
+
 
     async def __call__(self, messages, **kwargs):
         if self.config.client_type == ClientType.ANTHROPIC:
@@ -103,7 +131,9 @@ class LLMClient:
 
     async def _tool_loop(self, call_func, messages, adapter, **kwargs):
         try:
-            response = call_func(messages=messages, **kwargs)
+            raw_response = call_func(messages=messages, **kwargs)
+            response = self._normalize_response(raw_response)
+
             messages = adapter.append_message(messages, response)
 
             tool_calls = adapter.extract_tool_calls(response)
@@ -116,9 +146,10 @@ class LLMClient:
                     tool_response = adapter.format_tool_response(toolcall, output)
                     messages.append(tool_response)
 
-                response = call_func(messages=messages, **kwargs)
+                raw_response = call_func(messages=messages, **kwargs)
+                response = self._normalize_response(raw_response)
 
-            return response
+            return raw_response
 
         except Exception as e:
             logger.error(f"LLM call failed: {e}")

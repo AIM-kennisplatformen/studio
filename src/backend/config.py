@@ -1,6 +1,8 @@
 import os
 import secrets
+from dotenv import load_dotenv
 
+load_dotenv()
 BASE_URL = os.getenv("BASE_URL", "http://localhost:10090")
 DISCOVERY_URL = os.getenv(
     "OAUTH_DISCOVERY_URL",
