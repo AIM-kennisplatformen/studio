@@ -1,6 +1,6 @@
 from backend.endpoints.auth import get_current_user
 from backend.endpoints.graph import user_graph_contexts, SUBNODES, prefetch_subnode
-from backend.chat_helpers.chat_util import active_websockets
+from backend.utility.chat_util import active_websockets
 from backend.config import LLM_WORKER_URL
 
 from pydantic import BaseModel

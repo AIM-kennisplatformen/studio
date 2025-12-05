@@ -1,4 +1,4 @@
-from backend.graph_helpers.data_loader import load_knowledge_graph
+from backend.utility.graph_data_loader import load_knowledge_graph
 from backend.endpoints.assets import detect_frontend_dir
 from fastapi import APIRouter
 

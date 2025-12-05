@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 from typing import Dict, List, Any
-from backend.graph_helpers.models import Node, Edge
+from backend.utility.graph_api_models import Node, Edge
 
 
 class KnowledgeGraphData:

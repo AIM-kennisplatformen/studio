@@ -1,6 +1,6 @@
-from backend.graph_helpers.data_loader import KnowledgeGraphData
-from backend.graph_helpers.models import ContextResponse
-from backend.chat_helpers.chat_util import push_chat_message
+from backend.utility.graph_data_loader import KnowledgeGraphData
+from backend.utility.graph_api_models import ContextResponse
+from src.backend.utility.chat_util import push_chat_message
 from backend.endpoints.auth import get_current_user
 from backend.config import LLM_WORKER_URL
 
