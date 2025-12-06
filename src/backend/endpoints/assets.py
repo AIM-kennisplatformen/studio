@@ -1,8 +1,7 @@
 from backend.endpoints.auth import get_current_user
-from backend.endpoints.graph import kg_data
 
 import os
-from fastapi import HTTPException, Depends, APIRouter
+from fastapi import HTTPException, Depends, APIRouter, Request
 from fastapi.responses import RedirectResponse, FileResponse
 
 
@@ -49,7 +48,8 @@ def get_index_html():
 # Root (Protected)
 # ------------------------------------------------------
 @asset_router.get("/")
-async def root(user=Depends(get_current_user)):
+async def root(request: Request, user=Depends(get_current_user)):
+    kg_data = request.app.state.kg_data
     if kg_data is None:
         return {
             "status": "error",

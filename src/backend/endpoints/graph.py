@@ -1,21 +1,16 @@
-from backend.utility.graph_data_loader import KnowledgeGraphData
 from backend.utility.graph_api_models import ContextResponse
 from src.backend.utility.chat_util import push_chat_message
 from backend.endpoints.auth import get_current_user
 from backend.config import LLM_WORKER_URL
 
-from typing import Optional, DefaultDict
+
+from typing import DefaultDict
 from collections import defaultdict
-from fastapi import Depends
+from fastapi import Depends, Request
 import httpx
 from fastapi import APIRouter
 
 graph_router = APIRouter()
-
-# ------------------------------------------------------
-# Knowledge Graph Data
-# ------------------------------------------------------
-kg_data: Optional[KnowledgeGraphData] = None
 
 # Map concrete node IDs to "subnode names" as used for LLM routing
 SUBNODE_MAP = {
@@ -35,7 +30,6 @@ user_graph_contexts: DefaultDict[str, dict] = defaultdict(
         "pending": {},              # { subnode_name: asyncio.Task }
     }
 )
-
 
 
 async def prefetch_subnode(user_id: str, question: str, subnode: str):
@@ -88,8 +82,8 @@ async def prefetch_subnode(user_id: str, question: str, subnode: str):
 # ------------------------------------------------------
 # Node Context Endpoint (selection + original behavior)
 # ------------------------------------------------------
-@graph_router.post("/nodes/{node_id}/context", response_model=ContextResponse)
-async def get_node_context(node_id: int, user=Depends(get_current_user)):
+@graph_router.post("/nodes/{node_id}/context")
+async def get_node_context(node_id: int, request: Request, user=Depends(get_current_user)):
     """
     Existing endpoint used by the frontend on graph node click.
 
@@ -103,7 +97,7 @@ async def get_node_context(node_id: int, user=Depends(get_current_user)):
     """
     user_id = user["sub"]
     ctx = user_graph_contexts[user_id]
-
+    kg_data = request.app.state.kg_data
     # Track selection based on node_id
     if node_id == 1:
         ctx["selected_subnode"] = "root"

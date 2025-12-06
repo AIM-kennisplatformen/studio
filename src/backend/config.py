@@ -3,7 +3,7 @@ import secrets
 from dotenv import load_dotenv
 
 load_dotenv()
-BASE_URL = os.getenv("BASE_URL", "http://localhost:10090")
+BASE_URL = os.getenv("BACKEND_BASE_URL", "http://localhost:10090")
 DISCOVERY_URL = os.getenv(
     "OAUTH_DISCOVERY_URL",
     "http://auth.localhost:9000/application/o/kg/.well-known/openid-configuration"
