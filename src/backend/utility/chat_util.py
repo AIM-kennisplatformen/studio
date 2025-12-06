@@ -1,31 +1,94 @@
-from typing import Optional
-from fastapi import WebSocket
+from typing import Optional, Dict
+import socketio
 
-# Keep track of active websockets so background tasks can push messages into chat
-active_websockets: dict[str, Optional[WebSocket]] = {}
+# =====================================================
+# Socket.IO broker state
+# =====================================================
+
+sio: Optional[socketio.AsyncServer] = None
+
+# user_id → sid
+user_connections: Dict[str, str] = {}
+
+# sid → user_id
+sid_connections: Dict[str, str] = {}
 
 
-async def push_chat_message(user_id: str, text: str):
+# =====================================================
+# Registration
+# =====================================================
+
+def register_socketio(server: socketio.AsyncServer):
+    """Register global Socket.IO instance (called once in chat.py)."""
+    global sio
+    sio = server
+
+
+# =====================================================
+# Connection Mapping
+# =====================================================
+
+def bind_user(user_id: str, sid: str):
     """
-    Push an assistant-style message into the user's chat over WebSocket,
-    if there is an active connection.
+    Record mapping between authenticated user_id and Socket.IO sid.
     """
-    ws = active_websockets.get(user_id)
-    if not ws:
+    user_connections[user_id] = sid
+    sid_connections[sid] = user_id
+    print(f"[BIND] user={user_id} ↔ sid={sid}")
+
+
+def unbind_sid(sid: str) -> Optional[str]:
+    """
+    Remove sid and reverse-mapping when client disconnects.
+    """
+    user_id = sid_connections.pop(sid, None)
+    if user_id:
+        user_connections.pop(user_id, None)
+
+    print(f"[UNBIND] sid={sid} user={user_id}")
+    return user_id
+
+
+# =====================================================
+# Emitting Messages
+# =====================================================
+
+async def emit_to_user(user_id: str, event: str, payload: dict):
+    """
+    Emit a named event to a specific user if connected.
+    """
+    if sio is None:
+        print("[emit_to_user] Socket.IO not registered")
+        return
+
+    sid = user_connections.get(user_id)
+    if not sid:
+        print(f"[emit_to_user] No active sid for user={user_id}")
         return
 
     try:
-        # Stream as a single "message" + "done" pair
-        await ws.send_json({
-            "type": "message",
-            "role": "chatbot",
-            "content": text,
-        })
-        await ws.send_json({
-            "type": "done",
-            "full_response": text,
-        })
+        await sio.emit(event, payload, to=sid)
     except Exception as e:
-        # If sending fails, we just drop it; connection may have closed
-        print(f"Failed to push chat message for user {user_id}: {e}")
+        print(f"[emit_to_user] ERROR sending to user={user_id}: {e}")
 
+
+async def push_chat_message(user_id: str, message: str):
+    """
+    Sends a full assistant message (non-streamed) to the user,
+    followed by a 'done' event so the client updates cleanly.
+    """
+    if sio is None:
+        print("⚠ push_chat_message: Socket.IO not registered")
+        return
+
+    sid = user_connections.get(user_id)
+    print(f"[PUSH] user={user_id}, sid={sid}")
+
+    if not sid:
+        return
+
+    try:
+        await sio.emit("message", {"role": "chatbot", "content": message}, to=sid)
+        await sio.emit("done", {"full_response": message}, to=sid)
+    except Exception as e:
+        print(f"❌ push_chat_message ERROR for user={user_id}: {e}")

@@ -1,89 +1,75 @@
 "use client";
-import { useEffect, useRef } from "react";
-import { useAtom, useSetAtom } from "jotai";
-import { messagesAtom } from "./atoms";
 
-const WS_URL = "ws://localhost:10090/ws/chat";
+import { useEffect, useRef } from "react";
+import { useAtom } from "jotai";
+import { messagesAtom } from "./atoms";
+import { io } from "socket.io-client";
+
+const SOCKET_URL = "http://localhost:10090";
+
 export function useChatWebSocket(setStatus) {
   const [messages, setMessages] = useAtom(messagesAtom);
-  const wsRef = useRef(null);
-  const streamingMsgKeyRef = useRef(null);
+  const socketRef = useRef(null);
+
+  const streamingKeyRef = useRef(null);
 
   useEffect(() => {
-    const ws = new WebSocket(WS_URL);
-    wsRef.current = ws;
+    const socket = io(SOCKET_URL, {
+      path: "/socket.io",
+      withCredentials: true,
+      transports: ["polling", "websocket"],
+    });
 
-    ws.onopen = () => console.log("WS connected");
+    socketRef.current = socket;
 
-    ws.onmessage = (event) => {
-      console.log("WS RAW:", event.data);
+    socket.on("connect", () => {
+      console.log("Socket.IO connected:", socket.id);
+    });
 
-      let data;
-      try {
-        data = JSON.parse(event.data);
-      } catch (err) {
-        console.error("WS parse error", err);
-        return;
-      }
-
-      // ---------------------------
-      // HANDLE DONE EVENT
-      // ---------------------------
-      if (data.type === "done") {
-        console.log("WS DONE:", data);
-
-        streamingMsgKeyRef.current = null;
-
-        // Stop streaming state
-        setStatus("ready");
-
-        return;
-      }
-
-      // ---------------------------
-      // HANDLE STREAMED TOKEN
-      // ---------------------------
-      if (data.type === "message" && data.role === "chatbot") {
-        const token = data.content;
-
-        setMessages((prev) => {
-          if (streamingMsgKeyRef.current) {
-            return prev.map((msg) =>
-              msg.key === streamingMsgKeyRef.current
-                ? { ...msg, value: msg.value + token }
-                : msg
-            );
-          }
-
-          const newKey = (prev[0]?.key || 0) + 1;
-          streamingMsgKeyRef.current = newKey;
-
-          return [
-            { key: newKey, name: "chatbot", value: token },
-            ...prev,
-          ];
-        });
-
-        return;
-      }
-    };
-
-    ws.onclose = () => {
-      streamingMsgKeyRef.current = null;
+    socket.on("disconnect", () => {
+      console.log("Socket.IO disconnected");
+      streamingKeyRef.current = null;
       setStatus("ready");
-      console.log("WS disconnected");
-    };
+    });
 
-    return () => ws.close();
+    socket.on("message", (data) => {
+      console.log("SOCKET MESSAGE:", data);
+
+      if (data.role !== "chatbot") return;
+
+      const token = data.content || "";
+
+      setMessages((prev) => {
+        if (streamingKeyRef.current !== null) {
+          return prev.map((m) =>
+            m.key === streamingKeyRef.current
+              ? { ...m, value: m.value + token }
+              : m
+          );
+        }
+
+        const newKey = (prev[0]?.key || 0) + 1;
+        streamingKeyRef.current = newKey;
+
+        return [
+          { key: newKey, name: "chatbot", value: token },
+          ...prev,
+        ];
+      });
+    });
+
+    socket.on("done", () => {
+      streamingKeyRef.current = null;
+      setStatus("ready");
+    });
+
+    return () => socket.disconnect();
   }, []);
 
   const send = (msg) => {
-    streamingMsgKeyRef.current = null;
-
-    // Start streaming state
+    streamingKeyRef.current = null;
     setStatus("streaming");
-
-    wsRef.current?.send(JSON.stringify({ message: msg }));
+    socketRef.current?.emit("send_message", { message: msg });
   };
 
   return { send };

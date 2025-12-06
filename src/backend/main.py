@@ -8,8 +8,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.utility.graph_data_loader import load_knowledge_graph
 from backend.endpoints.assets import asset_router, frontend, detect_frontend_dir
 from backend.endpoints.auth import auth_router
-from backend.endpoints.chat import chat_router
+from backend.endpoints.chat import chat_router, socket_app
 from backend.endpoints.graph import graph_router
+
 
 
 @asynccontextmanager
@@ -32,7 +33,12 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=SESSION_SECRET,
+    same_site="lax",        # REQUIRED for cross-site requests
+    https_only=False,        # Only True if you deploy with HTTPS
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -42,7 +48,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+app.mount("/socket.io", socket_app)
 app.include_router(asset_router)
 app.include_router(auth_router)
 app.include_router(chat_router)
