@@ -5,7 +5,7 @@ import { useAtom } from "jotai";
 import { messagesAtom } from "./atoms";
 import { io } from "socket.io-client";
 
-const SOCKET_URL = "http://localhost:10090";
+const SOCKET_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
 export function useChatWebSocket(setStatus) {
   const [messages, setMessages] = useAtom(messagesAtom);

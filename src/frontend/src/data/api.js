@@ -1,4 +1,5 @@
-const BASE_URL = "http://localhost:10090";
+const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+
 
 const errorResponse = {
   value: "Sorry, I couldn't reach the server. Please try again later.",

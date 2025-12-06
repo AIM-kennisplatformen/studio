@@ -3,6 +3,8 @@ from mcp.server.fastmcp import FastMCP
 
 from mcp_servers.lib.qdrant.qdrant_source import QdrantSource
 from mcp_servers.lib.zotero.zotero_source import ZoteroSource
+from dotenv import load_dotenv
+import os
 
 # -------------------------------
 # MCP server init
@@ -10,7 +12,9 @@ from mcp_servers.lib.zotero.zotero_source import ZoteroSource
 mcp = FastMCP("paper_search")
 
 zotero_source = ZoteroSource()
-qdrant_source = QdrantSource("127.0.0.1", 6333, "knowledgeplatform")
+
+load_dotenv()
+qdrant_source = QdrantSource(os.getenv("QDRANT_URL","127.0.0.1"), os.getenv("QDRANT_PORT",6333), "knowledgeplatform")
 
 
 @mcp.tool()

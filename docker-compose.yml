@@ -1,89 +1,90 @@
+version: "3.9"
+
 services:
-  ####################################################
-  # PostgreSQL
-  ####################################################
-  postgresql:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: authentik
-      POSTGRES_USER: authentik
-      POSTGRES_PASSWORD: ${PG_PASS}
-    volumes:
-      - database:/var/lib/postgresql/data
-    networks:
-      - internal
-
-  ####################################################
-  # Authentik Server
-  ####################################################
-  authentik-server:
-    image: ghcr.io/goauthentik/server:${AUTHENTIK_TAG:-2025.10.2}
-    command: server
-    depends_on:
-      - postgresql
-    environment:
-      AUTHENTIK_POSTGRESQL__HOST: postgresql
-      AUTHENTIK_POSTGRESQL__NAME: authentik
-      AUTHENTIK_POSTGRESQL__USER: authentik
-      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
-      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
-    networks:
-      - internal
-    ports:
-      - "9000:9000"  # exposed only for local dev via DNS
-
-  ####################################################
-  # Authentik Worker
-  ####################################################
-  authentik-worker:
-    image: ghcr.io/goauthentik/server:${AUTHENTIK_TAG:-2025.10.2}
-    command: worker
-    depends_on:
-      - postgresql
-    environment:
-      AUTHENTIK_POSTGRESQL__HOST: postgresql
-      AUTHENTIK_POSTGRESQL__NAME: authentik
-      AUTHENTIK_POSTGRESQL__USER: authentik
-      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
-      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
-    networks:
-      - internal
-
-  ####################################################
-  # FastAPI Backend
-  ####################################################
   kg-backend:
     build:
       context: .
-      dockerfile: dockerfiles/Dockerfile
+      dockerfile: dockerfiles/Dockerfile.backend
+    container_name: kg-backend
+    env_file: [.env]
     environment:
-      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
-      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
-      OAUTH_DISCOVERY_URL: ${OAUTH_DISCOVERY_URL}
-      BASE_URL: ${BACKEND_BASE_URL}
-    networks:
-      - internal
-    extra_hosts:
-    - "auth.localhost:172.26.0.5"   # IP of authentik-server container
-    - "host.docker.internal:host-gateway"
-
-  ####################################################
-  # NGINX Reverse Proxy
-  ####################################################
-  nginx:
-    image: nginx:alpine
+      PYTHONPATH: "src"
+      BACKEND_BASE_URL:    "${BACKEND_BASE_URL}"
+      LLM_WORKER_URL:      "${LLM_WORKER_URL}"
+      OAUTH_CLIENT_ID:     "${OAUTH_CLIENT_ID}"
+      OAUTH_CLIENT_SECRET: "${OAUTH_CLIENT_SECRET}"
+      OAUTH_DISCOVERY_URL: "${OAUTH_DISCOVERY_URL}"
     ports:
-      - "8090:80"
-    depends_on:
-      - authentik-server
-      - kg-backend
+      - "10090:10090"
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    networks:
-      - internal
+      - .:/app
+    command:
+      - pixi
+      - run
+      - python
+      - -m
+      - uvicorn
+      - src.backend.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "10090"
 
-networks:
-  internal:
+  mcp-server:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.mcp
+    container_name: mcp-server
+    env_file: [.env]
+    environment:
+      PYTHONPATH: "src"
+      ZOTERO_API_KEY: "${ZOTERO_API_KEY}"
+      ZOTERO_LIBRARY_ID: "${ZOTERO_LIBRARY_ID}"
+      ZOTERO_COLLECTION_ID: "${ZOTERO_COLLECTION_ID}"
+      QDRANT_URL: "${QDRANT_URL}"
+      QDRANT_PORT: "${QDRANT_PORT}"
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    command:
+      - pixi
+      - run
+      - python
+      - src/mcp_servers/main.py
 
+  llm-worker:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.llm_worker
+    container_name: llm-worker
+    env_file: [.env]
+    environment:
+      PYTHONPATH: "src"
+      LANGFUSE_PUBLIC_KEY: "${LANGFUSE_PUBLIC_KEY}"
+      LANGFUSE_SECRET_KEY: "${LANGFUSE_SECRET_KEY}"
+      LANGFUSE_HOST:       "${LANGFUSE_HOST}"
+      LLM_WORKER_URL:      "${LLM_WORKER_URL}"
+    ports:
+      - "7000:7000"
+    volumes:
+      - .:/app
+      - ./llm_worker_config.toml:/app/llm_worker_config.toml
+    command:
+      - pixi
+      - run
+      - python
+      - src/llm_worker/main.py
+  qdrant:
+    image: qdrant/qdrant:v1.13.5-unprivileged
+    container_name: qdrant_kg
+    restart: unless-stopped
+    user: "1000:1000"
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_paper_data:/qdrant/storage:Z
+  
 volumes:
-  database:
+  qdrant_paper_data:

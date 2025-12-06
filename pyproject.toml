@@ -1,29 +1,16 @@
-# -----------------------------
+# ====================================
 # Build system
-# -----------------------------
+# ====================================
 [build-system]
-build-backend = "hatchling.build"
 requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/studio"]
 
-# -----------------------------
-# Dependency groups (PEP 735)
-# -----------------------------
-[dependency-groups]
-dev = [
-    "isort>=7.0.0",
-    "mypy>=1.18.2",
-    "nest-asyncio",
-    "ruff>=0.14.5",
-    "toml-sort>=0.24.3",
-    "typing-extensions>=4.15.0",
-]
-
-# -----------------------------
-# Project metadata + PyPI runtime deps
-# -----------------------------
+# ====================================
+# Project metadata + runtime deps
+# ====================================
 [project]
 name = "MCP-demo"
 description = "MCP demo library"
@@ -31,7 +18,7 @@ readme = "README.md"
 license = { text = "NONE" }
 authors = [
   { name = "RaoulG", email = "Raoul.Grouls@han.nl" },
-  { name = "Hoog-V", email = "victor.hogeweij@han.nl" },
+  { name = "Hoog-V",  email = "victor.hogeweij@han.nl" },
 ]
 classifiers = [
   "Environment :: Console",
@@ -42,102 +29,216 @@ requires-python = ">=3.11"
 dynamic = ["version"]
 
 dependencies = [
-    "fastmcp>=2.10.1",
-    "fastapi",
-    "httpx",
-    "typedb-driver==2.29.2",
-    "langfuse", 
-    "anthropic>=0.42.0",
-    "openai",
-    "loguru>=0.7.3",
-    "ollama>=0.4.5",
-    "python-dotenv>=1.0.1",
-    "qdrant-client>=1.15.1", 
-    "sentence-transformers>=5.1.2", 
-    "pyzotero>=1.7.3"
-    , "uvicorn[standard]>=0.38.0,<0.39", "python-socketio[asgi]>=5.15.0,<6"]
+  "fastmcp>=2.10.1",
+  "fastapi",
+  "httpx",
+  "typedb-driver==2.29.2",
+  "langfuse",
+  "anthropic>=0.42.0",
+  "openai",
+  "loguru>=0.7.3",
+  "ollama>=0.4.5",
+  "python-dotenv>=1.0.1",
+  "qdrant-client>=1.15.1",
+  "sentence-transformers>=5.1.2",
+  "pyzotero>=1.7.3",
+  "uvicorn[standard]>=0.38.0,<0.39",
+  "python-socketio[asgi]>=5.15.0,<6",
+]
 
-# -----------------------------
+# ====================================
+# Dev dependencies (PEP 735 groups)
+# ====================================
+[dependency-groups]
+dev = [
+  "isort>=7.0.0",
+  "mypy>=1.18.2",
+  "nest-asyncio",
+  "ruff>=0.14.5",
+  "toml-sort>=0.24.3",
+  "typing-extensions>=4.15.0",
+]
+
+# ====================================
 # Testing
-# -----------------------------
+# ====================================
 [tool.pytest.ini_options]
 pythonpath = ["client", "server"]
 addopts = ["--import-mode=importlib"]
 
-# -----------------------------
-# Pixi (Conda) — merged here for clarity
-# -----------------------------
+# ====================================
+# Pixi workspace
+# ====================================
 [tool.pixi.workspace]
 channels = [
   "https://fast.prefix.dev/conda-forge",
   "https://repo.prefix.dev/pypdfium2-public",
   "https://repo.prefix.dev/pytorch",
 ]
-platforms = ["linux-64", "osx-64", "osx-arm64"]
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 
-# Host deps (for builds like docling from PyPI)
-[tool.pixi.host-dependencies]
+
+# ====================================
+# Pixi environment dependencies
+# ====================================
+[tool.pixi.dependencies]
+python = "3.12.*"
 compilers = ">=1.9.0"
 pkg-config = ">=0.29.2"
 
-# Conda-side runtime dependencies
-[tool.pixi.dependencies]
-python = "3.12.*"
-python-dotenv = ">=1.1.0"
-loguru = ">=0.7.3,<0.8"
+# Node & tooling
+nodejs = ">=22.13.0,<22.14"
 lefthook = ">=1.11.13"
 lychee = ">=0.15.1"
+
+# Smaller libs
 einops = ">=0.8.1"
+itsdangerous = ">=2.2.0,<3"
+typing_extensions = ">=4.14.0"
+
+# Tools duplicated in project/dev groups (ok for Pixi env)
 ruff = ">=0.11.13"
 isort = ">=6.0.1"
 mypy = ">=1.16.0"
-typing_extensions = ">=4.14.0"
-nodejs = ">=22.13.0,<22.14"
-itsdangerous = ">=2.2.0,<3"
+loguru = ">=0.7.3,<0.8"
+python-dotenv = ">=1.1.0"
 
+# ====================================
+# Shared Pixi tasks (placeholders unless overridden)
+# ====================================
 [tool.pixi.tasks]
-frontend_build="rm -r kg && cd src/frontend && npm install && npm run build && mv dist ../../kg"
-backend_no_docker="BASE_URL=http://localhost:10090 PYTHONPATH=src python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090  --reload"
-backend="docker compose up"
-mcp_server="PYTHONPATH=src python src/mcp_servers/main.py"
-llm_worker="PYTHONPATH=src python src/llm_worker/main.py"
+backend = "docker compose up"
 vscode = "code ."
 lint = "ruff check"
 typecheck = "mypy ."
 test = "pytest -q"
 
-# Activation env
+frontend_build = ""
+backend_no_docker = ""
+mcp_server = ""
+llm_worker = ""
+
+# ====================================
+# Linux tasks (POSIX, Bash-only where needed)
+# ====================================
+[tool.pixi.target.linux-64.tasks]
+frontend_build = """
+bash -c 'set -a; source .env; set +a; \
+rm -rf kg && \
+cd src/frontend && \
+echo "VITE_BACKEND_BASE_URL=$BACKEND_BASE_URL" > .env.production && \
+npm install && npm run build && \
+rm .env.production && \
+mv dist ../../kg'
+"""
+
+backend_no_docker = """
+BASE_URL=http://localhost:10090 PYTHONPATH=src \
+python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
+"""
+
+mcp_server = "PYTHONPATH=src python src/mcp_servers/main.py"
+llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
+
+# ====================================
+# macOS x86 tasks
+# ====================================
+[tool.pixi.target.osx-64.tasks]
+frontend_build = """
+bash -c 'set -a; source .env; set +a; \
+rm -rf kg && \
+cd src/frontend && \
+echo "VITE_BACKEND_BASE_URL=$BACKEND_BASE_URL" > .env.production && \
+npm install && npm run build && \
+rm .env.production && \
+mv dist ../../kg'
+"""
+
+backend_no_docker = """
+BASE_URL=http://localhost:10090 PYTHONPATH=src \
+python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
+"""
+
+mcp_server = "PYTHONPATH=src python src/mcp_servers/main.py"
+llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
+
+# ====================================
+# macOS ARM tasks
+# ====================================
+[tool.pixi.target.osx-arm64.tasks]
+frontend_build = """
+bash -c 'set -a; source .env; set +a; \
+rm -rf kg && \
+cd src/frontend && \
+echo "VITE_BACKEND_BASE_URL=$BACKEND_BASE_URL" > .env.production && \
+npm install && npm run build && \
+rm .env.production && \
+mv dist ../../kg'
+"""
+
+backend_no_docker = """
+BASE_URL=http://localhost:10090 PYTHONPATH=src \
+python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
+"""
+
+mcp_server = "PYTHONPATH=src python src/mcp_servers/main.py"
+llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
+
+# ====================================
+# Windows (cmd.exe)
+# ====================================
+[tool.pixi.target.win-64.tasks]
+frontend_build = '''
+for /f "tokens=1,* delims==" %%a in (.env) do set %%a=%%b && ^
+rmdir /s /q kg && ^
+cd src\frontend && ^
+echo VITE_BACKEND_BASE_URL=%BACKEND_BASE_URL% > .env.production && ^
+npm install && npm run build && ^
+del .env.production && ^
+move dist ..\..\kg
+'''
+
+backend_no_docker = '''
+set BASE_URL=http://localhost:10090
+set PYTHONPATH=src
+python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
+'''
+
+mcp_server = 'set PYTHONPATH=src && python src\mcp_servers\main.py'
+llm_worker  = 'set PYTHONPATH=src && python src\llm_worker\main.py'
+
+# ====================================
+# Pixi activation environment
+# ====================================
 [tool.pixi.activation.env]
 PYTHONNOUSERSITE = "1"
-LD_LIBRARY_PATH = "$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+LD_LIBRARY_PATH  = "$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 
-# Platform-specific deps
+# ====================================
+# Platform-specific dependencies
+# ====================================
 [tool.pixi.target.linux-64.dependencies]
-python-devtools = ">=0.12.2"         # Optional but useful
-# cuda-toolkit = "12.9.0.*"   # For use with CUDA
+python-devtools = ">=0.12.2"
 
-# -----------------------------
-# Mypy
-# -----------------------------
+# ====================================
+# Mypy config
+# ====================================
 [tool.mypy]
 allow_redefinition = true
 disable_error_code = [
-    "call-arg",        # unexpected keyword arguments
-    "import-untyped",  # missing stubs like requests
-    "import-not-found",
-    "call-overload",
-    "arg-type",
-    "misc",
+  "call-arg",
+  "import-untyped",
+  "import-not-found",
+  "call-overload",
+  "arg-type",
+  "misc",
 ]
 pretty = true
-exclude = [
-    "^\\.pixi/",  # ignore the .pixi folder at repo root
-    "^\\studio-project/"
-]
+exclude = ["^\\.pixi/", "^studio-project/"]
 
-# -----------------------------
-# Ruff
-# -----------------------------
+# ====================================
+# Ruff config
+# ====================================
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "C4", "PT"]
 
