@@ -17,6 +17,7 @@ function getMockData(nodeId) {
  * Uses backend if reachable, otherwise returns mock data.
  */
 export async function fetchGraphAnswer(nodeId = "1") {
+  /*
   const url = `http://kg.localhost:8090/nodes/${nodeId}/context`;
 
   try {
@@ -50,5 +51,7 @@ export async function fetchGraphAnswer(nodeId = "1") {
     console.log("Fetch graph for nodeId:", nodeId);
     console.log("Returning mock data:", getMockData(nodeId));
     return getMockData(nodeId);
+    */
+    return getMockData(nodeId);
   }
-}
+
