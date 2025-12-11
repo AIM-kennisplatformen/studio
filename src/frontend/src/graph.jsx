@@ -94,7 +94,6 @@ export default function Graph({ data, width }) {
       })
       .filter(Boolean);
         const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
-  const newNodesToLayout = newNodes.filter((n) => !previousPositions.has(n.id))
 
  // Apply fcose layout to new nodes, keeping fixed nodes in place
   const layoutPositions = applyFcoseLayout(newNodes, newEdges, {
