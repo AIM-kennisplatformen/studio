@@ -188,8 +188,35 @@ llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
 # Windows (cmd.exe)
 # ====================================
 [tool.pixi.target.win-64.tasks]
-frontend_build = 'cmd /C "for /f \"tokens=1,* delims==\" %a in (.env) do set %a=%b && if exist kg rmdir /s /q kg && pushd src\\frontend && echo VITE_BACKEND_BASE_URL=%BACKEND_BASE_URL% > .env.production && npm install && npm run build && del .env.production && popd && mkdir kg && move src\\frontend\\dist kg"'
+frontend_build = '''
+python -c "from pathlib import Path; import shutil;
+root=Path.cwd();
+frontend=root/'src'/'frontend';
+kg=root/'kg';
 
+shutil.rmtree(kg, ignore_errors=True);
+
+env={};
+for l in (root/'.env').read_text().splitlines():
+    l=l.strip();
+    if l and not l.startswith('#'):
+        k,v=l.split('=',1); env[k]=v;
+
+(frontend/'.env.production').write_text(
+    f\"VITE_BACKEND_BASE_URL={env['BACKEND_BASE_URL']}\"
+)
+"
+&& cd src/frontend
+&& npm install
+&& npm run build
+&& python -c "from pathlib import Path; import shutil;
+frontend=Path.cwd();
+kg=frontend.parent.parent/'kg';
+
+(frontend/'.env.production').unlink(missing_ok=True);
+shutil.move(str(frontend/'dist'), kg)
+"
+'''
 backend_no_docker = ''' 
 PYTHONPATH=src python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 '''
