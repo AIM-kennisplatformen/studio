@@ -188,20 +188,10 @@ llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
 # Windows (cmd.exe)
 # ====================================
 [tool.pixi.target.win-64.tasks]
-frontend_build = '''
-for /f "tokens=1,* delims==" %%a in (.env) do set %%a=%%b && ^
-rmdir /s /q kg && ^
-cd src\frontend && ^
-echo VITE_BACKEND_BASE_URL=%BACKEND_BASE_URL% > .env.production && ^
-npm install && npm run build && ^
-del .env.production && ^
-move dist ..\..\kg
-'''
+frontend_build = 'cmd /C "for /f \"tokens=1,* delims==\" %a in (.env) do set %a=%b && if exist kg rmdir /s /q kg && pushd src\\frontend && echo VITE_BACKEND_BASE_URL=%BACKEND_BASE_URL% > .env.production && npm install && npm run build && del .env.production && popd && mkdir kg && move src\\frontend\\dist kg"'
 
-backend_no_docker = '''
-set BASE_URL=http://localhost:10090
-set PYTHONPATH=src
-python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
+backend_no_docker = ''' 
+PYTHONPATH=src python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 '''
 
 mcp_server = 'set PYTHONPATH=src && python src\mcp_servers\main.py'
