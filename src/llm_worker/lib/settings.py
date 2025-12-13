@@ -18,7 +18,7 @@ class ModelType(str, Enum):
     QWEN3 = "qwen3:8b-q8_0"
     CODELLAMA34B = "codellama:34b"
     PHI4 = "phi4"
-    QWEN3_32B = "Qwen/Qwen3-32B"
+    QWEN3_32B = "Qwen/Qwen3-32B-fast"
 
 class ModelConfig(BaseModel):
     client_type: ClientType
