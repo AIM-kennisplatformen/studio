@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Request
 
 from backend.utility.graph_api_models import ContextResponse
 from backend.endpoints.auth import get_current_user
-from backend.config import LLM_WORKER_URL
+from backend.config import LLM_WORKER_URL, LLM_WORKER_PORT
 
 from src.backend.utility.chat_util import push_chat_message
 
@@ -70,8 +70,9 @@ async def prefetch_subnode(user_id: str, question: str, subnode: str):
         )
 
         async with httpx.AsyncClient(timeout=200) as client:
+            worker_url = f"{LLM_WORKER_URL}:{LLM_WORKER_PORT}"
             resp = await client.post(
-                f"{LLM_WORKER_URL}/ask",
+                f"{worker_url}/ask",
                 json={"chat_id": "prefetch", "message": prompt},
             )
 

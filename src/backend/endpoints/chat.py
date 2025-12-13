@@ -8,7 +8,7 @@ import httpx
 import socketio
 from fastapi import APIRouter
 
-from backend.config import LLM_WORKER_URL, BASE_URL
+from backend.config import LLM_WORKER_URL, LLM_WORKER_PORT, BASE_URL
 from backend.endpoints.graph import (
     user_graph_contexts,
     SUBNODES,
@@ -88,37 +88,18 @@ async def disconnect(sid):
 
 @sio.event
 async def send_message(sid, data):
-    """
-    Frontend emits:
-        socket.emit("send_message", { message: "..." })
-
-    This function:
-    - resolves user_id
-    - updates session & graph context
-    - streams LLM response token-by-token
-    - kicks off subnode prefetch tasks
-    """
-
-    # --- Resolve user ---
     user_id = sid_connections.get(sid)
     if not user_id:
-        print(f"❌ No user mapped to sid {sid}")
         return
 
     user_msg = data.get("message", "")
-    print(f"[{user_id}] USER:", user_msg)
-
-    # --- Update session ---
     session = user_sessions[user_id]
-    session["history"].append({"role": "user", "message": user_msg})
-    session["last_seen"] = time.time()
-
-    # --- Update graph context ---
     ctx = user_graph_contexts[user_id]
+
+    session["history"].append({"role": "user", "message": user_msg})
     ctx["latest_question"] = user_msg
     ctx["selected_subnode"] = "root"
 
-    # --- Build LLM prompt ---
     synthetic_prompt = (
         "SYSTEM META-INSTRUCTION:\n"
         "Use the `paper_search` MCP tool to identify sources relevant to the question.\n\n"
@@ -127,13 +108,11 @@ async def send_message(sid, data):
         "Provide an evidence-informed explanation when possible.\n"
     )
 
-    # =====================================================
-    # STREAM ROOT RESPONSE FROM LLM WORKER
-    # =====================================================
-
     async with httpx.AsyncClient(timeout=httpx.Timeout(300)) as client:
+        worker_url = f"{LLM_WORKER_URL}:{LLM_WORKER_PORT}"
+
         resp = await client.post(
-            f"{LLM_WORKER_URL}/ask_stream",
+            f"{worker_url}/ask_stream",
             json={
                 "chat_id": "default",
                 "message": synthetic_prompt,
@@ -151,40 +130,81 @@ async def send_message(sid, data):
 
     full_response = ""
 
+    # --------------------------------------------------
+    # THINK-TAG STATE (important!)
+    # --------------------------------------------------
+    inside_think = False
+    buffer = ""
+
     async for line in resp.aiter_lines():
-        if not line.strip():
+        if not line.startswith("data:"):
             continue
 
-        try:
-            payload = json.loads(line)
-        except json.JSONDecodeError:
-            continue
+        raw = line.removeprefix("data:").strip()
 
-        # --- Streaming tokens ---
-        if "token" in payload:
-            token = payload["token"]
-            full_response += token
-            await sio.emit("message", {"role": "chatbot", "content": token}, to=sid)
-            continue
-
-        # --- Optional metadata ---
-        if "topic" in payload:
-            session["last_topic"] = payload["topic"]
-
-        # --- Completion ---
-        if payload.get("done"):
+        if raw == "[DONE]":
             await sio.emit("done", {"full_response": full_response}, to=sid)
             break
 
-    # --- Store full root answer ---
-    ctx["prefetched"]["root"] = full_response
-    session["history"].append(
-        {"role": "assistant", "message": full_response}
-    )
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
 
-    # =====================================================
-    # KICK OFF SUBNODE PREFETCH (async background tasks)
-    # =====================================================
+        if payload.get("type") != "on_chat_model_stream":
+            continue
+
+        token = payload.get("data", "")
+        if not token:
+            continue
+
+        buffer += token
+
+        while True:
+            if inside_think:
+                end = buffer.find("</think>")
+                if end == -1:
+                    # Still inside <think>, discard buffer safely
+                    buffer = buffer[-8:]  # keep tail for boundary detection
+                    break
+                # Exit think block
+                buffer = buffer[end + 8 :]
+                inside_think = False
+                continue
+
+            else:
+                start = buffer.find("<think>")
+                if start == -1:
+                    # No think tag → emit everything except safety tail
+                    safe_len = max(0, len(buffer) - 7)
+                    output = buffer[:safe_len]
+                    buffer = buffer[safe_len:]
+
+                    if output:
+                        full_response += output
+                        await sio.emit(
+                            "message",
+                            {"role": "chatbot", "content": output},
+                            to=sid,
+                        )
+                    break
+                else:
+                    # Emit content before <think>
+                    output = buffer[:start]
+                    if output:
+                        full_response += output
+                        await sio.emit(
+                            "message",
+                            {"role": "chatbot", "content": output},
+                            to=sid,
+                        )
+
+                    buffer = buffer[start + 7 :]
+                    inside_think = True
+                    continue
+    # --------------------------------------------------
+    # Kick off subnode prefetch (background)
+    # --------------------------------------------------
     for subnode in SUBNODES:
         if subnode not in ctx["pending"] and subnode not in ctx["prefetched"]:
             ctx["pending"][subnode] = asyncio.create_task(
@@ -194,3 +214,12 @@ async def send_message(sid, data):
                     subnode=subnode,
                 )
             )
+
+
+    # --------------------------------------------------
+    # Store clean response
+    # --------------------------------------------------
+    ctx["prefetched"]["root"] = full_response
+    session["history"].append(
+        {"role": "assistant", "message": full_response}
+    )

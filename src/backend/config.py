@@ -15,4 +15,5 @@ CLIENT_SECRET = os.getenv(
 )
 SESSION_SECRET = os.getenv("SESSION_SECRET", secrets.token_urlsafe(32))
 
-LLM_WORKER_URL = os.getenv("LLM_WORKER_URL", "http://localhost:7000")
+LLM_WORKER_URL = os.getenv("LLM_WORKER_URL", "http://localhost")
+LLM_WORKER_PORT = os.getenv("LLM_WORKER_PORT", "9200")

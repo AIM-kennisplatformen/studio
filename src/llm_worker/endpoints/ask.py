@@ -1,50 +1,124 @@
-from utility.llm_helper import run_pipeline, WorkerQuery
+import json
+import os
+import time
+from typing import AsyncGenerator
 
-from loguru import logger
+from dotenv import load_dotenv
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
-import json
+from langchain_openai import ChatOpenAI
+from langfuse import Langfuse, get_client
+from langfuse.langchain import CallbackHandler
+from mcp_use import MCPAgent, MCPClient
+from pydantic import BaseModel
+from mcp_use.client.config import load_config_file
+
+# =====================================================
+# Environment & Langfuse
+# =====================================================
+
+load_dotenv()
+
+Langfuse(
+    public_key=os.getenv("LANGFUSE_PUBLIC_KEY"),
+    secret_key=os.getenv("LANGFUSE_SECRET_KEY"),
+    host=os.getenv("LANGFUSE_HOST"),
+)
+
+# =====================================================
+# Models
+# =====================================================
+
+class WorkerQuery(BaseModel):
+    chat_id: str
+    message: str
+
+
+# =====================================================
+# Agent Factory
+# =====================================================
+
+async def create_agent() -> MCPAgent:
+    config = load_config_file(os.getenv("MCP_TOOL_CONFIG_PATH"))
+
+    client = MCPClient(config)
+
+    llm = ChatOpenAI(
+        model=os.getenv("LLM_MODEL"),
+        base_url=os.getenv("OPENAI_HOST"),
+    )
+
+    return MCPAgent(
+        llm=llm,
+        client=client,
+        max_steps=30,
+        callbacks=[CallbackHandler()],
+    )
+
+
+# =====================================================
+# Router
+# =====================================================
 
 llm_worker_router = APIRouter()
 
+
+# =====================================================
+# Non-streaming endpoint
+# =====================================================
+
 @llm_worker_router.post("/ask")
 async def ask_worker(payload: WorkerQuery):
-    result = await run_pipeline(payload.message)
-    return result
+    langfuse = get_client()
+    agent = await create_agent()
+
+    try:
+        result = await agent.run(payload.message)
+        return {
+            "llm": result,
+            "tools": "1 tools available",
+        }
+    finally:
+        langfuse.flush()
+
+
+# =====================================================
+# Streaming endpoint (SSE)
+# =====================================================
 
 @llm_worker_router.post("/ask_stream")
 async def ask_worker_stream(payload: WorkerQuery):
-    """
-    Streaming NDJSON endpoint (fake streaming).
+    langfuse = get_client()
 
-    It:
-      1. Runs the normal pipeline (LLM + tools) to completion.
-      2. Streams the final answer in chunks as {"token": "..."} lines.
-      3. Finishes with {"done": true, "full_response": "...", "tools": "..."}.
-    """
-    user_query = payload.message
-    logger.info(f"Fake-streaming pipeline for query: {user_query}")
+    async def event_generator() -> AsyncGenerator[str, None]:
+        agent = await create_agent()
 
-    async def event_stream():
-        # 1. Run the original pipeline once (same as /ask)
-        result = await run_pipeline(user_query)
-        full = result["llm"]
-        tools_info = result.get("tools")
+        try:
+            async for event in agent.stream_events(payload.message):
+                event_type = event.get("event")
 
-        # 2. Stream out in chunks
-        chunk_size = 64  # tweak to taste (chars per chunk)
-        for i in range(0, len(full), chunk_size):
-            tok = full[i:i + chunk_size]
-            yield json.dumps({"token": tok}) + "\n"
+                data = ""
+                if event_type == "on_chat_model_stream":
+                    data = event["data"]["chunk"].content or ""
 
-        # 3. Final "done" event with full response + tool info
-        yield json.dumps({
-            "done": True,
-            "full_response": full,
-            "tools": tools_info,
-        }) + "\n"
+                sse_payload = {
+                    "type": event_type,
+                    "timestamp": time.time(),
+                    "data": data,
+                }
+
+                yield f"data: {json.dumps(sse_payload)}\n\n"
+
+            yield "data: [DONE]\n\n"
+
+        finally:
+            langfuse.flush()
 
     return StreamingResponse(
-        event_stream(),
-        media_type="application/json",
+        event_generator(),
+        media_type="text/event-stream", 
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
     )

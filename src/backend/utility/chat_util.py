@@ -72,10 +72,14 @@ async def emit_to_user(user_id: str, event: str, payload: dict):
         print(f"[emit_to_user] ERROR sending to user={user_id}: {e}")
 
 
-async def push_chat_message(user_id: str, message: str):
+async def push_chat_message(
+    user_id: str,
+    message: str,
+    subnode: str | None = None,
+):
     """
-    Sends a full assistant message (non-streamed) to the user,
-    followed by a 'done' event so the client updates cleanly.
+    Sends a full assistant message (non-streamed) to the user.
+    Explicitly marked as FINAL/REPLACE to avoid streaming confusion.
     """
     if sio is None:
         print("⚠ push_chat_message: Socket.IO not registered")
@@ -87,8 +91,24 @@ async def push_chat_message(user_id: str, message: str):
     if not sid:
         return
 
+    payload = {
+        "role": "chatbot",
+        "content": message,
+        "mode": "replace",   # 🔥 DIT is de sleutel
+        "subnode": subnode,
+    }
+
     try:
-        await sio.emit("message", {"role": "chatbot", "content": message}, to=sid)
-        await sio.emit("done", {"full_response": message}, to=sid)
+        await sio.emit("message", payload, to=sid)
+        await sio.emit(
+            "done",
+            {
+                "full_response": message,
+                "mode": "replace",
+                "subnode": subnode,
+            },
+            to=sid,
+        )
     except Exception as e:
         print(f"❌ push_chat_message ERROR for user={user_id}: {e}")
+
