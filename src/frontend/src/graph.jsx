@@ -194,6 +194,7 @@ export default function Graph({ data, width }) {
       setCenterNodeId(Number(node.id));
       setSelectedNode(node);
       centerNodeInView(node);
+      sendNodeSelection(node.id);
     },
     [setCenterNodeId, setSelectedNode]
   );
