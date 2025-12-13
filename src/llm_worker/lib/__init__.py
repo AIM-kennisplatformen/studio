@@ -4,6 +4,9 @@ from lib.tools import MCPToolLoader
 from lib.settings import ClientType, ModelConfig
 from lib.llm import LLMClient
 
+from dotenv import load_dotenv
+load_dotenv()
+
 __all__ = [
     "LLMClient",
     "MCPToolReference",
@@ -14,3 +17,5 @@ __all__ = [
     "ClientType",
     "ModelConfig",
 ]
+
+

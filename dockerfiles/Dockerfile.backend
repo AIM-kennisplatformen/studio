@@ -1,0 +1,21 @@
+# ==========================================
+# Single-stage Pixi-based Dockerfile
+# ==========================================
+FROM ghcr.io/prefix-dev/pixi:latest
+
+WORKDIR /app
+
+# Copy project definition
+COPY pyproject.toml .
+COPY pixi.lock .
+
+# Solve + install environment inside the container
+RUN pixi install --frozen
+
+# Copy your actual application code
+COPY src ./src
+
+EXPOSE 10090
+
+# Default: pixi-run python service
+CMD ["pixi", "run", "python", "-m", "uvicorn", "src.backend.main:app", "--host", "0.0.0.0", "--port", "10090"]

@@ -1,186 +1,325 @@
-# Studio App
+# **Studio App**
 
-This repo contains a self-contained deploy-ready studio app. Although most components are imported, like the chat-ui ([Librechat](https://www.librechat.ai/)). 
+This repository contains a complete custom Studio application composed of:
 
-There is still some custom source-code for the MCP & RAG server (Todo!), which fetches from our custom databases.
+* **Frontend** — `src/frontend`
+* **MCP Server** — `src/mcp_servers`
+* **Backend API** — `src/backend`
+* **LLM Worker** — `src/llm_worker`
 
+All components run locally within a **Pixi environment**.
+No LibreChat or Docker-based workflow is required for development.
 
-## System requirements ...
+---
 
-**These are the requirements for deployment:**
+# 🚀 Features
 
-- NVIDIA cuda capable card (with atleast >= 12 GB VRAM)
+* Modular architecture with isolated components
+* Custom MCP server with optional Zotero + Qdrant vector search
+* Pluggable LLM worker (Ollama or OpenAI-compatible providers such as Nebius)
+* Fully custom frontend build pipeline
+* Optional OAuth (Authentik)
+* Optional telemetry (Langfuse)
 
-- Docker with nvidia-container toolkit configured: [See this guide from Nvidia ...](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+---
 
-- Intel/AMD x86_64 capable machine
+# 🖥️ System Requirements
 
-- Linux (preferably debian-based)
+## Development Requirements
 
-**These are the requirements for developing:**
+* Linux, macOS, or Windows
+* Intel/AMD x86_64 or ARM 64-bit
+* **Pixi** installed → [https://pixi.sh/latest/installation/](https://pixi.sh/latest/installation/)
+* No GPU required unless running local inference
 
-- Intel/AMD x86_64 or ARM 64-bit capable machine
+## Optional — GPU Local Inference
 
-- Linux/Windows/Mac are supported
+If you plan to run large models locally via Ollama:
 
-**Why does this matter?** 
+* NVIDIA GPU ≥ 12GB VRAM recommended
+* CUDA-compatible drivers
+* Ollama installed
 
-**If you're only working with the python source-code and don't need LLM inference** -> You can run the app within pixi environment without touching cuda. 
+---
 
-**But if you need to have LLM inference** -> you'll have to run the deploy config using docker compose.
+# 📁 Project Structure
 
-## Getting started for development
-Three steps:
+```
+src/
+  frontend/        # Custom UI
+  mcp_servers/     # MCP server implementation
+  backend/         # Backend API orchestrator
+  llm_worker/      # LLM inference worker
+```
 
-1. [Install Pixi on your computer, if you haven't already](https://pixi.sh/latest/installation/)
+---
 
-2. Open a terminal window, browse to the root of this repo. And run:
-```bash
+# 🔧 Configuration Files
+
+Two configuration files must be created before the system can run:
+
+### 1. `.env`
+
+```
+cp .env.sample .env
+```
+
+### 2. `llm_worker_config.toml`
+
+```
+cp llm_worker_config.sample.toml llm_worker_config.toml
+```
+
+Both must be fully configured before starting the system.
+
+---
+
+# 📑 Environment Variables (`.env`)
+
+Below is the full explanation of every field included in `.env.sample`.
+
+---
+
+## 📚 Zotero (Optional — MCP Paper Search)
+
+Used only if the MCP server needs to query academic papers.
+
+```
+ZOTERO_API_KEY=""
+ZOTERO_LIBRARY_ID=""
+ZOTERO_COLLECTION_ID=""
+```
+
+### Where to find them:
+
+* **API key** → Zotero settings → Feeds/API
+* **Library ID** → URL:
+  `https://www.zotero.org/groups/<library_id>/<name>/library`
+* **Collection ID** → URL:
+  `https://.../collections/<collection_id>/collection`
+
+Leave blank if not using Zotero.
+
+---
+
+## 🗂️ Qdrant Vector Database
+
+Used for document embeddings / semantic search.
+
+```
+QDRANT_URL="http://127.0.0.1"
+QDRANT_PORT=6333
+```
+
+Defaults are correct for local Qdrant.
+
+---
+
+## 🌐 Backend URL
+
+This URL is used internally by the frontend and MCP server to reach the backend.
+
+```
+BACKEND_BASE_URL=http://127.0.0.1:8090
+```
+
+---
+
+## 🤖 LLM Worker URL
+
+The backend sends inference jobs to the worker.
+
+```
+LLM_WORKER_URL=http://127.0.0.1:8002
+```
+
+Match this to your worker port.
+
+---
+
+## 🔐 Optional — Authentik OAuth Login
+
+If your frontend uses OAuth:
+
+```
+OAUTH_CLIENT_ID=
+OAUTH_CLIENT_SECRET=
+OAUTH_DISCOVERY_URL=https://<authentik_url>/application/o/<app_name>/.well-known/openid-configuration
+```
+
+Leave unused if not using OAuth.
+
+---
+
+## 📊 Optional — Langfuse Telemetry
+
+If you want tracing / prompt analytics:
+
+```
+LANGFUSE_SECRET_KEY=""
+LANGFUSE_PUBLIC_KEY=""
+LANGFUSE_HOST=""
+```
+
+---
+
+## ✔️ Minimal Working `.env` Example
+
+For a simple local dev environment:
+
+```dotenv
+QDRANT_URL="http://127.0.0.1"
+QDRANT_PORT=6333
+
+BACKEND_BASE_URL=http://127.0.0.1:8090
+LLM_WORKER_URL=http://127.0.0.1:8002
+```
+
+---
+
+# ⚙️ LLM Worker Configuration (`llm_worker_config.toml`)
+
+This config controls the LLM provider and model used by the worker.
+
+---
+
+## **Default: Local Ollama Setup**
+
+```toml
+[llm]
+client_type = "ollama"
+model_type = "qwen2.5:7b"
+max_tokens = 1000
+host = "http://localhost:11434/v1"
+api_key = "ollama"
+mcp_server = "http://localhost:8000/sse"
+```
+
+### Requirements:
+
+```
+ollama serve
+ollama pull qwen2.5:7b
+```
+
+---
+
+## **Alternative: OpenAI-Compatible Provider (Nebius, OpenAI, Groq, etc.)**
+
+```toml
+[llm]
+client_type = "ollama"
+model_type = "Qwen/Qwen3-32b"
+host = "https://api.studio.nebius.ai/v1"
+api_key = "<YOUR-NEBIUS-API-KEY>"
+max_tokens = 1000
+mcp_server = "http://localhost:8000/sse"
+```
+
+Change these for your provider:
+
+* `client_type = "openai"`
+* `model_type` → provider model name
+* `host` → provider’s API endpoint
+* `api_key` → provider API key
+
+---
+
+# 🏗️ Development Workflow
+
+**Run all commands inside a Pixi shell:**
+
+```
 pixi shell
 ```
 
-3. Open any editor, you would like to use from this windows (*except pycharm):
+Then follow this order:
 
-e.g. vscode (you might need to add to path in Mac OS -> CTRL+SHIFT+P -> Add to path): 
-```bash
-code .
-```
+---
 
-## Getting started for deployment (debian)
-1. Check if deployment machine has Nvidia GPU and drivers installed, it should show something like this when running `nvidia-smi`:
-```bash
-~/studio$ nvidia-smi
-Wed Oct  1 11:24:38 2025       
-+---------------------------------------------------------------------------------------+
-| NVIDIA-SMI 535.216.01             Driver Version: 535.216.01   CUDA Version: 12.2     |
-|-----------------------------------------+----------------------+----------------------+
-| GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
-| Fan  Temp   Perf          Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |
-|                                         |                      |               MIG M. |
-|=========================================+======================+======================|
-|   0  NVIDIA GeForce RTX 4080        Off | 00000000:01:00.0 Off |                  N/A |
-|  0%   39C    P8              15W / 320W |      1MiB / 16376MiB |      0%      Default |
-|                                         |                      |                  N/A |
-+-----------------------------------------+----------------------+----------------------+
-                                                                                         
-+---------------------------------------------------------------------------------------+
-| Processes:                                                                            |
-|  GPU   GI   CI        PID   Type   Process name                            GPU Memory |
-|        ID   ID                                                             Usage      |
-|=======================================================================================|
-|  No running processes found                                                           |
-+---------------------------------------------------------------------------------------+
+## **1. Build the Frontend**
 
 ```
-If command unrecognized? -> [Nvidia driver wiki debian](https://wiki.debian.org/NvidiaGraphicsDrivers)
-
-2. Prepare environment:
-    1. Place your typedb exported: knowledgeplatform-data.tar.gz file in data/ folder (create folder if it doesn't exist).
-    
-    2. Copy .env.sample to .env
-    
-    3. Copy librechat.variant.han.yaml to librechat.yaml
-
-3. Install docker & docker-container-toolkit (if you haven't already):
-
-```bash
-# Add Docker's official GPG key:
-sudo apt-get update
-sudo apt-get install ca-certificates curl
-sudo install -m 0755 -d /etc/apt/keyrings
-sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-# Add the repository to Apt sources:
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-# Do the same for Nvidia container toolkit
-curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
-  && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
-    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
-    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
-sudo apt-get update
-# Install both docker and the toolkit
-export NVIDIA_CONTAINER_TOOLKIT_VERSION=1.17.8-1
-  sudo apt-get install -y \
-      nvidia-container-toolkit=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \
-      nvidia-container-toolkit-base=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \
-      libnvidia-container-tools=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \
-      libnvidia-container1=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \
-      docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+pixi run frontend_build
 ```
 
-4. After installation run the docker-container-toolkit config command:
+Compiles frontend assets.
 
-```bash
-sudo nvidia-ctk runtime configure --runtime=docker
-# Restart docker
-sudo systemctl restart docker
-```
+---
 
-5. Now start the containers, by running in root of cloned repo:
-
-```bash
-sudo docker compose up
-```
-
-6. If running for first time, you need to download the llm model manually, till it's patched into toolchain. You do this by opening another window or ssh session and run:
-
-```bash
-sudo docker exec --it studio-ollama-1 bash
-```
-
-This opens a shell inside the ollama container and pull the model using the ollama pull command:
-
-```bash
-ollama pull gpt-oss:20b
-```
-
-Wait till it's finished, after its done, close the shell and continue the guide.
-
-```bash
-exit
-```
-
-7. Open a webbrowser and head to: ```http://<IP_ADDR>:3080```. Register for account and login. 
-
-8. To use the gpt-oss model:
-
-![Model selection window in librechat](docs/figures/model_selection.png)
-Now you can also register the MCP server and you should be done.
-
-9. Register the MCP server:
-
-![Mcp server selection window in librechat](docs/figures/mcp_server_selection.png)
-
-You should now be able to ask something about your hours (in Dutch or English):
+## **2. Start the MCP Server**
 
 ```
-Can you give me a weekly summary of my hours in 2024? My e-mail is: example@example.com 
+pixi run mcp_server
 ```
 
-## Some implementation details
+This must start before the worker and backend.
 
-This project uses the librechat ui interface, which also calls the LLM engine. Although custom frontend was suggested, for now this is easily accesible way to get the information we need atm. 
+---
 
-Librechat supports both the MCP protocol and qdrant vector database protocol and is configurable using the `librechat.yaml` configuraton file.
+## **3. Start the LLM Worker**
 
-Docker is used to deploy it quickly, it now contains:
+```
+pixi run llm_worker
+```
 
-- MCP server (src code in src/studio) (debian container, which runs the python script) listening on 0.0.0.0@8000
+Handles inference and communicates with the MCP server.
 
-- TypeDB 2.29 server: Runs typedb server with custom hook that initializes the DB on first setup by importing `data/knowledgeplatform-data.tar.gz`. Listens on 0.0.0.0@1729
+---
 
-- Ollama inference engine: Nvidia edition ollama listens on 0.0.0.0@11434
+## **4. Start the Backend**
 
-- RAG server: (Librechat provided, todo replace/make compatible). Listens on 0.0.0.0@8000 (should be changed)
+```
+pixi run backend_no_docker
+```
 
-- Mongo -> for chat history, listens on deamon mode
+This is the API core that coordinates all components.
 
-- VectorDB: (vectordb) -> listens on daemon mode
+---
 
-- Librechat webui -> listens on 0.0.0.0@3080
+# 🔄 Startup Summary
 
-The MCP server source code is in src/studio.
+| Order | Component               | Command                      |
+| ----- | ----------------------- | ---------------------------- |
+| 1     | **Frontend Build**      | `pixi run frontend_build`    |
+| 2     | **MCP Server**          | `pixi run mcp_server`        |
+| 3     | **LLM Worker**          | `pixi run llm_worker`        |
+| 4     | **Backend (No Docker)** | `pixi run backend_no_docker` |
+
+---
+
+# 🧪 First-Run Checklist
+
+Before running everything:
+
+✔ `.env` created and filled
+✔ `llm_worker_config.toml` filled
+✔ Qdrant running (optional)
+✔ Ollama running if using local inference
+✔ MCP server reachable
+✔ Ports not in use
+
+---
+
+# ❓ Troubleshooting
+
+### Worker cannot connect to MCP Server
+
+Check:
+
+* `mcp_server` URL in `llm_worker_config.toml`
+* MCP is running before worker
+
+### Backend cannot reach worker
+
+Check:
+
+* `LLM_WORKER_URL` in `.env`
+
+### Frontend calls fail
+
+Check:
+
+* `BACKEND_BASE_URL` in `.env`
+
+---

@@ -6,6 +6,7 @@ import {
   applyNodeChanges,
   useReactFlow,
 } from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 import { CustomNode } from "./components/CustomNode";
 import { SolidEdge } from "./components/CustomEdge";
 import { getEdgeHandles } from "./lib/graphUtils";
@@ -19,6 +20,7 @@ import {
   centerNodeAtom,
   layoutNodesAtom,
 } from "./data/atoms";
+import { sendNodeSelection } from "./data/api";
 
 export default function Graph({ data, width }) {
   const [nodes, setNodes] = useAtom(nodesAtom);

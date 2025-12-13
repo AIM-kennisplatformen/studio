@@ -18,12 +18,13 @@ class ModelType(str, Enum):
     QWEN3 = "qwen3:8b-q8_0"
     CODELLAMA34B = "codellama:34b"
     PHI4 = "phi4"
-
+    QWEN3_32B = "Qwen/Qwen3-32B"
 
 class ModelConfig(BaseModel):
     client_type: ClientType
     model_type: ModelType
     host: Optional[HttpUrl] = HttpUrl("http://localhost:11434")
+    api_key: Optional[str] = "ollama"
     allowed_tools: Optional[List[str]] = None
     max_tokens: int = 1000
 

@@ -1,0 +1,19 @@
+FROM ghcr.io/prefix-dev/pixi:latest
+
+WORKDIR /app
+
+# Copy project definition
+COPY pyproject.toml .
+COPY pixi.lock .
+
+# Install Pixi environment inside the container
+RUN pixi install --frozen
+
+# Copy source code
+COPY src ./src
+
+# Copy the LLM worker config file
+COPY llm_worker_config.toml .
+
+# Default command
+CMD ["pixi", "run", "python", "src/llm_worker/main.py"]

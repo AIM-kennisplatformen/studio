@@ -214,3 +214,5 @@ client/
 data/*
 ollama/
 .DS_Store
+kg/
+llm_worker_config.toml
