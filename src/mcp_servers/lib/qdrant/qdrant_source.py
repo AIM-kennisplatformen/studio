@@ -30,7 +30,7 @@ class QdrantSource:
             embedding = self.embedding_model.encode(
                 [query_text], convert_to_numpy=True, normalize_embeddings=True
             )[0]
-            results = self.qdrant.search(
+            results = self.qdrant.search( # type: ignore[attr-defined]
                 collection_name=self.collection,
                 query_vector=embedding.tolist(),
                 limit=limit,
@@ -55,7 +55,7 @@ class QdrantSource:
             ]
         )
 
-        results = self.qdrant.search(
+        results = self.qdrant.search( # type: ignore[attr-defined]
             collection_name=self.collection,
             query_vector=embedding.tolist(),
             limit=limit,
