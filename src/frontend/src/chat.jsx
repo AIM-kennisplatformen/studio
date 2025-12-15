@@ -18,7 +18,6 @@ import {
 
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
-  chatIdAtom,
   messagesAtom,
   textAtom,
   textStatusAtom,
@@ -31,7 +30,7 @@ export default function Chat() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* Messages container */}
-      <div className="flex flex-col overflow-y-auto justify-end p-4 flex-1 pb-5">
+      <div className="flex flex-col overflow-y-auto p-4 flex-1 pb-5">
         <Messages />
       </div>
 
@@ -44,7 +43,6 @@ export default function Chat() {
 }
 
 function InputArea() {
-  const chatId = useAtomValue(chatIdAtom);  // preserved if you need it
   const [text, setText] = useAtom(textAtom);
   const [status, setStatus] = useAtom(textStatusAtom);
   const setMessages = useSetAtom(messagesAtom);
@@ -104,7 +102,7 @@ function Messages() {
 
   return (
     <Conversation>
-      <ConversationContent className="flex flex-col overflow-y-auto">
+      <ConversationContent className="flex flex-col justify-end overflow-y-auto h-full">
         {[...messages].reverse().map(({ key, value, name }) =>
           name === "chatbot" ? (
             <div key={key} className="flex items-start gap-2 justify-start pr-20">
