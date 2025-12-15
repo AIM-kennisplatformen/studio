@@ -26,6 +26,18 @@ SUBNODE_MAP = {
 
 SUBNODES = list(SUBNODE_MAP.values())
 
+def strip_think(text: str) -> str:
+    while True:
+        start = text.find("<think>")
+        if start == -1:
+            break
+        end = text.find("</think>", start)
+        if end == -1:
+            text = text[:start]
+            break
+        text = text[:start] + text[end + len("</think>"):]
+    return text.strip()
+
 
 # =====================================================
 # Per-user Graph Context
@@ -78,6 +90,10 @@ async def prefetch_subnode(user_id: str, question: str, subnode: str):
 
         resp.raise_for_status()
         answer = resp.json().get("llm", "")
+        answer = strip_think(answer)
+
+        ctx["prefetched"][subnode] = answer
+
 
         # Store prefetch result
         ctx["prefetched"][subnode] = answer
@@ -97,7 +113,6 @@ async def prefetch_subnode(user_id: str, question: str, subnode: str):
 # =====================================================
 # Graph Node Selection Endpoint
 # =====================================================
-
 @graph_router.post("/nodes/{node_id}/context")
 async def get_node_context(
     node_id: int,

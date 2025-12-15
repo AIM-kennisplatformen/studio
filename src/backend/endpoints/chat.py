@@ -160,48 +160,53 @@ async def send_message(sid, data):
 
         buffer += token
 
-        while True:
-            if inside_think:
-                end = buffer.find("</think>")
-                if end == -1:
-                    # Still inside <think>, discard buffer safely
-                    buffer = buffer[-8:]  # keep tail for boundary detection
-                    break
-                # Exit think block
-                buffer = buffer[end + 8 :]
-                inside_think = False
-                continue
+    buffer += token
+    THINK_OPEN = "<think>"
+    THINK_CLOSE = "</think>"
+    MAX_TAG_LEN = max(len(THINK_OPEN), len(THINK_CLOSE))  # 8
 
-            else:
-                start = buffer.find("<think>")
-                if start == -1:
-                    # No think tag → emit everything except safety tail
-                    safe_len = max(0, len(buffer) - 7)
-                    output = buffer[:safe_len]
-                    buffer = buffer[safe_len:]
+    while True:
+        if inside_think:
+            end = buffer.find(THINK_CLOSE)
+            if end == -1:
+                # Keep only enough buffer to detect closing tag
+                buffer = buffer[-MAX_TAG_LEN:]
+                break
+            buffer = buffer[end + len(THINK_CLOSE):]
+            inside_think = False
+            continue
 
-                    if output:
-                        full_response += output
-                        await sio.emit(
-                            "message",
-                            {"role": "chatbot", "content": output},
-                            to=sid,
-                        )
-                    break
-                else:
-                    # Emit content before <think>
-                    output = buffer[:start]
-                    if output:
-                        full_response += output
-                        await sio.emit(
-                            "message",
-                            {"role": "chatbot", "content": output},
-                            to=sid,
-                        )
+        else:
+            start = buffer.find(THINK_OPEN)
+            if start == -1:
+                # Only emit text that cannot be part of a future <think>
+                emit_len = max(0, len(buffer) - MAX_TAG_LEN)
+                if emit_len:
+                    output = buffer[:emit_len]
+                    buffer = buffer[emit_len:]
 
-                    buffer = buffer[start + 7 :]
-                    inside_think = True
-                    continue
+                    full_response += output
+                    await sio.emit(
+                        "message",
+                        {"role": "chatbot", "content": output},
+                        to=sid,
+                    )
+                break
+
+            # Emit everything before <think>
+            if start > 0:
+                output = buffer[:start]
+                full_response += output
+                await sio.emit(
+                    "message",
+                    {"role": "chatbot", "content": output},
+                    to=sid,
+                )
+
+            buffer = buffer[start + len(THINK_OPEN):]
+            inside_think = True
+            continue
+
     # --------------------------------------------------
     # Kick off subnode prefetch (background)
     # --------------------------------------------------
