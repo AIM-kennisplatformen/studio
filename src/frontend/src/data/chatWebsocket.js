@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useAtom } from "jotai";
+import { useSetAtom } from "jotai";
 import { messagesAtom } from "./atoms";
 import { io } from "socket.io-client";
 
 const SOCKET_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
 export function useChatWebSocket(setStatus) {
-  const [messages, setMessages] = useAtom(messagesAtom);
+  const setMessages = useSetAtom(messagesAtom);
   const socketRef = useRef(null);
 
   const streamingKeyRef = useRef(null);
