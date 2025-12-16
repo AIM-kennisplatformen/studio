@@ -6,6 +6,7 @@ import {
   PromptInputTextarea,
   PromptInputToolbar,
 } from "@/components/shadcn-io/ai/prompt-input";
+import { FeedbackButton } from "@/components/FeedbackButton";
 
 import { Response } from "@/components/shadcn-io/ai/response";
 import { Message, MessageContent } from "@/components/shadcn-io/ai/message";
@@ -28,19 +29,29 @@ import { useRef, useEffect } from "react";
 
 export default function Chat() {
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col min-h-full">
       {/* Messages container */}
-      <div className="flex flex-col overflow-y-auto p-4 flex-1 pb-5">
+      <div className="flex flex-col flex-1 overflow-y-auto p-4 ">
         <Messages />
       </div>
 
-      {/* Sticky bottom input bar */}
-      <div className="w-full bg-white border-t sticky bottom-0 z-10">
-        <InputArea />
+      {/* Bottom row: Feedback button + InputArea */}
+      <div className="flex">
+        {/* Left-side Feedback Button */}
+        <div className="flex flex-col justify-end -ml-22 pb-18">
+          <FeedbackButton />
+        </div>
+
+        {/* Input area takes full remaining width */}
+        <div className="flex-1 -ml-9" >
+          <InputArea />
+        </div>
       </div>
     </div>
   );
 }
+
+
 
 function InputArea() {
   const [text, setText] = useAtom(textAtom);
