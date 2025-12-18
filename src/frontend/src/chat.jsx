@@ -67,9 +67,9 @@ function InputArea() {
 
     // Add user message instantly
     setMessages((prev) => [
-            ...prev,
-
       { key: prev.length + 1, value: text, name: "user" },
+        ...prev,
+
     ]);
 
     // Update UI state
@@ -115,7 +115,10 @@ function Messages() {
   return (
     <div className="flex flex-col h-full">
     <Conversation>
-      <ConversationContent className="flex flex-col-reverse overflow-y-auto h-full gap-4">
+      <ConversationContent className="flex flex-col overflow-y-auto h-full gap-4">
+        <div className="h-full background-green">
+
+        </div>
         {[...messages].reverse().map(({ key, value, name }) =>
           name === "chatbot" ? (
             <div key={key} className="flex items-start gap-2 justify-start pr-20">
