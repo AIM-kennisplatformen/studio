@@ -29,21 +29,21 @@ import { useRef, useEffect } from "react";
 
 export default function Chat() {
   return (
-    <div className="flex flex-col min-h-full">
-      {/* Messages container */}
-      <div className="flex flex-col flex-1 overflow-y-auto p-4 ">
+    <div className="flex flex-col h-screen bg-white">
+      {/* Messages container - scrollable */}
+      <div className="flex-1 overflow-y-auto p-4">
         <Messages />
       </div>
 
-      {/* Bottom row: Feedback button + InputArea */}
-      <div className="flex">
+      {/* Bottom row: Feedback button + InputArea - sticky at bottom */}
+      <div className="flex border-t border-gray-200 bg-white">
         {/* Left-side Feedback Button */}
         <div className="flex flex-col justify-end -ml-22 pb-18">
           <FeedbackButton />
         </div>
 
         {/* Input area takes full remaining width */}
-        <div className="flex-1 -ml-9" >
+        <div className="flex-1 -ml-9">
           <InputArea />
         </div>
       </div>
@@ -67,8 +67,9 @@ function InputArea() {
 
     // Add user message instantly
     setMessages((prev) => [
+            ...prev,
+
       { key: prev.length + 1, value: text, name: "user" },
-      ...prev,
     ]);
 
     // Update UI state
@@ -112,8 +113,9 @@ function Messages() {
   }, [messages]);
 
   return (
+    <div className="flex flex-col h-full">
     <Conversation>
-      <ConversationContent className="flex flex-col justify-end overflow-y-auto h-full">
+      <ConversationContent className="flex flex-col-reverse overflow-y-auto h-full gap-4">
         {[...messages].reverse().map(({ key, value, name }) =>
           name === "chatbot" ? (
             <div key={key} className="flex items-start gap-2 justify-start pr-20">
@@ -142,5 +144,6 @@ function Messages() {
 
       <ConversationScrollButton className="text-white hover:text-white" />
     </Conversation>
+    </div>
   );
 }
