@@ -141,8 +141,6 @@ function Messages() {
 
         <div ref={bottomRef} />
       </ConversationContent>
-
-      <ConversationScrollButton className="text-white hover:text-white" />
     </Conversation>
     </div>
   );
