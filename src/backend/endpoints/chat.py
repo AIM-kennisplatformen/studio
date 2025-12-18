@@ -85,7 +85,6 @@ async def disconnect(sid):
 # =====================================================
 # MAIN MESSAGE HANDLER
 # =====================================================
-
 @sio.event
 async def send_message(sid, data):
     user_id = sid_connections.get(sid)
@@ -108,107 +107,119 @@ async def send_message(sid, data):
         "Provide an evidence-informed explanation when possible.\n"
     )
 
-    async with httpx.AsyncClient(timeout=httpx.Timeout(300)) as client:
-        worker_url = f"{LLM_WORKER_URL}:{LLM_WORKER_PORT}"
+    worker_url = f"{LLM_WORKER_URL}:{LLM_WORKER_PORT}"
 
-        resp = await client.post(
+    full_response = ""
+
+    # --------------------------------------------------
+    # THINK-TAG STREAM STATE
+    # --------------------------------------------------
+    THINK_OPEN = "<think>"
+    THINK_CLOSE = "</think>"
+    MAX_TAG_LEN = max(len(THINK_OPEN), len(THINK_CLOSE))
+
+    inside_think = False
+    buffer = ""
+
+    async with httpx.AsyncClient(timeout=None) as client:
+        async with client.stream(
+            "POST",
             f"{worker_url}/ask_stream",
             json={
                 "chat_id": "default",
                 "message": synthetic_prompt,
                 "user_id": user_id,
             },
-        )
+        ) as resp:
 
-    if resp.status_code != 200:
-        await sio.emit(
-            "message",
-            {"role": "chatbot", "content": "Error: worker unavailable"},
-            to=sid,
-        )
-        return
-
-    full_response = ""
-
-    # --------------------------------------------------
-    # THINK-TAG STATE (important!)
-    # --------------------------------------------------
-    inside_think = False
-    buffer = ""
-
-    async for line in resp.aiter_lines():
-        if not line.startswith("data:"):
-            continue
-
-        raw = line.removeprefix("data:").strip()
-
-        if raw == "[DONE]":
-            await sio.emit("done", {"full_response": full_response}, to=sid)
-            break
-
-        try:
-            payload = json.loads(raw)
-        except json.JSONDecodeError:
-            continue
-
-        if payload.get("type") != "on_chat_model_stream":
-            continue
-
-        token = payload.get("data", "")
-        if not token:
-            continue
-
-        buffer += token
-
-    buffer += token
-    THINK_OPEN = "<think>"
-    THINK_CLOSE = "</think>"
-    MAX_TAG_LEN = max(len(THINK_OPEN), len(THINK_CLOSE))  # 8
-
-    while True:
-        if inside_think:
-            end = buffer.find(THINK_CLOSE)
-            if end == -1:
-                # Keep only enough buffer to detect closing tag
-                buffer = buffer[-MAX_TAG_LEN:]
-                break
-            buffer = buffer[end + len(THINK_CLOSE):]
-            inside_think = False
-            continue
-
-        else:
-            start = buffer.find(THINK_OPEN)
-            if start == -1:
-                # Only emit text that cannot be part of a future <think>
-                emit_len = max(0, len(buffer) - MAX_TAG_LEN)
-                if emit_len:
-                    output = buffer[:emit_len]
-                    buffer = buffer[emit_len:]
-
-                    full_response += output
-                    await sio.emit(
-                        "message",
-                        {"role": "chatbot", "content": output},
-                        to=sid,
-                    )
-                break
-
-            # Emit everything before <think>
-            if start > 0:
-                output = buffer[:start]
-                full_response += output
+            if resp.status_code != 200:
                 await sio.emit(
                     "message",
-                    {"role": "chatbot", "content": output},
+                    {"role": "chatbot", "content": "Error: worker unavailable"},
                     to=sid,
                 )
+                await sio.emit("done", to=sid)
+                return
 
-            buffer = buffer[start + len(THINK_OPEN):]
-            inside_think = True
-            continue
+            async for line in resp.aiter_lines():
+                if not line.startswith("data:"):
+                    continue
+
+                raw = line.removeprefix("data:").strip()
+
+                if raw == "[DONE]":
+                    break
+
+                try:
+                    payload = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+
+                if payload.get("type") != "on_chat_model_stream":
+                    continue
+
+                token = payload.get("data", "")
+                if not token:
+                    continue
+
+                buffer += token
+
+                # ------------------------------------------
+                # STREAM-SAFE THINK-TAG FILTER
+                # ------------------------------------------
+                while True:
+                    if inside_think:
+                        end = buffer.find(THINK_CLOSE)
+                        if end == -1:
+                            buffer = buffer[-MAX_TAG_LEN:]
+                            break
+
+                        buffer = buffer[end + len(THINK_CLOSE):]
+                        inside_think = False
+                        continue
+
+                    start = buffer.find(THINK_OPEN)
+                    if start == -1:
+                        emit_len = max(0, len(buffer) - MAX_TAG_LEN)
+                        if emit_len:
+                            output = buffer[:emit_len]
+                            buffer = buffer[emit_len:]
+
+                            full_response += output
+                            await sio.emit(
+                                "message",
+                                {"role": "chatbot", "content": output},
+                                to=sid,
+                            )
+                        break
+
+                    if start > 0:
+                        output = buffer[:start]
+                        full_response += output
+                        await sio.emit(
+                            "message",
+                            {"role": "chatbot", "content": output},
+                            to=sid,
+                        )
+
+                    buffer = buffer[start + len(THINK_OPEN):]
+                    inside_think = True
 
     # --------------------------------------------------
-    # Kick off subnode prefetch (background)
+    # FLUSH REMAINDER
+    # --------------------------------------------------
+    if buffer and not inside_think:
+        full_response += buffer
+        await sio.emit(
+            "message",
+            {"role": "chatbot", "content": buffer},
+            to=sid,
+        )
+
+    await sio.emit("done", {"full_response": full_response}, to=sid)
+
+    # --------------------------------------------------
+    # BACKGROUND PREFETCH
     # --------------------------------------------------
     for subnode in SUBNODES:
         if subnode not in ctx["pending"] and subnode not in ctx["prefetched"]:
@@ -220,10 +231,6 @@ async def send_message(sid, data):
                 )
             )
 
-
-    # --------------------------------------------------
-    # Store clean response
-    # --------------------------------------------------
     ctx["prefetched"]["root"] = full_response
     session["history"].append(
         {"role": "assistant", "message": full_response}
