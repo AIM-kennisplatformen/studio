@@ -14,7 +14,6 @@ import { Message, MessageContent } from "@/components/shadcn-io/ai/message";
 import {
   Conversation,
   ConversationContent,
-  ConversationScrollButton,
 } from "@/components/shadcn-io/ai/conversation";
 
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
@@ -26,6 +25,7 @@ import {
 
 import { useChatWebSocket } from "./data/chatWebsocket";
 import { useRef, useEffect } from "react";
+import { Reasoning, ReasoningTrigger } from "@/components/shadcn-io/ai/reasoning";
 
 export default function Chat() {
   return (
@@ -106,6 +106,7 @@ function InputArea() {
 
 function Messages() {
   const messages = useAtomValue(messagesAtom);
+  const status = useAtomValue(textStatusAtom);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -116,9 +117,7 @@ function Messages() {
     <div className="flex flex-col h-full">
     <Conversation>
       <ConversationContent className="flex flex-col overflow-y-auto h-full gap-4">
-        <div className="h-full background-green">
-
-        </div>
+        <div className="flex-1"></div>
         {[...messages].reverse().map(({ key, value, name }) =>
           name === "chatbot" ? (
             <div key={key} className="flex items-start gap-2 justify-start pr-20">
@@ -140,8 +139,17 @@ function Messages() {
               </MessageContent>
             </Message>
           )
+          
         )}
-
+          {status === "streaming" && (
+            <div>
+              <Reasoning isStreaming={status === "streaming"}>
+                <ReasoningTrigger style={{ backgroundColor: "transparent", color: "black", border: "none", padding: "0", outline: "none", cursor: "text" }}>
+                  🧠 Thinking...
+                </ReasoningTrigger>
+              </Reasoning>
+            </div>
+          )}
         <div ref={bottomRef} />
       </ConversationContent>
     </Conversation>

@@ -33,8 +33,6 @@ export function useChatWebSocket(setStatus) {
     });
 
     socket.on("message", (data) => {
-      console.log("SOCKET MESSAGE:", data);
-
       if (data.role !== "chatbot") return;
 
       const token = data.content || "";
@@ -52,10 +50,19 @@ export function useChatWebSocket(setStatus) {
         streamingKeyRef.current = newKey;
 
         return [
-          { key: newKey, name: "chatbot", value: token },
+          { key: newKey, name: "chatbot", value: token, reasoning: null },
           ...prev,
         ];
       });
+    });
+
+    socket.on("event", (payload) => {
+      if (payload.data === "") {
+        setStatus("streaming");
+      }
+      else {
+        setStatus("ready");
+      }
     });
 
     socket.on("done", () => {
