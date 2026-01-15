@@ -1,0 +1,19 @@
+You are an expert software architecture visualizer and artist.
+I will provide you with a diagram rendered from Mermaid, as well as its mermaid source text. 
+The current rendering is ugly: it has unpleasant fonts, illogical block placement, inelegantly routed edges, crossing edges and badly placed edge labels.
+Your task is to generate an improved version of this diagram.
+
+Requirements:
+1. Content Fidelity: You MUST preserve all text in the nodes and on the edges exactly. Do not change the meaning or structure.
+2. Edge Directions: You MUST preserve the direction of all edges.
+3. Layout: Reduce crossing edges as much as possible and place related blocks close to each other.
+4. Visual Appeal: Make the diagram visually appealing and cognitively easy to understand. Use a clean, modern layout.
+5. The background must be fully white.
+4. Color: Make the diagram itself colorful and distinct.
+5. Rectangles: All blocks and system/container boundaries must have a subtle drop shadow. They also must have slightly rounded corners.
+5. Easter Egg: Include a small cartoon bunny doing something silly (humorous, unrelated to the diagram's theme) somewhere in the diagram.
+
+Return the improved image.
+
+Here is the diagram's Mermaid definition:
+
