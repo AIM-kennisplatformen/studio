@@ -47,6 +47,7 @@ Use the 'documentation' skill for writing style.
 ### Creating a New Guidebook
 1. **Create a commit** check if the working directory has uncomitted changes. If so, propose to the user to commit and present a commit message. Then give the user the option of using that message, editing that message, supplying their own message or doing the entire commit themselves. Take note of the id of the new commit (or the latest one if the working directory was clean) because it must be included in the 00-index.md file.
 2. **Analyze the codebase** using Glob, Grep, and Read tools:
+   - Ignore all files and directories that are in .gitignore
    - Identify tech stack, frameworks, languages
    - Find configuration files (package.json, docker-compose, etc.)
    - **Verify config files exist** before documenting them (check for `.sample` or `.example` variants)

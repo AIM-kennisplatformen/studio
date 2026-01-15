@@ -46,6 +46,7 @@ Simon Brown warns against "overly long and detailed documents that nobody ever r
 
 > A living document describing the architecture and design of [Project Name].
 > Last updated: [DATE]
+> Commit: [COMMIT_ID](GITHUB_COMMIT_URL)
 
 ## About This Guidebook
 

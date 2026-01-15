@@ -9,20 +9,17 @@ description: Mermaid -> PNG. Given a diagram written in Mermaid, this skill will
 
 Use this skill to improve diagrams that are written with Mermaid syntax. 
 
-The API key must be set via the `OPENROUTER_API_KEY` environment variable.
+The API key must be set via the `OPENROUTER_KEY` environment variable.
 
 ## Workflow
 
 1. Check if the environment variable OPENROUTER_KEY has a value. If not, stop with a friendly message.
 1. A filename for a markdown text is provided. In that file, find all Mermaid diagrams.
 2. For each mermaid diagram found:
-   1. If we're running in Roo Code or Claude Code: spawn a subagent for each diagram.
-      - in Roo Code: Use the `new_task` tool with `code` mode to spawn a subagent.
-      - in Claude Code: Use the `Task` tool with the `general-purpose` agent type.
-   2. Extract the full Mermaid text of the diagram. Do not extract the markdown delimiters (e.g. ```markdown etc.)
-   3. Use the improve_diagram.sh script to get an improved version of the diagram as a PNG file. The output image must be placed in the same directory as the markdown file.
-   4. Add the image to the markdown file, immediately after the corresponding Mermaid version of the diagram. DO NOT remove the original Mermaid diagram.
-   5. In the markdown file, place the Mermaid version in a html details section, like this:
+   1. Extract the full Mermaid text of the diagram. Do not extract the markdown delimiters (e.g. ```markdown etc.)
+   2. Use the improve_diagram.sh script to get an improved version of the diagram as a PNG file. The output image must be placed in the same directory as the markdown file.
+   3. Add the image to the markdown file, immediately after the corresponding Mermaid version of the diagram. DO NOT remove the original Mermaid diagram.
+   4. In the markdown file, place the Mermaid version in a html details section, like this:
 	<details>
 	   <summary>original mermaid diagram</summary>
 	   ```mermaid

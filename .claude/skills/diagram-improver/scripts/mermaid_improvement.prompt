@@ -4,7 +4,7 @@ The current rendering is ugly: it has unpleasant fonts, illogical block placemen
 Your task is to generate an improved version of this diagram.
 
 Requirements:
-1. Content Fidelity: You MUST preserve all text in the nodes and on the edges exactly. Do not change the meaning or structure.
+1. Content Fidelity: You MUST preserve all text in the nodes and on the edges exactly. DO NOT change the meaning or structure. DO NOT add nodes or edges that aren't in the original mermaid version.
 2. Edge Directions: You MUST preserve the direction of all edges.
 3. Layout: Reduce crossing edges as much as possible and place related blocks close to each other.
 4. Visual Appeal: Make the diagram visually appealing and cognitively easy to understand. Use a clean, modern layout.
