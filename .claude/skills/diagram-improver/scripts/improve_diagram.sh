@@ -26,8 +26,7 @@ for cmd in curl jq bc file python3; do
 done
 
 # 0. Render Mermaid to Image using mermaid.ink
-echo "Rendering Mermaid diagram via mermaid.ink..."
-echo "  Width: ${RENDER_WIDTH}px"
+echo "Rendering Mermaid diagram via mermaid.ink... (${RENDER_WIDTH}px wide)"
 
 IMAGE_PATH="temp_mermaid_$(date +%s).jpg"
 
@@ -113,7 +112,7 @@ if [[ -z "$WIDTH" || -z "$HEIGHT" ]]; then
     exit 1
 fi
 
-echo "Rendered image: ${WIDTH}x${HEIGHT} pixels"
+echo "-- Mermaid image: ${WIDTH}x${HEIGHT} pixels"
 
 # 2. Aspect Ratio Logic for Nano Banana Pro (Supported: 1:1, 3:2, 2:3, 4:3, 3:4, 16:9, 9:16)
 RATIO=$(echo "scale=2; $WIDTH / $HEIGHT" | bc)
@@ -158,7 +157,7 @@ IMAGE_DATA=$(echo "$response" | jq -r '.choices[0].message.images[0].image_url.u
 
 if [[ $IMAGE_DATA == data:image* ]]; then
     echo "$IMAGE_DATA" | sed 's/data:image\/.*;base64,//' | base64 --decode > "$OUTPUT_PATH"
-    echo "Success! Image saved as $OUTPUT_PATH (Aspect Ratio: $ASPECT)"
+    echo "-- Success! Image saved as $OUTPUT_PATH (Aspect Ratio: $ASPECT)"
 else
     ERROR_MSG=$(echo "$response" | jq -r '.error.message // "Unknown Error"')
     echo "Error: $ERROR_MSG"
