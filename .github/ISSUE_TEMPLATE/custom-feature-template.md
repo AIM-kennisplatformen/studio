@@ -1,11 +1,14 @@
 ---
 name: Custom feature template
-about: Describe this issue template's purpose here.
+about: 'A feature is a user story that directly translates into a single functionality
+  in the codebase. '
 title: ''
 labels: ''
 assignees: ''
 
 ---
+
+## Description
 
 <!--Give a short description of the feature and some context on how it came about-->
 
@@ -19,7 +22,6 @@ Fill in the … in ‘As (S), I want to …’, and keep your Description minima
 For example, ‘As Student (S) I want to read (V) books (O)’.-->
 
 ## Acceptance criteria
-
 
 <!--Specify the acceptance criteria for the feature. Try to make them as concrete as possible.-->
 
