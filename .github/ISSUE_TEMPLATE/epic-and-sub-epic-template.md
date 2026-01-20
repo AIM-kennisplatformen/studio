@@ -1,11 +1,13 @@
 ---
 name: Epic and sub epic template
-about: Describe this issue template's purpose here.
+about: The purpose of this epic is to describe high level (user) value
 title: ''
 labels: ''
 assignees: ''
 
 ---
+
+# Title
 
 ## Description
 
