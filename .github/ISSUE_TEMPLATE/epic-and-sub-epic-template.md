@@ -7,14 +7,18 @@ assignees: ''
 
 ---
 
+## Description
+
+<!--Provide an elaborate description of the context of the epic. Describe the problem space and the solution space. Add relevant literature herre. -->
+
+## So that …
+
 <!--Give a title in User Story format.
 
 Use a Subject Verb Object (SVO) word order (‘Students (S) read (V) books (O)’).
 _S_ are the Stakeholder(s), and do not repeat these in this Description but exclusively list them as Stake Labels.
 Fill in the … in ‘As (S), I want to …’, and keep your Description minimal (e.g., don’t repeat parts that aren't ‘…’).
 For example, ‘As Student (S) I want to read (V) books (O)’.-->
-
-## So that …
 
 ## Attacker Story
 
@@ -23,7 +27,6 @@ For example, ‘As Student (S) I want to read (V) books (O)’.-->
 See https://owaspsamm.org/model/verification/requirements-driven-testing/stream-b/.-->
 
 ## Acceptance criteria
-
 
 <!--Choose acceptance criteria from the acceptance criteria library.-->
 
