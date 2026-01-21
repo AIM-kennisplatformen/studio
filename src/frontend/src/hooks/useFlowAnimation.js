@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useReactFlow } from '@xyflow/react';
-import { applyAvsdfLayout, applyColaLayout, applyFcoseLayout } from '@/lib/ctrytoscapeLayout';
+import { applyAvsdfLayout, applyColaLayout, applyFcoseLayout, applyDagreLayout } from '@/lib/ctrytoscapeLayout';
 /**
  * Custom hook to handle node position animations in React Flow
  * @param {Array} nodes - Current nodes array
@@ -74,9 +74,6 @@ export function useFlowAnimation(nodes, edges, setNodes, setEdges, updateEdgePos
             },
           };
         });
-        
-        // Update edge positions based on new node positions
-        setEdges((currentEdges) => updateEdgePositions(updatedNodes, currentEdges));
         
         return updatedNodes;
       });
@@ -169,9 +166,6 @@ export function useFlowAnimation(nodes, edges, setNodes, setEdges, updateEdgePos
             },
           };
         });
-        
-        // Update edge positions based on new node positions
-        setEdges((currentEdges) => updateEdgePositions(updatedNodes, currentEdges));
         
         return updatedNodes;
       });
@@ -270,9 +264,6 @@ export function useFlowAnimation(nodes, edges, setNodes, setEdges, updateEdgePos
           };
         });
         
-        // Update edge positions based on new node positions
-        setEdges((currentEdges) => updateEdgePositions(updatedNodes, currentEdges));
-        
         return updatedNodes;
       });
       
@@ -304,7 +295,7 @@ export function useFlowAnimation(nodes, edges, setNodes, setEdges, updateEdgePos
   }, [nodes, edges, setNodes, setEdges, updateEdgePositions, setViewport, getViewport]);
 
   // Function to apply fcose layout with smooth animation
-  const applyFcosePositions = useCallback(() => {
+const applyFcosePositions = useCallback(() => {
     if (nodes.length === 0) return;
     
     // Cancel any ongoing animation
@@ -377,9 +368,6 @@ export function useFlowAnimation(nodes, edges, setNodes, setEdges, updateEdgePos
           };
         });
         
-        // Update edge positions based on new node positions
-        setEdges((currentEdges) => updateEdgePositions(updatedNodes, currentEdges));
-        
         return updatedNodes;
       });
       
@@ -410,6 +398,7 @@ export function useFlowAnimation(nodes, edges, setNodes, setEdges, updateEdgePos
     animationFrameRef.current = requestAnimationFrame(animate);
   }, [nodes, edges, setNodes, setEdges, updateEdgePositions, setViewport, getViewport]);
 
+  // Function to apply dagre layout (top-to-bottom) with smooth animation
   // Cleanup animation on unmount
   useEffect(() => {
     return () => {
@@ -428,12 +417,82 @@ export function useFlowAnimation(nodes, edges, setNodes, setEdges, updateEdgePos
     }
   }, []);
 
+  // Function to apply dagre layout (any direction) with smooth animation
+  const applyDagrePositions = useCallback((options = {}) => {
+    if (nodes.length === 0) return;
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    setIsAnimating(true);
+
+    // Get new positions from dagre layout
+    const newPositions = applyDagreLayout(nodes, edges, options);
+    const startPositions = nodes.map(node => ({ ...node.position }));
+    const targetPositions = nodes.map(node => newPositions[node.id] || node.position);
+
+    const personIndex = nodes.findIndex(n => n.id === 'person');
+    const initialViewport = getViewport();
+    const duration = 1000;
+    const startTime = performance.now();
+
+    function animate(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+
+      let maxRemainingMovement = 0;
+      for (let i = 0; i < startPositions.length; i++) {
+        if (startPositions[i] && targetPositions[i]) {
+          const remainingX = Math.abs((targetPositions[i].x - startPositions[i].x) * (1 - eased));
+          const remainingY = Math.abs((targetPositions[i].y - startPositions[i].y) * (1 - eased));
+          maxRemainingMovement = Math.max(maxRemainingMovement, remainingX, remainingY);
+        }
+      }
+      const isEffectivelyComplete = maxRemainingMovement < 0.5;
+
+      setNodes((currentNodes) => {
+        const updatedNodes = currentNodes.map((node, index) => {
+          if (!startPositions[index] || !targetPositions[index]) return node;
+          return {
+            ...node,
+            position: {
+              x: isEffectivelyComplete ? targetPositions[index].x : startPositions[index].x + (targetPositions[index].x - startPositions[index].x) * eased,
+              y: isEffectivelyComplete ? targetPositions[index].y : startPositions[index].y + (targetPositions[index].y - startPositions[index].y) * eased,
+            },
+          };
+        });
+        return updatedNodes;
+      });
+
+      if (personIndex !== -1) {
+        const deltaX = (targetPositions[personIndex].x - startPositions[personIndex].x) * eased;
+        const deltaY = (targetPositions[personIndex].y - startPositions[personIndex].y) * eased;
+        setViewport({
+          x: initialViewport.x - deltaX * initialViewport.zoom,
+          y: initialViewport.y - deltaY * initialViewport.zoom,
+          zoom: initialViewport.zoom
+        }, { duration: 0 });
+      }
+
+      if (progress < 1 && !isEffectivelyComplete) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        animationFrameRef.current = null;
+        setIsAnimating(false);
+      }
+    }
+    animationFrameRef.current = requestAnimationFrame(animate);
+  }, [nodes, edges, setNodes, setEdges, updateEdgePositions, setViewport, getViewport]);
+
   return {
     randomizePositions,
     applyAvsdfPositions,
     applyColaPositions,
     applyFcosePositions,
+    applyDagrePositions,
     stopAnimation,
     isAnimating
   };
 }
+
+

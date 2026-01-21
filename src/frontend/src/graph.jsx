@@ -10,7 +10,7 @@ import "@xyflow/react/dist/style.css";
 import { CustomNode } from "./components/CustomNode";
 import { SolidEdge } from "./components/CustomEdge";
 import { getEdgeHandles } from "./lib/graphUtils";
-import { applyFcoseLayout } from "./lib/ctrytoscapeLayout";
+import { applyDagreLayout } from "./lib/ctrytoscapeLayout";
 import { useAtom } from "jotai";
 import {
   nodesAtom,
@@ -97,8 +97,8 @@ export default function Graph({ data, width }) {
       .filter(Boolean);
         const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
 
- // Apply fcose layout to new nodes, keeping fixed nodes in place
-  const layoutPositions = applyFcoseLayout(newNodes, newEdges, {
+ // Apply dagre layout to new nodes, keeping fixed nodes in place
+  const layoutPositions = applyDagreLayout(newNodes, newEdges, {
     quality: "proof",
     nodeSeparation: 200,
     idealEdgeLength: 300,
