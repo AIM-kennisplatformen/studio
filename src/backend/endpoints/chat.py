@@ -13,6 +13,7 @@ from backend.endpoints.graph import (
     user_graph_contexts,
     SUBNODES,
     prefetch_subnode,
+    _default_user_graph_context
 )
 
 from src.backend.utility.chat_util import (
@@ -72,7 +73,8 @@ async def connect(sid, environ, auth):
 
     user_id = user["sub"]
     bind_user(user_id, sid)
-
+    user_graph_contexts[user_id] = _default_user_graph_context()
+    
     print(f"✓ Socket connected: {sid} user={user_id}")
 
 

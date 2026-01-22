@@ -94,7 +94,7 @@ async def push_chat_message(
     payload = {
         "role": "chatbot",
         "content": message,
-        "mode": "replace",   # 🔥 DIT is de sleutel
+        "mode": "replace", 
         "subnode": subnode,
     }
 
