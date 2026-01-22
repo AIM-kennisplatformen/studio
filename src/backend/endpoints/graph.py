@@ -197,18 +197,20 @@ async def get_node_context(
         ctx["selected_subnode"] = "root"
 
         if not question:
-            return
-
+            await push_chat_message(
+                user_id,
+                "You've clicked the summary node. Do you want a main summary of the three subjects: Strategic overview, Best practices and Target groups."
+                "To proceed. Ask me your question?" 
+            )
+        else:
+            await push_chat_message(
+                user_id,
+                "You're back on the main summary. "
+                f"Would you like to ask a different question than: '{question}'? "
+                "**Respond with another question** or type **no** to reuse it."
+            )
         # If a prompt was already pending, cancel it and re-ask
         ctx["dialogue_state_asked"] = False
-
-        await push_chat_message(
-            user_id,
-            "You're back on the main summary. "
-            f"Would you like to ask a different question than: '{question}'? "
-            "**Respond with another question** or type **no** to reuse it."
-        )
-
         await push_chat_message_stream(user_id, "done", "", "root")
 
         ctx["dialogue_state_asked"] = True
@@ -221,20 +223,22 @@ async def get_node_context(
     if node_id in SUBNODE_MAP:
         subnode = SUBNODE_MAP[node_id]
         ctx["selected_subnode"] = subnode
-
-        if not question:
-            return
-
         # If a prompt was already pending, cancel it and re-ask
         ctx["dialogue_state_asked"] = False
-
-        await push_chat_message(
-            user_id,
-            "You've selected subset "
-            f"{subnode}. Would you like to ask a different question than: "
-            f"'{question}'? **Respond with another question** or type **no** "
-            "to reuse it."
-        )
+        if not question:
+            await push_chat_message(
+                user_id,
+                "You've selected subset "
+                f"{subnode}. What question do you want to ask?" 
+            )
+        else:
+            await push_chat_message(
+                user_id,
+                "You've selected subset "
+                f"{subnode}. Would you like to ask a different question than: "
+                f"'{question}'? **Respond with another question** or type **no** "
+                "to reuse it."
+            )
 
         await push_chat_message_stream(user_id, "done", "", subnode)
 
