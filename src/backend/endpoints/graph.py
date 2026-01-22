@@ -8,9 +8,8 @@ from backend.utility.graph_api_models import ContextResponse
 from backend.endpoints.auth import get_current_user
 from backend.config import LLM_WORKER_URL, LLM_WORKER_PORT
 
-from src.backend.utility.chat_util import push_chat_message
-
-
+from src.backend.utility.chat_util import push_chat_message, push_chat_message_stream
+import json
 graph_router = APIRouter()
 
 
@@ -47,9 +46,11 @@ def _default_user_graph_context() -> Dict[str, Any]:
     return {
         "selected_subnode": "root",
         "latest_question": None,
+        "previous_question": None,
         "latest_keywords": [],
         "prefetched": {},   # subnode_name → llm_answer
         "pending": {},      # subnode_name → asyncio.Task
+        "dialogue_state_asked": False,
     }
 
 user_graph_contexts: DefaultDict[str, Dict[str, Any]] = defaultdict(
@@ -60,6 +61,71 @@ user_graph_contexts: DefaultDict[str, Dict[str, Any]] = defaultdict(
 # =====================================================
 # Prefetch Logic
 # =====================================================
+
+async def fetch_subnode_stream(user_id: str, question: str, subnode: str):
+    """
+    Docstring for fetch_subnode_stream
+    
+    :param user_id: Description
+    :type user_id: str
+    :param question: Description
+    :type question: str
+    :param subnode: Description
+    :type subnode: str
+    """
+    ctx = user_graph_contexts[user_id]
+
+    try:
+        if subnode == "root":
+            subnode = "Best practices || Target groups || Strategic overview"
+        synthetic_prompt = (
+            "SYSTEM META-INSTRUCTION:\n"
+            "If relevant, use the `paper_search` MCP tool to identify scientific "
+            "literature or studies relevant to the question.\n\n"
+            "Don't alter question and keywords below — insert them straight into the tool.\n"
+            f"full_question:\n\"{question}\"\n\n"
+            f"keywords_related_to_question=\"{subnode}\" "
+            "Provide an evidence-informed explanation when possible.\n"
+        )
+
+        worker_url = f"{LLM_WORKER_URL}:{LLM_WORKER_PORT}"
+        full_response = ""
+
+        async with httpx.AsyncClient(timeout=None) as client:
+            async with client.stream(
+                "POST",
+                f"{worker_url}/ask_stream",
+                json={
+                    "chat_id": "default",
+                    "message": synthetic_prompt,
+                    "user_id": user_id,
+                },
+            ) as resp:
+                async for line in resp.aiter_lines():
+                    if not line.startswith("data:"):
+                        continue
+
+                    raw = line.removeprefix("data:").strip()
+
+                    if raw == "[DONE]":
+                        break
+
+                    try:
+                        payload = json.loads(raw)
+                    except json.JSONDecodeError:
+                        continue
+
+                    event_type = payload.get("type")
+                    event_data = payload.get("data")
+
+                    # ALSO emit chat messages for chat UI
+                    await push_chat_message_stream(user_id, event_type, event_data, subnode)
+                    full_response += event_data
+
+        ctx["prefetched"][subnode] = full_response
+        await push_chat_message_stream(user_id, "done", full_response)
+    except Exception as e:
+        print(f"[PREFETCH ERROR - {subnode}] {e}")
 
 async def prefetch_subnode(user_id: str, question: str, subnode: str):
     """
@@ -107,7 +173,7 @@ async def prefetch_subnode(user_id: str, question: str, subnode: str):
 
     finally:
         # Clean up pending entry
-        ctx["pending"].pop(subnode, None)
+        ctx["pending"].pop(subnode, subnode)
 
 
 # =====================================================
@@ -119,36 +185,62 @@ async def get_node_context(
     request: Request,
     user=Depends(get_current_user),
 ):
-    """
-    User clicked a graph node. This:
-    - updates the user's selected subnode
-    - pushes prefetch results if available
-    - returns standard KG node context to frontend
-    """
     user_id = user["sub"]
     ctx = user_graph_contexts[user_id]
     kg_data = request.app.state.kg_data
 
+    question = ctx.get("latest_question")
     # --------------------------------------------------
-    # ROOT NODE SELECTED
+    # ROOT NODE
     # --------------------------------------------------
     if node_id == 1:
         ctx["selected_subnode"] = "root"
 
-        if "root" in ctx["prefetched"]:
-            await push_chat_message(user_id, ctx["prefetched"]["root"])
+        if not question:
+            return
+
+        # If a prompt was already pending, cancel it and re-ask
+        ctx["dialogue_state_asked"] = False
+
+        await push_chat_message(
+            user_id,
+            "You're back on the main summary. "
+            f"Would you like to ask a different question than: '{question}'? "
+            "**Respond with another question** or type **no** to reuse it."
+        )
+
+        await push_chat_message_stream(user_id, "done", "", "root")
+
+        ctx["dialogue_state_asked"] = True
+        ctx["previous_question"] = question
+        return
 
     # --------------------------------------------------
-    # SUBNODE SELECTED
+    # SUBNODE
     # --------------------------------------------------
-    elif node_id in SUBNODE_MAP:
+    if node_id in SUBNODE_MAP:
         subnode = SUBNODE_MAP[node_id]
         ctx["selected_subnode"] = subnode
 
-        # Push cached prefetch result immediately
-        prefetched_answer = ctx["prefetched"].get(subnode)
-        if prefetched_answer:
-            await push_chat_message(user_id, prefetched_answer)
+        if not question:
+            return
+
+        # If a prompt was already pending, cancel it and re-ask
+        ctx["dialogue_state_asked"] = False
+
+        await push_chat_message(
+            user_id,
+            "You've selected subset "
+            f"{subnode}. Would you like to ask a different question than: "
+            f"'{question}'? **Respond with another question** or type **no** "
+            "to reuse it."
+        )
+
+        await push_chat_message_stream(user_id, "done", "", subnode)
+
+        ctx["dialogue_state_asked"] = True
+        ctx["previous_question"] = question
+        return
 
     # --------------------------------------------------
     # Knowledge Graph Lookup
@@ -172,13 +264,11 @@ async def get_node_context(
             error="not_found",
         )
 
-    # Gather edges involving this node
     edges = [
         rel for rel in kg_data.relations.values()
         if int(rel.sourceId) == node_id or int(rel.targetId) == node_id
     ]
 
-    # Gather neighbor nodes
     neighbor_ids = (
         {int(rel.sourceId) for rel in edges} |
         {int(rel.targetId) for rel in edges}
