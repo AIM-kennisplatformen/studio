@@ -99,59 +99,46 @@ async def send_message(sid, data):
     ctx = user_graph_contexts[user_id]
 
     selected_subnode = ctx.get("selected_subnode", "root")
-    latest_question = ctx.get("latest_question")
     dialogue_state_asked = bool(ctx.get("dialogue_state_asked", False))
+    prefetched = (ctx.get("prefetched") or {}).get(selected_subnode)
 
-    # --------------------------------------------------
-    # DIALOGUE STATE HANDLING (root + subnodes unified)
-    # The user is answering: "new question or reuse the same one?"
-    # --------------------------------------------------
     if dialogue_state_asked:
-        # ALWAYS clear the flag, even if we error/return early
         try:
-            # Resolve same vs new question
             if user_msg.lower() == "yes":
-                question = latest_question
+                # Use prefetched if available
+                if prefetched:
+                    await push_chat_message_stream(
+                        user_id,
+                        "on_chat_model_stream",
+                        prefetched,
+                        selected_subnode,
+                    )
+                    await push_chat_message_stream(
+                        user_id,
+                        "done",
+                        prefetched,
+                        selected_subnode,
+                    )
+                    return
+
+                question = ctx.get("latest_question") or ctx.get("previous_question")
             else:
-                ctx["previous_question"] = latest_question
-                question = user_msg
-                ctx["latest_question"] = question
-
-            # If no previous question exists, treat input as the question
-            if not question:
-                question = user_msg
-                ctx["latest_question"] = question
-
-            # Cached answer path (only safe if question unchanged)
-            prefetched = ctx.get("prefetched", {}).get(selected_subnode)
-            if prefetched and user_msg.lower() == "yes":
-                await push_chat_message_stream(
-                    user_id,
-                    "on_chat_model_stream",
-                    prefetched,
-                    selected_subnode,
-                )
-                await push_chat_message_stream(
-                    user_id,
-                    "done",
-                    prefetched,
-                    selected_subnode,
-                )
-                return
-
-            # Fresh LLM path (this function should stream + emit done itself)
+                ctx["latest_question"] = user_msg
+                ctx["prefetched"] = {}
+                question = ctx["latest_question"]
 
             await fetch_subnode_stream(user_id, question, selected_subnode)
             await push_chat_message_stream(
                     user_id,
                     "done",
-                    prefetched,
+                    ctx.get("prefetched", {}).get(selected_subnode),
                     selected_subnode,
                 )
             return
 
         finally:
             ctx["dialogue_state_asked"] = False
+
 
     # --------------------------------------------------
     # NORMAL ROOT WORKFLOW (user asked a new question in chat)
