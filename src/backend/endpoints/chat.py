@@ -110,7 +110,7 @@ async def send_message(sid, data):
         # ALWAYS clear the flag, even if we error/return early
         try:
             # Resolve same vs new question
-            if user_msg.lower() == "no":
+            if user_msg.lower() == "yes":
                 question = latest_question
             else:
                 ctx["previous_question"] = latest_question
@@ -124,7 +124,7 @@ async def send_message(sid, data):
 
             # Cached answer path (only safe if question unchanged)
             prefetched = ctx.get("prefetched", {}).get(selected_subnode)
-            if prefetched and user_msg.lower() == "no":
+            if prefetched and user_msg.lower() == "yes":
                 await push_chat_message_stream(
                     user_id,
                     "on_chat_model_stream",

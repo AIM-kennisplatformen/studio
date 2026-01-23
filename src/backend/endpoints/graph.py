@@ -25,19 +25,6 @@ SUBNODE_MAP = {
 
 SUBNODES = list(SUBNODE_MAP.values())
 
-def strip_think(text: str) -> str:
-    while True:
-        start = text.find("<think>")
-        if start == -1:
-            break
-        end = text.find("</think>", start)
-        if end == -1:
-            text = text[:start]
-            break
-        text = text[:start] + text[end + len("</think>"):]
-    return text.strip()
-
-
 # =====================================================
 # Per-user Graph Context
 # =====================================================
@@ -127,55 +114,6 @@ async def fetch_subnode_stream(user_id: str, question: str, subnode: str):
     except Exception as e:
         print(f"[PREFETCH ERROR - {subnode}] {e}")
 
-async def prefetch_subnode(user_id: str, question: str, subnode: str):
-    """
-    Prefetches a subnode answer from the LLM worker.
-    - Saves result to user_graph_contexts[user_id]["prefetched"]
-    - If the user is viewing that subnode, pushes it immediately.
-    """
-    ctx = user_graph_contexts[user_id]
-
-    try:
-        # Build prefetch prompt
-        prompt = (
-            "SYSTEM META-INSTRUCTION:\n"
-            "If relevant, use the `paper_search` MCP tool to identify scientific "
-            "literature or studies relevant to the question.\n\n"
-            "Don't alter question and keywords below — insert them straight into the tool.\n"
-            f"full_question:\n\"{question}\"\n\n"
-            f"keywords_related_to_question=\"{subnode}\" "
-            "Provide an evidence-informed explanation when possible.\n"
-        )
-
-        async with httpx.AsyncClient(timeout=200) as client:
-            worker_url = f"{LLM_WORKER_URL}:{LLM_WORKER_PORT}"
-            resp = await client.post(
-                f"{worker_url}/ask",
-                json={"chat_id": "prefetch", "message": prompt},
-            )
-
-        resp.raise_for_status()
-        answer = resp.json().get("llm", "")
-        answer = strip_think(answer)
-
-        ctx["prefetched"][subnode] = answer
-
-
-        # Store prefetch result
-        ctx["prefetched"][subnode] = answer
-
-        # Auto-push if user is viewing this subnode
-        if ctx["selected_subnode"] == subnode:
-            await push_chat_message(user_id, answer)
-
-    except Exception as e:
-        print(f"[PREFETCH ERROR - {subnode}] {e}")
-
-    finally:
-        # Clean up pending entry
-        ctx["pending"].pop(subnode, subnode)
-
-
 # =====================================================
 # Graph Node Selection Endpoint
 # =====================================================
@@ -199,15 +137,15 @@ async def get_node_context(
         if not question:
             await push_chat_message(
                 user_id,
-                "You've clicked the summary node. Do you want a main summary of the three subjects: Strategic overview, Best practices and Target groups."
-                "To proceed. Ask me your question?" 
+                "Do you want to ask an question, answered by the full body of literature?"
+                "Please proceed, by asking me your question?" 
             )
         else:
             await push_chat_message(
                 user_id,
-                "You're back on the main summary. "
+                "Answer a question by using the full body of literature "
                 f"Would you like to ask a different question than: '{question}'? "
-                "**Respond with another question** or type **no** to reuse it."
+                "**Respond with another question** or type **yes** to repeat the previous question."
             )
         # If a prompt was already pending, cancel it and re-ask
         ctx["dialogue_state_asked"] = False
@@ -229,15 +167,16 @@ async def get_node_context(
             await push_chat_message(
                 user_id,
                 "You've selected subset "
-                f"{subnode}. What question do you want to ask?" 
+                f"{subnode}."
+                " Please ask me your question?"
             )
         else:
             await push_chat_message(
                 user_id,
                 "You've selected subset "
-                f"{subnode}. Would you like to ask a different question than: "
-                f"'{question}'? **Respond with another question** or type **no** "
-                "to reuse it."
+                f"{subnode}. Please ask me your question using this subset. If you want to repeat your previous question: "
+                f"`{question}`"
+                " type **yes**, otherwise **Respond with another question**."
             )
 
         await push_chat_message_stream(user_id, "done", "", subnode)
