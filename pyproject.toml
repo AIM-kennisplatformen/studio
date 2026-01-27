@@ -46,7 +46,8 @@ dependencies = [
   "python-socketio>=5.15.0,<6", 
   "langchain-openai>=1.1.3,<2", 
   "mcp-use>=1.5.0,<2", 
-  "langchain>=1.1.3,<2",
+  "langchain>=1.1.3,<2", 
+  "typing-extensions",
 ]
 
 # ====================================

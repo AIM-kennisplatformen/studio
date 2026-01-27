@@ -216,3 +216,6 @@ ollama/
 .DS_Store
 kg/
 llm_worker_config.toml
+
+# Remove auto-generated pycache folder
+src/studio
