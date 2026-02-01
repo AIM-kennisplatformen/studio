@@ -1,8 +1,8 @@
 import React from "react";
 import {
   BaseEdge,
-  getStraightPath,
   EdgeLabelRenderer,
+  getSmoothStepPath,
 } from "@xyflow/react";
 
 export const SolidEdge = ({
@@ -19,7 +19,7 @@ export const SolidEdge = ({
   labelStyle,
   labelBgStyle,
 }) => {
-  const [edgePath, labelX, labelY] = getStraightPath({
+  const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
     sourceY,
     sourcePosition,

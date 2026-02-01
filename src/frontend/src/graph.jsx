@@ -190,7 +190,7 @@ export default function Graph({ data, width }) {
   );
 
   const onNodeClick = useCallback(
-    (event, node) => {
+    (_, node) => {
       setCenterNodeId(Number(node.id));
       setSelectedNode(node);
       centerNodeInView(node);
