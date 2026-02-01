@@ -94,7 +94,7 @@ async def push_chat_message(
     payload = {
         "role": "chatbot",
         "content": message,
-        "mode": "replace",   # 🔥 DIT is de sleutel
+        "mode": "replace",   
         "subnode": subnode,
     }
 
@@ -112,3 +112,61 @@ async def push_chat_message(
     except Exception as e:
         print(f"❌ push_chat_message ERROR for user={user_id}: {e}")
 
+
+async def push_chat_message_stream(
+    user_id: str,
+    event_type: str,
+    message: str,
+    subnode: str | None = None,
+):
+    """
+    Sends a full assistant message (non-streamed) to the user.
+    Explicitly marked as FINAL/REPLACE to avoid streaming confusion.
+    """
+    if sio is None:
+        print("⚠ push_chat_message: Socket.IO not registered")
+        return
+
+    sid = user_connections.get(user_id)
+    print(f"[PUSH] user={user_id}, sid={sid}")
+
+    if not sid:
+        return
+
+    payload = {
+        "role": "chatbot",
+        "content": message,
+        "mode": "replace", 
+        "subnode": subnode,
+    }
+
+    try:
+        if(event_type == "done"):
+            await sio.emit(
+            "done",
+            {"full_response": message},
+            to=sid,
+            )
+        # ALSO emit chat messages for chat UI
+        elif event_type == "on_chat_model_stream" and message:
+            await sio.emit(
+                "message",
+                {
+                    "role": "chatbot",
+                    "content": message,
+                },
+                to=sid,
+            )
+        else:
+            await sio.emit(
+                "event",
+                {
+                    "type": event_type,
+                    "data": message,
+                    "timestamp": payload.get("timestamp"),
+                },
+                to=sid,
+            )
+
+    except Exception as e:
+        print(f"❌ push_chat_message ERROR for user={user_id}: {e}")
