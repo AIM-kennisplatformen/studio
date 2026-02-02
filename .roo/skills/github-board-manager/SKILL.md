@@ -1,16 +1,32 @@
 ---
 name: github-board-manager
-description: This skill ties in to the github-issues-generator skill in this repository. Where this skill handles the different GitHub project board tasks, the github-issues-generator is responsible for the generation of the content. But, both work in harmony, tying in into each others workflows.
-
-This skill handles the execution of GitHub project board tasks such as creating new issues, improving existing issues and retreiving exisiting issues to use as context for generation in the github-issue-generator skill in this repository. There are four different kinds of GitHub issue types that this skill needs to be able to handle. Epics, sub-epics, features, and tasks.
-
-Use when user wants to (1) create epics, sub-epics, features, or tasks as GitHub issues. (2) link issues to other issues as sub-issues, (3) create sub-epics linked to parent epics, (4) update issue status on project boards, (5) list or query issues, (6) get context for a specific feature, (7) migrate markdown files to GitHub issues. Triggers on phrases like "create an epic", "create a sub-epic", "add a user feature", "move issue to In Progress", "list issues", "create a task for".
+description: >
+  Executes GitHub project board operations for the github-issues-generator skill.
+  Handles CRUD operations for GitHub issues with type classification (epic, sub-epic, feature, task).
+  Supports filtering/retrieval by issue type, parent-child linking, and project board status updates.
+  Use when you need to (1) create issues with a specific type, (2) retrieve issues filtered by type,
+  (3) link issues to parent issues, (4) update issue status on project boards.
+  Triggers: "post this epic", "retrieve all features", "link to parent", "update status", "list epics",
+  "create an epic", "create a sub-epic", "add a user feature", "move issue to In Progress", "list issues".
 ---
 
+# GitHub Board Manager
 
-# GitHub Projects Skill
+Manage GitHub issues with hierarchical relationships (Epic → Sub-Epic → Feature → Task) and project board integration using the `github-issue-manager.sh` script.
 
-Manage GitHub issues with hierarchical relationships (Epic → Sub-Epic → issue → Task) and project board integration using the `github-issue-manager.sh` script.
+## When to Use
+
+- Creating GitHub issues with type classification (epic, sub-epic, feature, task)
+- Retrieving existing issues filtered by type for context-gathering
+- Linking child issues to parent issues (e.g., feature → epic)
+- Updating issue status on the project board
+- Querying issues by type, status, or parent
+
+## When NOT to Use
+
+- **Content generation**: Use `github-issues-generator` skill for drafting issue content
+- **Issue templates or hierarchy decisions**: Handled by `github-issues-generator`
+- **Improving/expanding descriptions**: Delegate to `github-issues-generator`
 
 ## Prerequisites
 
@@ -22,25 +38,35 @@ github:
   project_board: "Project Board Name"
 ```
 
-<!-- Required labels (`epic`, `issue`, `task`) are auto-created on first use. -->
+## GitHub Issue Types
+
+This skill operates on 4 issue types that must be specified when creating or retrieving issues:
+
+| Type | Parent Allowed | Children Allowed | Type Flag |
+|------|----------------|------------------|-----------|
+| `epic` | None | sub-epic, feature | `--issue-type epic` |
+| `sub-epic` | epic | feature | `--issue-type sub-epic` |
+| `feature` | epic, sub-epic | task | `--issue-type feature` |
+| `task` | feature | None | `--issue-type task` |
 
 ## Quick Reference
 
-| Command | Syntax |
-|---------|--------|
-| Create Epic | `create-epic <title> <body> <epic_slug>` |
-| Create Sub-Epic | `create-sub-epic <title> <body> <sub_epic_slug> --parent <num> <parent_slug>` |
-| Create issue | `create-issue <title> <body> <issue_slug> [--epic <num> <epic_slug>]` |
-| Create Task | `create-task <title> <body> [--issue <num> <issue_slug>] [--epic-slug <slug>]` |
-| Update Status | `update-status <issue_num> <status>` |
-| List issues | `list-issues [filter]` |
-| Get Context | `get-issue-context <issue_num>` |
+| Command | Syntax | Returns |
+|---------|--------|---------|
+| Create Epic | `create-epic <title> <body> <slug>` | `{"epic_number": N}` |
+| Create Sub-Epic | `create-sub-epic <title> <body> <slug> --parent <num> <slug>` | `{"sub_epic_number": N, "parent_epic_number": N}` |
+| Create Feature | `create-feature <title> <body> <slug> --parent <num> <slug>` | `{"feature_number": N, "parent_number": N}` |
+| Create Task | `create-task <title> <body> --parent <num> <slug>` | `{"task_number": N, "parent_feature_number": N}` |
+| List by Type | `list-issues --issue-type <type>` | `[{issue}, ...]` |
+| List by Parent | `list-issues --parent <num>` | `[{issue}, ...]` |
+| Get Context | `get-issue-context <num>` | `{issue with hierarchy}` |
+| Update Status | `update-status <num> <status>` | `{"updated": true}` |
 
-Run script at: `.roo/skills/github-projects/scripts/github-issue-manager.sh`
+Run script at: `scripts/github-issue-manager.sh` (relative to this skill directory)
 
 ## Slug Creation Rules
 
-Slugs are **required** for epics and issues. Create them by:
+Slugs are **required** for epics, sub-epics, and features. Create them by:
 - Deriving from title, lowercase
 - Replace spaces with hyphens
 - Alphanumeric and hyphens only
@@ -53,61 +79,123 @@ Slugs are **required** for epics and issues. Create them by:
 Examples: `user-auth`, `db-schema`, `ci-pipeline`, `login-flow`
 
 ## Workflows
-### Workflow 1: Create epic
+
+### Workflow 1: Create Epic
+
+**Input:** Title, body, slug  
+**Output:** `{"epic_number": N}`
 
 ```bash
-# 1. Create epic
 ./github-issue-manager.sh create-epic "User Authentication" "Implement full auth system" "user-auth"
 # Returns: {"epic_number": 15}
 ```
 
-## Workflow 2: Create sub-epic
+Epics get:
+- GitHub issue type `Epic`
+- Added to project board with status `Epic Structure`
+
+### Workflow 2: Create Sub-Epic
+
+**Input:** Title, body, slug, parent epic number, parent epic slug  
+**Output:** `{"sub_epic_number": N, "parent_epic_number": N}`
 
 ```bash
-# Create a sub-epic linked to parent epic #15
 ./github-issue-manager.sh create-sub-epic "Database Layer" "Database infrastructure and data model setup" "db-layer" --parent 15 "user-auth"
 # Returns: {"sub_epic_number": 20, "parent_epic_number": 15}
-
-# issues can link to the sub-epic using its slug
-./github-issue-manager.sh create-feature "Schema Design" "Design the database schema..." "schema-design" --epic 20 "db-layer"
 ```
 
 Sub-epics get:
-- Both their own `epic:sub-slug` label and parent's `epic:parent-slug` label
+- GitHub issue type `sub-epic`
 - Sub-issue relationship to parent epic
-- Added to project board
+- Added to project board with status `Epic Structure`
 
-## Workflow 3: Create feature
+### Workflow 3: Create Feature
+
+**Input:** Title, body, slug, parent (epic or sub-epic) number, parent slug  
+**Output:** `{"feature_number": N, "parent_number": N}`
 
 ```bash
-# 1. Create issue (linked to epic or sub-epic)
-./github-issue-manager.sh create-feature "Password Reset" "As a user, I want to reset my password..." "password-reset" --epic 15 "user-auth" --issue_type "feature"
-# Returns: {"issue_number": 15}
+./github-issue-manager.sh create-feature "Password Reset" "As a user, I want to reset my password..." "password-reset" --parent 15 "user-auth"
+# Returns: {"feature_number": 25, "parent_number": 15}
 ```
 
-## Workflow 4: Create Task
+Features get:
+- GitHub issue type `Feature`
+- Sub-issue relationship to parent epic or sub-epic
+- Added to project board with status `Backlog`
 
-## Workflow 5: Retrieve issues
+### Workflow 4: Create Task
 
+**Input:** Title, body, parent feature number, parent feature slug  
+**Output:** `{"task_number": N, "parent_feature_number": N}`
 
 ```bash
-# List issues
-./github-issue-manager.sh list-issues "type:issue"
+./github-issue-manager.sh create-task "Implement token refresh" "Add JWT refresh logic..." --parent 25 "password-reset"
+# Returns: {"task_number": 30, "parent_feature_number": 25}
+```
 
-# List epics
-./github-issue-manager.sh list-issues "type:epic"
+Tasks get:
+- GitHub issue type `Feature`
+- Sub-issue relationship to parent feature
+- Added to project board with status `Backlog`
 
-# Get full context for a issue
+### Workflow 5: Retrieve Issues
+
+**Input:** Filter criteria (issue type, status, parent, search term, or issue number)  
+**Output:** JSON array of matching issues or single issue context
+
+#### By Issue Type
+
+```bash
+# List all epics
+./github-issue-manager.sh list-issues --issue-type epic
+
+# List all sub-epics
+./github-issue-manager.sh list-issues --issue-type sub-epic
+
+# List all features
+./github-issue-manager.sh list-issues --issue-type feature
+
+# List all tasks
+./github-issue-manager.sh list-issues --issue-type task
+
+```
+
+#### By Parent
+
+```bash
+# List features under epic #15
+./github-issue-manager.sh list-issues --parent 15
+
+# List tasks under feature #25
+./github-issue-manager.sh list-issues --parent 25
+```
+
+#### Get Full Context (with hierarchy)
+
+```bash
 ./github-issue-manager.sh get-issue-context 16
+# Returns: {"number": 16, "type": "feature", "title": "...", "body": "...", "parent": {...}, "children": [...]}
 ```
 
-### Update Status
+#### Search by Keyword
+
+```bash
+./github-issue-manager.sh list-issues --search "authentication"
+```
+
+### Workflow 6: Update Status
+
+**Input:** Issue number, status  
+**Output:** `{"updated": true}`
 
 Valid statuses: `Backlog`, `Ready`, `In Progress`, `AI Review`, `Review`, `Done`
 
 ```bash
 ./github-issue-manager.sh update-status 16 "In Progress"
+# Returns: {"updated": true}
 ```
 
-### Query Stories
+## Advanced Reference
 
+For complete documentation including migration workflows, bulk operations, and troubleshooting, see: [references/github-issue-manager-reference.md](references/github-issue-manager-reference.md)
