@@ -102,7 +102,7 @@ If it is addressed, that will provide **value** in the following way:
 ## Workflow 2: Create new sub-epic
 
 1. Ask the user for the title of the parent epic.
-2. Retrieve the parent epic using the github-board-manager skill workflow "Retrieve issues". 
+2. Retrieve the parent epic using the github-board-manager skill workflow "Retrieve issues" with.  
 3. Confirm with the user if this is the right epic by showing the title, description and user sotry. If not approved retry. 
 4. When approved, link the epic as a parent to the newly generated sub-epic.
 5. Ask the user for a title and a description to use for the new sub-epic. 
@@ -206,7 +206,7 @@ This workflow is for the generation of feature issues and post them on the GitHu
 * Accept new description and generate full feature based on the format below.
 * The user gets to provide instructions and corrections. Use this input to further improve the new description, and repeat asking the user for next steps.
 
-9. 10. After this selection, generate and present the user with the full feature, according to the following template:
+9. After this selection, generate the full feature according to the following template:
 
 "
 ## Description
@@ -231,12 +231,12 @@ For example, ‘As Student (S) I want to read (V) books (O)’.-->
 [ ] ...
 "
 
-9. After the feasture has been generated, show it to the user and present the user with the following options:
+10. After the feasture has been generated, show it to the user and present the user with the following options:
 
 * Accept the feature and the linked parent epic and create it on the Github project board using the github-board-manager skill workflow "Create feature".
 * Select a different epic as a parent by the title on the Github project board and link it to the newly generated feature.
 
-10. Use the github-board-manager skill workflow "create feature" to create the new feature and link it to the chosen epic or sub-epic.
+11. Use the github-board-manager skill workflow "create feature" to create the new feature and link it to the chosen epic or sub-epic.
 
 ### Create new Task
 This workflow is for generating tasks, the smallest unit of work. Tasks describe concrete functionalities that need to be implemented for the value described in the feature to be realized. Tasks need to have a feature as a parent. The template is very simple and mainly consists of requirements. The workflow is as follows.
