@@ -38,29 +38,38 @@ USAGE:
 COMMANDS:
     create-epic <title> <body> <epic_slug>
         Create epic issue with required slug for labeling.
+        Sets GitHub issue type to "Epic".
 
     create-sub-epic <title> <body> <sub_epic_slug> --parent <parent_epic_num> <parent_epic_slug>
         Create sub-epic issue linked as a sub-issue of a parent epic.
+        Sets GitHub issue type to "Sub-Epic".
 
-    create-feature <title> <body> <feature_slug> [--epic <epic_num> <epic_slug>]
-        Create feature issue. feature slug is always required.
-        Use --epic to link to a parent epic (requires both epic number and slug).
+    create-feature <title> <body> <feature_slug> --parent <parent_num> <parent_slug>
+        Create feature issue. Feature slug is always required.
+        Use --parent to link to a parent epic or sub-epic.
+        Sets GitHub issue type to "Feature".
 
-    create-task <title> <body> [--feature <feature_num> <feature_slug>] [--epic-slug <epic_slug>]
-        Create task issue. Use --feature to link to a parent feature.
-        Use --epic-slug to add epic label without linking.
+    create-task <title> <body> --parent <feature_num> <feature_slug>
+        Create task issue linked to a parent feature.
+        Sets GitHub issue type to "Task".
 
     update-status <issue_num> <status>
         Update issue status on project board.
+        Valid statuses: Backlog, Ready, In Progress, AI Review, Review, Done
 
-    list-issues [filter]
-        List issues (default: "type:feature")
+    list-issues [options]
+        List issues with filtering options.
+        Options:
+          --issue-type <type>   Filter by type: epic, sub-epic, feature, task
+          --parent <num>        List children of issue #num
+          --search <term>       Search in title and body
+
+    get-issue-context <issue_num>
+        Get comprehensive context with parent/child hierarchy.
+        Returns: {"number": N, "type": "...", "parent": {...}, "children": [...]}
 
     migrate-issues
         Migrate Markdown issues to GitHub issues.
-
-    get-feature-context <issue_num>
-        Get comprehensive context for a user feature.
 
     help                Show this help message
     version             Show version information
@@ -72,26 +81,27 @@ EXAMPLES:
     # Create a sub-epic linked to a parent epic
     ${SCRIPT_NAME} create-sub-epic "Sub-Epic: Database Layer" "Database infrastructure setup" "db-layer" --parent 15 "foundation"
 
-    # Create a feature linked to an epic
-    ${SCRIPT_NAME} create-feature "User Auth" "As a user I want to login" "user-auth" --epic 15 "foundation"
-
-    # Create a standalone feature (no epic)
-    ${SCRIPT_NAME} create-feature "Bug Fix" "Fix login timeout issue" "login-fix"
+    # Create a feature linked to an epic or sub-epic
+    ${SCRIPT_NAME} create-feature "User Auth" "As a user I want to login" "user-auth" --parent 15 "foundation"
 
     # Create a task linked to a feature
-    ${SCRIPT_NAME} create-task "Login form validation" "Implement client-side validation" --feature 16 "user-auth"
+    ${SCRIPT_NAME} create-task "Login form validation" "Implement client-side validation" --parent 16 "user-auth"
 
-    # Create a task with epic label only (no feature link)
-    ${SCRIPT_NAME} create-task "Setup CI pipeline" "Configure GitHub Actions" --epic-slug "foundation"
+    # List issues by type
+    ${SCRIPT_NAME} list-issues --issue-type epic
+    ${SCRIPT_NAME} list-issues --issue-type feature
+    ${SCRIPT_NAME} list-issues --issue-type task
 
-    # Create a standalone task
-    ${SCRIPT_NAME} create-task "Quick fix" "Patch security issue"
+    # List children of a parent issue
+    ${SCRIPT_NAME} list-issues --parent 15
+
+    # Search issues
+    ${SCRIPT_NAME} list-issues --search "authentication"
 
     # Other commands
     ${SCRIPT_NAME} update-status 42 "In Progress"
-    ${SCRIPT_NAME} list-issues
+    ${SCRIPT_NAME} get-issue-context 42
     ${SCRIPT_NAME} migrate-issues
-    ${SCRIPT_NAME} get-feature-context 42
 
 For detailed usage examples, see: README github-issue-manager.md
 Slug creation tips: derive from title, lowercase, hyphens instead of spaces, alphanumeric and hyphens only, max 20 characters, use well known abbreviations where possible (e.g., "auth" for "authentication"), avoid stop words (e.g., "the", "and", "of")
@@ -183,6 +193,97 @@ ensure_label() {
             # Add to cache on successful creation
             LABEL_CACHE="${LABEL_CACHE}${label_name}"$'\n'
         fi
+    fi
+}
+
+#=============================================================================
+# GITHUB ISSUE TYPES FUNCTIONS
+#=============================================================================
+
+# Cache for issue type IDs
+ISSUE_TYPE_CACHE=""
+
+# Get available issue types for the repository
+get_repo_issue_types() {
+    if [ -z "$REPO" ]; then
+        load_config
+    fi
+    
+    # Check cache first
+    if [ -n "$ISSUE_TYPE_CACHE" ]; then
+        echo "$ISSUE_TYPE_CACHE"
+        return 0
+    fi
+    
+    local result=$(gh api graphql -f query='
+        query($owner: String!, $name: String!) {
+            repository(owner: $owner, name: $name) {
+                issueTypes(first: 20) {
+                    nodes {
+                        id
+                        name
+                    }
+                }
+            }
+        }' -f owner="$REPO_OWNER" -f name="$REPO_NAME" \
+        --jq '.data.repository.issueTypes.nodes // []' 2>/dev/null)
+    
+    if [ $? -eq 0 ] && [ -n "$result" ] && [ "$result" != "null" ]; then
+        ISSUE_TYPE_CACHE="$result"
+        echo "$result"
+    else
+        echo "[]"
+    fi
+}
+
+# Get issue type ID by name
+get_issue_type_id() {
+    local type_name="$1"
+    local types=$(get_repo_issue_types)
+    echo "$types" | jq -r --arg name "$type_name" '.[] | select(.name == $name) | .id // empty'
+}
+
+# Set GitHub issue type for an issue
+set_issue_type() {
+    local issue_num="$1"
+    local type_name="$2"  # Epic, Sub-Epic, Feature, Task
+    
+    if [ -z "$issue_num" ] || [ -z "$type_name" ]; then
+        log_warning "set_issue_type requires issue_num and type_name"
+        return 1
+    fi
+    
+    local node_id=$(gh api "repos/$REPO/issues/$issue_num" --jq '.node_id' 2>/dev/null)
+    if [ -z "$node_id" ] || [ "$node_id" = "null" ]; then
+        log_warning "Could not get node ID for issue #$issue_num"
+        return 1
+    fi
+    
+    local type_id=$(get_issue_type_id "$type_name")
+    if [ -z "$type_id" ] || [ "$type_id" = "null" ]; then
+        log_warning "Issue type '$type_name' not found in repository. Available types might need to be configured."
+        return 1
+    fi
+    
+    # Set the issue type using GraphQL mutation
+    local result=$(gh api graphql -f query='
+        mutation($issueId: ID!, $issueTypeId: ID!) {
+            updateIssue(input: {id: $issueId, issueTypeId: $issueTypeId}) {
+                issue {
+                    id
+                    issueType {
+                        name
+                    }
+                }
+            }
+        }' -f issueId="$node_id" -f issueTypeId="$type_id" 2>&1)
+    
+    if [ $? -eq 0 ]; then
+        log_info "Set issue type to '$type_name' for issue #$issue_num"
+        return 0
+    else
+        log_warning "Failed to set issue type: $result"
+        return 1
     fi
 }
 
@@ -431,6 +532,9 @@ create_epic_issue() {
         log_warning "Failed to add epic to project, manual addition needed"
     fi
 
+    # Set GitHub issue type to "Epic"
+    set_issue_type "$epic_num" "Epic"
+
     output_json "{\"epic_number\": $epic_num}"
 }
 
@@ -515,6 +619,9 @@ Parent Epic: $parent_epic_slug (#$parent_epic_num)"
     # Create sub-issue relationship with parent epic
     create_sub_issue_relationship "$parent_epic_num" "$sub_epic_num"
     
+    # Set GitHub issue type to "Sub-Epic"
+    set_issue_type "$sub_epic_num" "Sub-Epic"
+
     output_json "{\"sub_epic_number\": $sub_epic_num, \"parent_epic_number\": $parent_epic_num}"
 }
 
@@ -616,7 +723,10 @@ Parent Epic: $epic_slug (#$epic_num)"
         create_sub_issue_relationship "$epic_num" "$feature_num"
     fi
     
-    output_json "{\"feature_number\": $feature_num}"
+    # Set GitHub issue type to "Feature"
+    set_issue_type "$feature_num" "Feature"
+
+    output_json "{\"feature_number\": $feature_num, \"parent_number\": ${epic_num:-null}}"
 }
 
 create_task_issue() {
@@ -732,7 +842,10 @@ Epic Slug: $epic_slug"
         create_sub_issue_relationship "$feature_num" "$task_num"
     fi
     
-    output_json "{\"task_number\": $task_num}"
+    # Set GitHub issue type to "Task"
+    set_issue_type "$task_num" "Task"
+
+    output_json "{\"task_number\": $task_num, \"parent_feature_number\": ${feature_num:-null}}"
 }
 
 create_sub_issue_relationship() {
@@ -920,36 +1033,122 @@ query($projectId: ID!) {
     fi
 }
 
-list_stories() {
-    local filter=${1:-"label:feature state:open"}
+list_issues() {
+    local issue_type=""
+    local parent_num=""
+    local search_term=""
+    local legacy_filter=""
     
     if [ -z "$REPO" ]; then
         load_config
     fi
     
-    # Parse filter into gh issue list arguments
-    local gh_args=""
-    if [[ "$filter" == *"label:"* ]]; then
-        local label=$(echo "$filter" | sed -n 's/.*label:\([^ ]*\).*/\1/p')
-        if [ -n "$label" ]; then
-            gh_args="$gh_args --label \"$label\""
+    # Parse arguments
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --issue-type)
+                if [ $# -lt 2 ]; then
+                    output_error "--issue-type requires an argument: epic, sub-epic, feature, or task"
+                fi
+                issue_type="$2"
+                shift 2
+                ;;
+            --parent)
+                if [ $# -lt 2 ]; then
+                    output_error "--parent requires an issue number"
+                fi
+                parent_num="$2"
+                shift 2
+                ;;
+            --search)
+                if [ $# -lt 2 ]; then
+                    output_error "--search requires a search term"
+                fi
+                search_term="$2"
+                shift 2
+                ;;
+            *)
+                # Legacy filter support for backward compatibility
+                legacy_filter="$1"
+                shift
+                ;;
+        esac
+    done
+    
+    # Build gh arguments based on issue type
+    local gh_args="--state open"
+    local filter_desc=""
+    
+    case "$issue_type" in
+        epic)
+            gh_args="$gh_args --label epic"
+            filter_desc="issue_type:epic"
+            ;;
+        sub-epic)
+            # Sub-epics have both epic and a sub-epic slug pattern
+            gh_args="$gh_args --label epic"
+            filter_desc="issue_type:sub-epic"
+            ;;
+        feature)
+            gh_args="$gh_args --label feature"
+            filter_desc="issue_type:feature"
+            ;;
+        task)
+            gh_args="$gh_args --label task"
+            filter_desc="issue_type:task"
+            ;;
+        "")
+            # No issue type specified, check legacy filter or default
+            if [ -n "$legacy_filter" ]; then
+                # Parse legacy filter format
+                if [[ "$legacy_filter" == *"label:"* ]]; then
+                    local label=$(echo "$legacy_filter" | sed -n 's/.*label:\([^ ]*\).*/\1/p')
+                    if [ -n "$label" ]; then
+                        gh_args="$gh_args --label \"$label\""
+                    fi
+                fi
+                filter_desc="$legacy_filter"
+            else
+                # Default to all open issues
+                filter_desc="state:open"
+            fi
+            ;;
+        *)
+            output_error "Invalid issue type: $issue_type. Valid types: epic, sub-epic, feature, task"
+            ;;
+    esac
+    
+    # Filter by parent using epic:slug or feature:slug labels
+    if [ -n "$parent_num" ]; then
+        # Validate parent_num is numeric
+        if ! [[ "$parent_num" =~ ^[0-9]+$ ]]; then
+            output_error "Invalid parent issue number: $parent_num. Must be numeric."
+        fi
+        
+        # Get parent issue labels to extract slug
+        local parent_labels=$(gh issue view "$parent_num" --repo "$REPO" --json labels --jq '.labels[].name' 2>/dev/null)
+        if [ -z "$parent_labels" ]; then
+            output_error "Parent issue #$parent_num not found or has no labels"
+        fi
+        
+        local slug_label=$(echo "$parent_labels" | grep -E "^(epic|feature):" | head -1)
+        if [ -n "$slug_label" ]; then
+            gh_args="$gh_args --label \"$slug_label\""
+            filter_desc="${filter_desc} parent:$parent_num"
+        else
+            log_warning "Parent issue #$parent_num has no epic: or feature: label, listing may be incomplete"
         fi
     fi
     
-    if [[ "$filter" == *"state:"* ]]; then
-        local state=$(echo "$filter" | sed -n 's/.*state:\([^ ]*\).*/\1/p')
-        if [ -n "$state" ]; then
-            gh_args="$gh_args --state \"$state\""
-        fi
-    fi
-    
-    # If no specific args parsed, use default
-    if [ -z "$gh_args" ]; then
-        gh_args="--label feature --state open"
+    # Search in title/body
+    if [ -n "$search_term" ]; then
+        gh_args="$gh_args --search \"$search_term in:title,body\""
+        filter_desc="${filter_desc} search:$search_term"
     fi
     
     # List issues
-    local output=$(eval "gh issue list $gh_args --json number,title,body,labels,assignees,milestone --limit 50 --repo \"$REPO\"" 2>&1)
+    log_info "Listing issues with filter: $filter_desc"
+    local output=$(eval "gh issue list $gh_args --json number,title,body,labels,state,assignees,milestone --limit 100 --repo \"$REPO\"" 2>&1)
     if [ $? -ne 0 ]; then
         output_error "Failed to list issues: $output"
     fi
@@ -959,22 +1158,27 @@ list_stories() {
         output_error "Invalid JSON response from gh issue list"
     fi
     
+    # For sub-epic filter, post-filter results that have Parent Epic in body
+    if [ "$issue_type" = "sub-epic" ]; then
+        output=$(echo "$output" | jq '[.[] | select(.body | test("Parent Epic:"; "i"))]')
+    fi
+    
     # Check if output is empty array (this is normal, not an error)
-    local feature_count=$(echo "$output" | jq '. | length')
-    if [ "$feature_count" -eq 0 ]; then
-        output_json "{\"result\": [], \"count\": 0, \"message\": \"No stories found matching filter: $filter\"}"
+    local issue_count=$(echo "$output" | jq '. | length')
+    if [ "$issue_count" -eq 0 ]; then
+        output_json "{\"result\": [], \"count\": 0, \"message\": \"No issues found matching filter: $filter_desc\"}"
         return 0
     fi
     
     # Return successful result with metadata
-    echo "$output" | jq --arg filter "$filter" --arg count "$feature_count" '. + [{"_metadata": {"filter": $filter, "count": ($count | tonumber)}}]'
+    echo "$output" | jq --arg filter "$filter_desc" --arg count "$issue_count" '{result: ., count: ($count | tonumber), filter: $filter}'
 }
 
-get_feature_context() {
+get_issue_context() {
     local issue_num="$1"
     
     if [ -z "$issue_num" ]; then
-        output_error "Usage: get-feature-context <issue_num>"
+        output_error "Usage: get-issue-context <issue_num>"
     fi
     
     # Validate issue number
@@ -1004,58 +1208,47 @@ get_feature_context() {
     local state=$(echo "$issue_data" | jq -r '.state // empty')
     local body=$(echo "$issue_data" | jq -r '.body // empty')
     local url=$(echo "$issue_data" | jq -r '.url // empty')
+    local labels_json=$(echo "$issue_data" | jq '.labels')
     
     if [ -z "$title" ]; then
         output_error "Failed to extract issue metadata for #$issue_num"
     fi
     
-    # Parse acceptance criteria from body (look for ## Acceptance Criteria section)
-    local acceptance_criteria=$(echo "$body" | awk '
-        BEGIN { in_section = 0; content = "" }
-        /^##/ {
-            if (in_section) exit
-            if ($0 ~ /^## Acceptance Criteria/) in_section = 1
-            next
-        }
-        in_section {
-            if (content != "") content = content "\\n"
-            content = content $0
-        }
-        END { print content }
-    ')
+    # Determine issue type from labels
+    local issue_type="unknown"
+    local labels_names=$(echo "$labels_json" | jq -r '.[].name' 2>/dev/null)
     
-    # Parse tasks/subtasks from body (look for ## Tasks section)
-    local tasks_section=$(echo "$body" | awk '
-        BEGIN { in_section = 0; content = "" }
-        /^##/ {
-            if (in_section) exit
-            if ($0 ~ /^## (Tasks|Subtasks|Tasks \/ Subtasks)/) in_section = 1
-            next
-        }
-        in_section {
-            if (content != "") content = content "\\n"
-            content = content $0
-        }
-        END { print content }
-    ')
-    
-    # Extract linked issues from body (looking for #123 patterns and sub-issue relationships)
-    local linked_issues=$(echo "$body" | grep -o '#[0-9]\+' | sed 's/#//' | sort -u | jq -R . | jq -s .)
-    
-    # Query comments to find "File List" entries
-    log_info "Checking comments for file lists..."
-    local comments_data=$(gh issue comments "$issue_num" --repo "$REPO" --json body,author 2>&1)
-    local file_lists="[]"
-    
-    if [ $? -eq 0 ] && [ -n "$comments_data" ]; then
-        # Look for comments containing "File List" or similar markers
-        file_lists=$(echo "$comments_data" | jq '[.[] | select(.body | test("(?i)(file list|files?:)")) | {author: .author.login, content: .body}]')
+    if echo "$labels_names" | grep -q "^task$"; then
+        issue_type="task"
+    elif echo "$labels_names" | grep -q "^feature$"; then
+        issue_type="feature"
+    elif echo "$labels_names" | grep -q "^epic$"; then
+        # Check if it's a sub-epic (has Parent Epic in body)
+        if echo "$body" | grep -qi "Parent Epic:"; then
+            issue_type="sub-epic"
+        else
+            issue_type="epic"
+        fi
     fi
     
-    # Get sub-issues using GraphQL if available
-    log_info "Fetching sub-issues..."
+    # Extract parent information from body
+    local parent_info="null"
+    local parent_match=$(echo "$body" | grep -E "(Parent Epic|Parent feature|Parent Feature):" | head -1)
+    if [ -n "$parent_match" ]; then
+        local parent_num=$(echo "$parent_match" | grep -o '#[0-9]\+' | head -1 | sed 's/#//')
+        if [ -n "$parent_num" ]; then
+            # Fetch parent issue basic info
+            local parent_data=$(gh issue view "$parent_num" --repo "$REPO" --json number,title,state,url 2>/dev/null)
+            if [ $? -eq 0 ] && [ -n "$parent_data" ]; then
+                parent_info="$parent_data"
+            fi
+        fi
+    fi
+    
+    # Get sub-issues (children) using GraphQL if available
+    log_info "Fetching children (sub-issues)..."
     local node_id=$(gh api "repos/$REPO/issues/$issue_num" --jq '.node_id' 2>/dev/null)
-    local sub_issues="[]"
+    local children="[]"
     
     if [ -n "$node_id" ] && [ "$node_id" != "null" ]; then
         local sub_issues_data=$(gh api graphql -f query='
@@ -1077,44 +1270,41 @@ get_feature_context() {
             }' -f nodeId="$node_id" 2>/dev/null)
         
         if [ $? -eq 0 ] && [ -n "$sub_issues_data" ]; then
-            sub_issues=$(echo "$sub_issues_data" | jq '[.data.node.trackedIssues.edges[].node // empty]')
+            children=$(echo "$sub_issues_data" | jq '[.data.node.trackedIssues.edges[].node // empty]')
         fi
     fi
     
-    # Build comprehensive JSON result
+    # Build result matching SKILL.md specification:
+    # {"number": N, "type": "feature", "title": "...", "body": "...", "parent": {...}, "children": [...]}
     local result=$(jq -n \
-        --arg issue_num "$issue_num" \
-        --argjson metadata "$issue_data" \
-        --arg acceptance_criteria "$acceptance_criteria" \
-        --arg tasks "$tasks_section" \
-        --argjson linked_issues "$linked_issues" \
-        --argjson file_lists "$file_lists" \
-        --argjson sub_issues "$sub_issues" \
+        --arg num "$issue_num" \
+        --arg type "$issue_type" \
+        --arg title "$title" \
+        --arg body "$body" \
+        --argjson parent "$parent_info" \
+        --argjson children "$children" \
+        --argjson labels "$labels_json" \
+        --arg state "$state" \
+        --arg url "$url" \
         '{
-            issue_number: ($issue_num | tonumber),
-            metadata: {
-                title: $metadata.title,
-                state: $metadata.state,
-                url: $metadata.url,
-                labels: $metadata.labels,
-                assignees: $metadata.assignees,
-                milestone: $metadata.milestone,
-                created_at: $metadata.createdAt,
-                updated_at: $metadata.updatedAt,
-                closed_at: $metadata.closedAt
-            },
-            body: $metadata.body,
-            parsed_sections: {
-                acceptance_criteria: $acceptance_criteria,
-                tasks: $tasks
-            },
-            linked_issues: $linked_issues,
-            sub_issues: $sub_issues,
-            file_lists: $file_lists
+            number: ($num | tonumber),
+            type: $type,
+            title: $title,
+            body: $body,
+            state: $state,
+            url: $url,
+            labels: $labels,
+            parent: $parent,
+            children: $children
         }')
     
     log_success "Successfully retrieved context for issue #$issue_num"
     output_json "$result"
+}
+
+# Alias for backward compatibility
+get_feature_context() {
+    get_issue_context "$@"
 }
 
 #=============================================================================
@@ -1499,16 +1689,23 @@ main() {
             update_issue_status "$1" "$2"
             ;;
         "list-issues")
-            list_issues "$1"
+            list_issues "$@"
             ;;
         "migrate-issues")
             migrate_md_to_issues
             ;;
+        "get-issue-context")
+            if [ $# -lt 1 ]; then
+                output_error "Usage: get-issue-context <issue_num>"
+            fi
+            get_issue_context "$1"
+            ;;
         "get-feature-context")
+            # Backward compatibility alias
             if [ $# -lt 1 ]; then
                 output_error "Usage: get-feature-context <issue_num>"
             fi
-            get_feature_context "$1"
+            get_issue_context "$1"
             ;;
         "help"|"-h"|"--help")
             print_usage
