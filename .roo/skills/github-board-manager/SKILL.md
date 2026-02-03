@@ -196,3 +196,8 @@ Valid statuses: `Backlog`, `Ready`, `In Progress`, `AI Review`, `Review`, `Done`
 ./github-issue-manager.sh update-status 16 "In Progress"
 # Returns: {"updated": true}
 ```
+
+For migration workflows, bulk operations, and troubleshooting, refer to the script usage help:
+```bash
+./scripts/github-issue-manager.sh help
+```
