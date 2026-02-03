@@ -1,0 +1,1777 @@
+#!/bin/bash
+# GitHub Issue Management Tool - Consolidated BMAD Issue Management Scripts
+# Manages GitHub issues, project boards, and issue relationships for BMAD workflows
+
+VERSION="1.0.0"
+SCRIPT_NAME="github-issue-manager.sh"
+
+# Color codes for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Global variables (will be set by load_config)
+REPO=""
+REPO_OWNER=""
+REPO_NAME=""
+BOARD_ID=""
+CONFIG_FILE=""
+PROJECT_ROOT=""
+PROJECT_ID=""
+PROJECT_NUMBER=""
+STATUS_FIELD_ID=""
+BACKLOG_OPTION_ID=""
+
+#=============================================================================
+# UTILITY FUNCTIONS
+#=============================================================================
+
+print_usage() {
+    cat << EOF
+GitHub Issue Manager v${VERSION}
+
+USAGE:
+    ${SCRIPT_NAME} <command> [options]
+
+COMMANDS:
+    create-epic <title> <body> <epic_slug>
+        Create epic issue with required slug for labeling.
+        Sets GitHub issue type to "Epic".
+
+    create-sub-epic <title> <body> <sub_epic_slug> --parent <parent_epic_num> <parent_epic_slug>
+        Create sub-epic issue linked as a sub-issue of a parent epic.
+        Sets GitHub issue type to "Sub-Epic".
+
+    create-feature <title> <body> <feature_slug> --parent <parent_num> <parent_slug>
+        Create feature issue. Feature slug is always required.
+        Use --parent to link to a parent epic or sub-epic.
+        Sets GitHub issue type to "Feature".
+
+    create-task <title> <body> --parent <feature_num> <feature_slug>
+        Create task issue linked to a parent feature.
+        Sets GitHub issue type to "Task".
+
+    update-status <issue_num> <status>
+        Update issue status on project board.
+        Valid statuses: Backlog, Ready, In Progress, AI Review, Review, Done
+
+    list-issues [options]
+        List issues with filtering options.
+        Options:
+          --issue-type <type>   Filter by type: epic, sub-epic, feature, task
+          --parent <num>        List children of issue #num
+          --search <term>       Search in title and body
+
+    get-issue-context <issue_num>
+        Get comprehensive context with parent/child hierarchy.
+        Returns: {"number": N, "type": "...", "parent": {...}, "children": [...]}
+
+    migrate-issues
+        Migrate Markdown issues to GitHub issues.
+
+    help                Show this help message
+    version             Show version information
+
+EXAMPLES:
+    # Create an epic
+    ${SCRIPT_NAME} create-epic "Epic 1: Foundation" "Setup basic infrastructure" "foundation"
+
+    # Create a sub-epic linked to a parent epic
+    ${SCRIPT_NAME} create-sub-epic "Sub-Epic: Database Layer" "Database infrastructure setup" "db-layer" --parent 15 "foundation"
+
+    # Create a feature linked to an epic or sub-epic
+    ${SCRIPT_NAME} create-feature "User Auth" "As a user I want to login" "user-auth" --parent 15 "foundation"
+
+    # Create a task linked to a feature
+    ${SCRIPT_NAME} create-task "Login form validation" "Implement client-side validation" --parent 16 "user-auth"
+
+    # List issues by type
+    ${SCRIPT_NAME} list-issues --issue-type epic
+    ${SCRIPT_NAME} list-issues --issue-type feature
+    ${SCRIPT_NAME} list-issues --issue-type task
+
+    # List children of a parent issue
+    ${SCRIPT_NAME} list-issues --parent 15
+
+    # Search issues
+    ${SCRIPT_NAME} list-issues --search "authentication"
+
+    # Other commands
+    ${SCRIPT_NAME} update-status 42 "In Progress"
+    ${SCRIPT_NAME} get-issue-context 42
+    ${SCRIPT_NAME} migrate-issues
+
+For detailed usage examples, see: README github-issue-manager.md
+Slug creation tips: derive from title, lowercase, hyphens instead of spaces, alphanumeric and hyphens only, max 20 characters, use well known abbreviations where possible (e.g., "auth" for "authentication"), avoid stop words (e.g., "the", "and", "of")
+EOF
+}
+
+print_version() {
+    echo "${SCRIPT_NAME} v${VERSION}"
+    echo "Consolidated GitHub Issue Management for BMAD workflows"
+}
+
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1" >&2
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1" >&2
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1" >&2
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1" >&2
+}
+
+output_json() {
+    echo "$1"
+}
+
+output_error() {
+    echo "{\"error\": \"$1\"}" >&2
+    exit 1
+}
+
+# Validate that a slug is not purely numeric (common AI agent mistake)
+validate_slug() {
+    local slug="$1"
+    local slug_type="$2"  # "epic" or "feature" for error messages
+    
+    # Allow empty slugs (they're handled elsewhere)
+    if [ -z "$slug" ]; then
+        return 0
+    fi
+    
+    # Reject purely numeric slugs - this is likely an issue number passed by mistake
+    if [[ "$slug" =~ ^[0-9]+$ ]]; then
+        log_warning "Invalid ${slug_type}_slug: '$slug' appears to be an issue number, not a semantic slug."
+        log_warning "Slugs should be descriptive (e.g., 'user-auth', 'foundation') not issue numbers."
+        log_warning "Check that you're passing the correct parameters to the script."
+        output_error "Invalid ${slug_type}_slug: '$slug'. Slugs must contain at least one letter or hyphen, not be purely numeric. Expected format: 'lowercase-hyphenated-slug'"
+    fi
+    
+    return 0
+}
+
+#=============================================================================
+# GITHUB ISSUE TYPES FUNCTIONS
+#=============================================================================
+
+# Cache for issue type IDs
+ISSUE_TYPE_CACHE=""
+
+# Get available issue types for the repository
+get_repo_issue_types() {
+    if [ -z "$REPO" ]; then
+        load_config
+    fi
+    
+    # Check cache first
+    if [ -n "$ISSUE_TYPE_CACHE" ]; then
+        echo "$ISSUE_TYPE_CACHE"
+        return 0
+    fi
+    
+    local result=$(gh api graphql -f query='
+        query($owner: String!, $name: String!) {
+            repository(owner: $owner, name: $name) {
+                issueTypes(first: 20) {
+                    nodes {
+                        id
+                        name
+                    }
+                }
+            }
+        }' -f owner="$REPO_OWNER" -f name="$REPO_NAME" \
+        --jq '.data.repository.issueTypes.nodes // []' 2>/dev/null)
+    
+    if [ $? -eq 0 ] && [ -n "$result" ] && [ "$result" != "null" ]; then
+        ISSUE_TYPE_CACHE="$result"
+        echo "$result"
+    else
+        echo "[]"
+    fi
+}
+
+# Get issue type ID by name
+get_issue_type_id() {
+    local type_name="$1"
+    local types=$(get_repo_issue_types)
+    echo "$types" | jq -r --arg name "$type_name" '.[] | select(.name == $name) | .id // empty'
+}
+
+# List issues by native GitHub Issue Type via GraphQL
+# Returns JSON array of issues with the specified type
+list_issues_by_native_type() {
+    local type_name="$1"  # Epic, sub-epic, Feature, Task
+    local search_term="$2"
+    
+    if [ -z "$REPO" ]; then
+        load_config
+    fi
+    
+    # Map lowercase input to proper GitHub Issue Type names
+    local gh_type_name=""
+    case "$type_name" in
+        epic) gh_type_name="Epic" ;;
+        sub-epic) gh_type_name="sub-epic" ;;
+        feature) gh_type_name="Feature" ;;
+        task) gh_type_name="Task" ;;
+        *) gh_type_name="$type_name" ;;  # Pass through for exact matches
+    esac
+    
+    local query='
+    query($owner: String!, $name: String!, $cursor: String) {
+        repository(owner: $owner, name: $name) {
+            issues(first: 100, states: OPEN, after: $cursor) {
+                pageInfo {
+                    hasNextPage
+                    endCursor
+                }
+                nodes {
+                    number
+                    title
+                    body
+                    state
+                    issueType {
+                        name
+                    }
+                    labels(first: 20) {
+                        nodes {
+                            name
+                        }
+                    }
+                    assignees(first: 10) {
+                        nodes {
+                            login
+                        }
+                    }
+                    milestone {
+                        title
+                    }
+                }
+            }
+        }
+    }'
+    
+    local all_issues="[]"
+    local cursor=""
+    local has_next="true"
+    
+    while [ "$has_next" = "true" ]; do
+        local cursor_arg=""
+        if [ -n "$cursor" ]; then
+            cursor_arg="-f cursor=$cursor"
+        fi
+        
+        local result=$(gh api graphql -f query="$query" -f owner="$REPO_OWNER" -f name="$REPO_NAME" $cursor_arg 2>/dev/null)
+        
+        if [ $? -ne 0 ] || [ -z "$result" ]; then
+            log_warning "GraphQL query failed, result: $result"
+            break
+        fi
+        
+        # Extract issues and filter by type
+        local issues=$(echo "$result" | jq --arg type "$gh_type_name" '
+            .data.repository.issues.nodes
+            | map(select(.issueType.name == $type))
+            | map({
+                number: .number,
+                title: .title,
+                body: .body,
+                state: .state,
+                issueType: .issueType.name,
+                labels: [.labels.nodes[].name],
+                assignees: [.assignees.nodes[].login],
+                milestone: .milestone.title
+            })
+        ')
+        
+        # Apply search filter if provided
+        if [ -n "$search_term" ]; then
+            issues=$(echo "$issues" | jq --arg search "$search_term" '
+                map(select(
+                    (.title | test($search; "i")) or
+                    (.body | test($search; "i"))
+                ))
+            ')
+        fi
+        
+        # Merge results
+        all_issues=$(echo "$all_issues $issues" | jq -s 'add')
+        
+        # Check for next page
+        has_next=$(echo "$result" | jq -r '.data.repository.issues.pageInfo.hasNextPage')
+        cursor=$(echo "$result" | jq -r '.data.repository.issues.pageInfo.endCursor')
+    done
+    
+    echo "$all_issues"
+}
+
+# Set GitHub issue type for an issue
+set_issue_type() {
+    local issue_num="$1"
+    local type_name="$2"  # Epic, Sub-Epic, Feature, Task
+    
+    if [ -z "$issue_num" ] || [ -z "$type_name" ]; then
+        log_warning "set_issue_type requires issue_num and type_name"
+        return 1
+    fi
+    
+    local node_id=$(gh api "repos/$REPO/issues/$issue_num" --jq '.node_id' 2>/dev/null)
+    if [ -z "$node_id" ] || [ "$node_id" = "null" ]; then
+        log_warning "Could not get node ID for issue #$issue_num"
+        return 1
+    fi
+    
+    local type_id=$(get_issue_type_id "$type_name")
+    if [ -z "$type_id" ] || [ "$type_id" = "null" ]; then
+        log_warning "Issue type '$type_name' not found in repository. Available types might need to be configured."
+        return 1
+    fi
+    
+    # Set the issue type using GraphQL mutation
+    local result=$(gh api graphql -f query='
+        mutation($issueId: ID!, $issueTypeId: ID!) {
+            updateIssue(input: {id: $issueId, issueTypeId: $issueTypeId}) {
+                issue {
+                    id
+                    issueType {
+                        name
+                    }
+                }
+            }
+        }' -f issueId="$node_id" -f issueTypeId="$type_id" 2>&1)
+    
+    if [ $? -eq 0 ]; then
+        log_info "Set issue type to '$type_name' for issue #$issue_num"
+        return 0
+    else
+        log_warning "Failed to set issue type: $result"
+        return 1
+    fi
+}
+
+check_dependencies() {
+    local missing_deps=()
+    
+    if ! command -v yq &> /dev/null; then
+        missing_deps+=("yq (install with: brew install yq)")
+    fi
+    
+    if ! command -v jq &> /dev/null; then
+        missing_deps+=("jq (install with: brew install jq)")
+    fi
+    
+    if ! command -v gh &> /dev/null; then
+        missing_deps+=("gh (install with: brew install gh)")
+    fi
+    
+    if [ ${#missing_deps[@]} -gt 0 ]; then
+        log_error "Missing dependencies:"
+        for dep in "${missing_deps[@]}"; do
+            log_error "  - $dep"
+        done
+        exit 1
+    fi
+    
+    # Check GitHub authentication
+    if ! gh auth status &> /dev/null; then
+        output_error "GitHub CLI not authenticated. Run: gh auth login"
+    fi
+}
+
+#=============================================================================
+# CONFIGURATION FUNCTIONS
+#=============================================================================
+
+load_config() {
+    check_dependencies
+
+    # Find project root by looking for studio/.roo/skills directory
+    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    PROJECT_ROOT="$(cd "$script_dir" && while [[ ! -d "studio/.roo/skills" && "$(pwd)" != "/" ]]; do cd ..; done && pwd)"
+
+    if [[ ! -d "$PROJECT_ROOT/studio/.roo/skills" ]]; then
+        output_error "Could not find project root with studio/.roo/skills directory"
+    fi
+
+    CONFIG_FILE="$PROJECT_ROOT/studio/.roo/skills/core-config.yaml"
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        output_error "core-config.yaml not found at $CONFIG_FILE"
+    fi
+    
+    # Load repo configuration
+    REPO=$(yq eval '.github.repo' "$CONFIG_FILE" 2>/dev/null || echo "")
+    if [ -z "$REPO" ] || [ "$REPO" = "null" ]; then
+        output_error "No github.repo configured in core-config.yaml"
+    fi
+    
+    # Validate repo format (owner/repo)
+    if [[ ! "$REPO" =~ ^[^/]+/[^/]+$ ]]; then
+        output_error "Invalid repo format. Expected: owner/repo, got: $REPO"
+    fi
+    
+    REPO_OWNER=$(echo "$REPO" | cut -d'/' -f1)
+    REPO_NAME=$(echo "$REPO" | cut -d'/' -f2)
+    
+    # Validate owner and name are not empty
+    if [ -z "$REPO_OWNER" ] || [ -z "$REPO_NAME" ]; then
+        output_error "Failed to parse repo owner/name from: $REPO"
+    fi
+    
+    BOARD_ID=$(yq eval '.github.project_board' "$CONFIG_FILE" 2>/dev/null || echo "")
+    # Board ID can be empty (will be created by ensure_project_board)
+    
+}
+
+#=============================================================================
+# PROJECT BOARD FUNCTIONS
+#=============================================================================
+
+ensure_project_board() {
+    if [ -z "$REPO" ]; then
+        load_config
+    fi
+    
+    # Get organization project board title from config
+    local project_name=$(yq eval '.github.project_board' "$CONFIG_FILE" 2>/dev/null || echo "")
+    if [ -z "$project_name" ] || [ "$project_name" = "null" ]; then
+        output_error "project_board is not configured in core-config.yaml"
+    fi
+    
+    log_info "Looking for project board with title: $project_name"
+    
+    # Check if project exists (using new Projects API)
+    local project_exists=false
+    PROJECT_ID=""
+    PROJECT_NUMBER=""
+    
+    # List organization projects to find existing one
+    local projects_response=$(gh project list --owner "$REPO_OWNER" --format json 2>&1)
+    local gh_exit_code=$?
+    
+    # Check for authentication/scope errors
+    if echo "$projects_response" | grep -q "missing required scopes"; then
+        log_error "GitHub CLI is missing required scopes for project access."
+        log_error "Run: gh auth refresh -s read:project,project"
+        output_error "Missing GitHub scopes. Run: gh auth refresh -s read:project,project"
+    fi
+    
+    if [ $gh_exit_code -eq 0 ] && [ -n "$projects_response" ] && echo "$projects_response" | jq . >/dev/null 2>&1; then
+        local existing_project=$(echo "$projects_response" | jq -r --arg name "$project_name" '.projects[] | select(.title == $name) // empty')
+        if [ -n "$existing_project" ] && [ "$existing_project" != "null" ]; then
+            PROJECT_ID=$(echo "$existing_project" | jq -r '.id // empty')
+            PROJECT_NUMBER=$(echo "$existing_project" | jq -r '.number // empty')
+            if [ -n "$PROJECT_ID" ] && [ -n "$PROJECT_NUMBER" ]; then
+                project_exists=true
+                log_info "Found existing project: $project_name (Number: $PROJECT_NUMBER, ID: $PROJECT_ID)"
+            fi
+        fi
+    fi
+    
+    if [ "$project_exists" = false ]; then
+        # Do NOT automatically create projects - this can cause duplicates
+        # The project must already exist on GitHub
+        log_error "Project '$project_name' not found on GitHub."
+        log_error "Please create the project manually on GitHub or verify the project_board name in core-config.yaml."
+        log_error "To create a project: gh project create --owner $REPO_OWNER --title \"$project_name\""
+        output_error "Project '$project_name' not found. Create it manually on GitHub first."
+    fi
+    
+    log_info "Using existing project: $project_name (ID: $PROJECT_ID, Number: $PROJECT_NUMBER)"
+    
+    # Get project fields to find the existing Status field
+    local fields_response=$(gh project field-list "$PROJECT_NUMBER" --owner "$REPO_OWNER" --format json 2>/dev/null)
+    STATUS_FIELD_ID=""
+    
+    if [ $? -eq 0 ] && [ -n "$fields_response" ]; then
+        # Extract Status field info including existing options
+        local status_field_info=$(echo "$fields_response" | jq -r '.fields[] | select(.name == "Status")')
+        if [ -n "$status_field_info" ] && [ "$status_field_info" != "null" ]; then
+            STATUS_FIELD_ID=$(echo "$status_field_info" | jq -r '.id // empty')
+            local existing_options=$(echo "$status_field_info" | jq -r '.options[]?.name // empty' | tr '\n' ',' | sed 's/,$//')
+            log_info "Status field exists with ID: $STATUS_FIELD_ID"
+            log_info "Existing options: $existing_options"
+        fi
+    fi
+    
+    if [ -z "$STATUS_FIELD_ID" ] || [ "$STATUS_FIELD_ID" = "null" ]; then
+        output_error "Status field not found in project"
+    fi
+
+    # Get the Backlog option ID for setting initial status
+    BACKLOG_OPTION_ID=$(gh api graphql -f query='
+query($projectId: ID!) {
+  node(id: $projectId) {
+    ... on ProjectV2 {
+      fields(first: 20) {
+        nodes {
+          ... on ProjectV2SingleSelectField {
+            id
+            name
+            options {
+              id
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+}' -f projectId="$PROJECT_ID" 2>/dev/null | jq -r '.data.node.fields.nodes[] | select(.name == "Status") | .options[] | select(.name == "Backlog") | .id // empty')
+
+    if [ -n "$BACKLOG_OPTION_ID" ] && [ "$BACKLOG_OPTION_ID" != "null" ]; then
+        log_info "Backlog option ID: $BACKLOG_OPTION_ID"
+    else
+        log_warning "Could not find Backlog option ID, status setting will be skipped"
+    fi
+
+    # Link repository to project
+    log_info "Linking repository to project..."
+    gh project link "$PROJECT_NUMBER" --owner "$REPO_OWNER" --repo "$REPO" 2>/dev/null
+    # Don't fail if already linked
+    
+}
+
+#=============================================================================
+# ISSUE CREATION FUNCTIONS
+#=============================================================================
+
+create_epic_issue() {
+    local title="$1"
+    local body="$2"
+    local epic_slug="$3"
+    
+    if [ -z "$title" ] || [ -z "$body" ] || [ -z "$epic_slug" ]; then
+        output_error "Usage: create-epic <title> <body> <epic_slug>"
+    fi
+    
+    # Validate slug is not purely numeric (common AI agent mistake - passing issue numbers as slugs)
+    validate_slug "$epic_slug" "epic"
+    
+    if [ -z "$REPO" ]; then
+        load_config
+    fi
+
+    ensure_project_board
+
+    # Create issue and capture the issue number directly
+    local issue_url=$(gh issue create --repo "$REPO" --title "$title" --body "$body")
+    if [ $? -ne 0 ]; then
+        output_error "Failed to create epic issue"
+    fi
+    
+    local epic_num=$(echo "$issue_url" | grep -o '[0-9]*$')
+    if [ -z "$epic_num" ]; then
+        output_error "Failed to parse epic issue number"
+    fi
+    
+    # Add to project and set status to Backlog
+    log_info "Adding epic to project..."
+    local add_response=$(gh project item-add "$PROJECT_NUMBER" --owner "$REPO_OWNER" --url "https://github.com/$REPO/issues/$epic_num" --format json 2>/dev/null)
+
+    if [ $? -eq 0 ] && [ -n "$add_response" ]; then
+        local epic_item_id=$(echo "$add_response" | jq -r '.id // empty')
+        if [ -n "$epic_item_id" ] && [ "$epic_item_id" != "null" ]; then
+            # Set status to Backlog using the option ID
+            if [ -n "$BACKLOG_OPTION_ID" ] && [ "$BACKLOG_OPTION_ID" != "null" ]; then
+                gh project item-edit --id "$epic_item_id" --project-id "$PROJECT_ID" --field-id "$STATUS_FIELD_ID" --single-select-option-id "$BACKLOG_OPTION_ID" 2>/dev/null
+                if [ $? -eq 0 ]; then
+                    log_success "Epic added to project with Backlog status"
+                else
+                    log_warning "Epic added to project but failed to set status"
+                fi
+            else
+                log_warning "Epic added to project (status not set - no Backlog option ID)"
+            fi
+        else
+            log_warning "Epic added to project but failed to parse item ID"
+        fi
+    else
+        log_warning "Failed to add epic to project, manual addition needed"
+    fi
+
+    # Set GitHub issue type to "Epic"
+    set_issue_type "$epic_num" "Epic"
+
+    output_json "{\"epic_number\": $epic_num}"
+}
+
+create_sub_epic_issue() {
+    # Parameters: title, body, sub_epic_slug, parent_epic_num, parent_epic_slug
+    local title="$1"
+    local body="$2"
+    local sub_epic_slug="$3"
+    local parent_epic_num="$4"
+    local parent_epic_slug="$5"
+    
+    # Validate required parameters
+    if [ -z "$title" ] || [ -z "$body" ] || [ -z "$sub_epic_slug" ]; then
+        output_error "Usage: create-sub-epic <title> <body> <sub_epic_slug> --parent <parent_epic_num> <parent_epic_slug>"
+    fi
+    
+    # Parent epic info is required for sub-epics
+    if [ -z "$parent_epic_num" ] || [ -z "$parent_epic_slug" ]; then
+        output_error "Sub-epic requires --parent <parent_epic_num> <parent_epic_slug>"
+    fi
+    
+    # Validate slugs are not purely numeric
+    validate_slug "$sub_epic_slug" "sub-epic"
+    validate_slug "$parent_epic_slug" "parent-epic"
+    
+    # Validate parent_epic_num is numeric
+    if ! [[ "$parent_epic_num" =~ ^[0-9]+$ ]]; then
+        output_error "Invalid parent_epic_num: $parent_epic_num. Must be numeric."
+    fi
+    
+    if [ -z "$REPO" ]; then
+        load_config
+    fi
+
+    ensure_project_board
+    
+    # Enhance body with parent epic reference
+    local enhanced_body="$body
+
+Parent Epic: $parent_epic_slug (#$parent_epic_num)"
+
+    # Create sub-epic issue
+    local issue_url=$(gh issue create --repo "$REPO" --title "$title" --body "$enhanced_body")
+    if [ $? -ne 0 ]; then
+        output_error "Failed to create sub-epic issue"
+    fi
+    
+    local sub_epic_num=$(echo "$issue_url" | grep -o '[0-9]*$')
+    if [ -z "$sub_epic_num" ]; then
+        output_error "Failed to parse sub-epic issue number"
+    fi
+    
+    # Add to project and set status to Backlog
+    log_info "Adding sub-epic to project..."
+    local add_response=$(gh project item-add "$PROJECT_NUMBER" --owner "$REPO_OWNER" --url "https://github.com/$REPO/issues/$sub_epic_num" --format json 2>/dev/null)
+
+    if [ $? -eq 0 ] && [ -n "$add_response" ]; then
+        local sub_epic_item_id=$(echo "$add_response" | jq -r '.id // empty')
+        if [ -n "$sub_epic_item_id" ] && [ "$sub_epic_item_id" != "null" ]; then
+            if [ -n "$BACKLOG_OPTION_ID" ] && [ "$BACKLOG_OPTION_ID" != "null" ]; then
+                gh project item-edit --id "$sub_epic_item_id" --project-id "$PROJECT_ID" --field-id "$STATUS_FIELD_ID" --single-select-option-id "$BACKLOG_OPTION_ID" 2>/dev/null
+                if [ $? -eq 0 ]; then
+                    log_success "Sub-epic added to project with Backlog status"
+                else
+                    log_warning "Sub-epic added to project but failed to set status"
+                fi
+            else
+                log_warning "Sub-epic added to project (status not set - no Backlog option ID)"
+            fi
+        else
+            log_warning "Sub-epic added to project but failed to parse item ID"
+        fi
+    else
+        log_warning "Failed to add sub-epic to project, manual addition needed"
+    fi
+
+    # Create sub-issue relationship with parent epic
+    create_sub_issue_relationship "$parent_epic_num" "$sub_epic_num"
+    
+    # Set GitHub issue type to "Sub-Epic"
+    set_issue_type "$sub_epic_num" "Sub-Epic"
+
+    output_json "{\"sub_epic_number\": $sub_epic_num, \"parent_epic_number\": $parent_epic_num}"
+}
+
+create_feature_issue() {
+    # Parameters: title, body, feature_slug, [epic_num], [epic_slug]
+    # epic_num and epic_slug are optional but must be provided together
+    local title="$1"
+    local body="$2"
+    local feature_slug="$3"
+    local epic_num="$4"
+    local epic_slug="$5"
+    
+    # Validate required parameters
+    if [ -z "$title" ] || [ -z "$body" ] || [ -z "$feature_slug" ]; then
+        output_error "Usage: create-feature <title> <body> <feature_slug> [--parent <parent_num> <parent_slug>]"
+    fi
+    
+    # Validate slugs are not purely numeric (common AI agent mistake - passing issue numbers as slugs)
+    validate_slug "$feature_slug" "feature"
+    
+    # If epic_num is provided, epic_slug must also be provided (and vice versa)
+    if [ -n "$epic_num" ] && [ -z "$epic_slug" ]; then
+        output_error "When providing --parent, both <parent_num> and <parent_slug> are required"
+    fi
+    if [ -n "$epic_slug" ] && [ -z "$epic_num" ]; then
+        output_error "When providing --epic, both <epic_num> and <epic_slug> are required"
+    fi
+    
+    # Validate epic_num is numeric if provided
+    if [ -n "$epic_num" ] && ! [[ "$epic_num" =~ ^[0-9]+$ ]]; then
+        output_error "Invalid epic_num: $epic_num. Must be numeric."
+    fi
+    
+    if [ -n "$epic_slug" ]; then
+        validate_slug "$epic_slug" "epic"
+    fi
+    
+    if [ -z "$REPO" ]; then
+        load_config
+    fi
+
+    ensure_project_board
+    
+    # Enhance body with parent epic reference (only if epic info provided)
+    local enhanced_body="$body"
+    if [ -n "$epic_num" ] && [ -n "$epic_slug" ]; then
+        enhanced_body="$body
+
+Parent Epic: $epic_slug (#$epic_num)"
+    fi
+
+    # Create feature issue and capture the issue number directly
+    local issue_url=$(gh issue create --repo "$REPO" --title "$title" --body "$enhanced_body")
+    if [ $? -ne 0 ]; then
+        output_error "Failed to create feature issue"
+    fi
+    
+    local feature_num=$(echo "$issue_url" | grep -o '[0-9]*$')
+    if [ -z "$feature_num" ]; then
+        output_error "Failed to parse feature issue number"
+    fi
+    
+    # Add to project and set status to Backlog
+    log_info "Adding feature to project..."
+    local add_response=$(gh project item-add "$PROJECT_NUMBER" --owner "$REPO_OWNER" --url "https://github.com/$REPO/issues/$feature_num" --format json 2>/dev/null)
+
+    if [ $? -eq 0 ] && [ -n "$add_response" ]; then
+        local feature_item_id=$(echo "$add_response" | jq -r '.id // empty')
+        if [ -n "$feature_item_id" ] && [ "$feature_item_id" != "null" ]; then
+            # Set status to Backlog using the option ID
+            if [ -n "$BACKLOG_OPTION_ID" ] && [ "$BACKLOG_OPTION_ID" != "null" ]; then
+                gh project item-edit --id "$feature_item_id" --project-id "$PROJECT_ID" --field-id "$STATUS_FIELD_ID" --single-select-option-id "$BACKLOG_OPTION_ID" 2>/dev/null
+                if [ $? -eq 0 ]; then
+                    log_success "feature added to project with Backlog status"
+                else
+                    log_warning "feature added to project but failed to set status"
+                fi
+            else
+                log_warning "feature added to project (status not set - no Backlog option ID)"
+            fi
+        else
+            log_warning "feature added to project but failed to parse item ID"
+        fi
+    else
+        log_warning "Failed to add feature to project, manual addition needed"
+    fi
+
+    # Create sub-issue relationship with epic (only if epic_num exists)
+    if [ -n "$epic_num" ]; then
+        create_sub_issue_relationship "$epic_num" "$feature_num"
+    fi
+    
+    # Set GitHub issue type to "Feature"
+    set_issue_type "$feature_num" "Feature"
+
+    output_json "{\"feature_number\": $feature_num, \"parent_number\": ${epic_num:-null}}"
+}
+
+create_task_issue() {
+    # Parameters: title, body, [feature_num], [feature_slug], [epic_slug]
+    # feature_num and feature_slug must be provided together if linking to a feature
+    local title="$1"
+    local body="$2"
+    local feature_num="$3"
+    local feature_slug="$4"
+    local epic_slug="$5"
+    
+    # Validate required parameters
+    if [ -z "$title" ] || [ -z "$body" ]; then
+        output_error "Usage: create-task <title> <body> [--parent <feature_num> <feature_slug>]"
+    fi
+    
+    # If feature_num is provided, feature_slug must also be provided (and vice versa)
+    if [ -n "$feature_num" ] && [ -z "$feature_slug" ]; then
+        output_error "When providing --parent, both <feature_num> and <feature_slug> are required"
+    fi
+    if [ -n "$feature_slug" ] && [ -z "$feature_num" ]; then
+        output_error "When providing --parent, both <feature_num> and <feature_slug> are required"
+    fi
+    
+    # Validate feature_num is numeric if provided
+    if [ -n "$feature_num" ] && ! [[ "$feature_num" =~ ^[0-9]+$ ]]; then
+        output_error "Invalid feature_num: $feature_num. Must be numeric."
+    fi
+    
+    # Validate slugs are not purely numeric (common AI agent mistake - passing issue numbers as slugs)
+    if [ -n "$epic_slug" ]; then
+        validate_slug "$epic_slug" "epic"
+    fi
+    if [ -n "$feature_slug" ]; then
+        validate_slug "$feature_slug" "feature"
+    fi
+    
+    if [ -z "$REPO" ]; then
+        load_config
+    fi
+
+    ensure_project_board
+    
+    # Build enhanced body
+    local enhanced_body="$body"
+    
+    # Add parent feature reference if provided
+    if [ -n "$feature_num" ]; then
+        enhanced_body="$enhanced_body
+
+Parent feature: #$feature_num"
+        if [ -n "$feature_slug" ]; then
+            enhanced_body="$enhanced_body
+feature Slug: $feature_slug"
+        fi
+    fi
+    
+    # Add epic slug info if provided
+    if [ -n "$epic_slug" ]; then
+        enhanced_body="$enhanced_body
+Epic Slug: $epic_slug"
+    fi
+    
+    # Create task issue and capture the issue number directly
+    local issue_url=$(gh issue create --repo "$REPO" --title "$title" --body "$enhanced_body")
+    if [ $? -ne 0 ]; then
+        output_error "Failed to create task issue"
+    fi
+    
+    local task_num=$(echo "$issue_url" | grep -o '[0-9]*$')
+    if [ -z "$task_num" ]; then
+        output_error "Failed to parse task issue number"
+    fi
+    
+    # Add to project and set status to Backlog
+    log_info "Adding task to project..."
+    local add_response=$(gh project item-add "$PROJECT_NUMBER" --owner "$REPO_OWNER" --url "https://github.com/$REPO/issues/$task_num" --format json 2>/dev/null)
+
+    if [ $? -eq 0 ] && [ -n "$add_response" ]; then
+        local task_item_id=$(echo "$add_response" | jq -r '.id // empty')
+        if [ -n "$task_item_id" ] && [ "$task_item_id" != "null" ]; then
+            # Set status to Backlog using the option ID
+            if [ -n "$BACKLOG_OPTION_ID" ] && [ "$BACKLOG_OPTION_ID" != "null" ]; then
+                gh project item-edit --id "$task_item_id" --project-id "$PROJECT_ID" --field-id "$STATUS_FIELD_ID" --single-select-option-id "$BACKLOG_OPTION_ID" 2>/dev/null
+                if [ $? -eq 0 ]; then
+                    log_success "Task added to project with Backlog status"
+                else
+                    log_warning "Task added to project but failed to set status"
+                fi
+            else
+                log_warning "Task added to project (status not set - no Backlog option ID)"
+            fi
+        else
+            log_warning "Task added to project but failed to parse item ID"
+        fi
+    else
+        log_warning "Failed to add task to project, manual addition needed"
+    fi
+
+    # Create sub-issue relationship with parent feature (only if feature_num provided)
+    if [ -n "$feature_num" ]; then
+        create_sub_issue_relationship "$feature_num" "$task_num"
+    fi
+    
+    # Set GitHub issue type to "Task"
+    set_issue_type "$task_num" "Task"
+
+    output_json "{\"task_number\": $task_num, \"parent_feature_number\": ${feature_num:-null}}"
+}
+
+create_sub_issue_relationship() {
+    local parent_issue_num="$1"
+    local child_issue_num="$2"
+    
+    if [ -z "$parent_issue_num" ] || [ -z "$child_issue_num" ]; then
+        output_error "Usage: create-relationship <parent_issue_num> <child_issue_num>"
+    fi
+    
+    # Validate inputs
+    if ! [[ "$parent_issue_num" =~ ^[0-9]+$ ]]; then
+        output_error "Invalid parent issue number: $parent_issue_num. Must be numeric."
+    fi
+    
+    if ! [[ "$child_issue_num" =~ ^[0-9]+$ ]]; then
+        output_error "Invalid child issue number: $child_issue_num. Must be numeric."
+    fi
+    
+    if [ -z "$REPO" ]; then
+        load_config
+    fi
+    
+    # Verify both issues exist
+    if ! gh issue view "$parent_issue_num" --repo "$REPO" >/dev/null 2>&1; then
+        output_error "Parent issue #$parent_issue_num not found in repo $REPO"
+    fi
+    
+    if ! gh issue view "$child_issue_num" --repo "$REPO" >/dev/null 2>&1; then
+        output_error "Child issue #$child_issue_num not found in repo $REPO"
+    fi
+    
+    # Get issue node IDs for GraphQL
+    local parent_node_id=$(gh api "repos/$REPO/issues/$parent_issue_num" --jq '.node_id' 2>/dev/null)
+    local child_node_id=$(gh api "repos/$REPO/issues/$child_issue_num" --jq '.node_id' 2>/dev/null)
+    
+    if [ -z "$parent_node_id" ] || [ -z "$child_node_id" ]; then
+        output_error "Failed to get issue node IDs"
+    fi
+    
+    # Create sub-issue relationship using GraphQL
+    log_info "Creating sub-issue relationship: #$parent_issue_num -> #$child_issue_num"
+    
+    local mutation_result=$(gh api graphql -f query='
+      mutation($parentId: ID!, $subIssueId: ID!) {
+        addSubIssue(input: {
+          issueId: $parentId,
+          subIssueId: $subIssueId
+        }) {
+          issue {
+            id
+            number
+          }
+          subIssue {
+            id
+            number
+          }
+        }
+      }' -f parentId="$parent_node_id" -f subIssueId="$child_node_id" 2>&1)
+    
+    if [ $? -eq 0 ]; then
+        # GraphQL mutation succeeded
+        output_json "{\"success\": \"Sub-issue relationship created\", \"parent\": \"$parent_issue_num\", \"child\": \"$child_issue_num\"}"
+    else
+        # Check if it's an API error we can handle
+        if echo "$mutation_result" | grep -q "not found\|does not exist"; then
+            output_error "GitHub sub-issue API not available or issues not found"
+        else
+            output_error "Failed to create sub-issue relationship: $mutation_result"
+        fi
+    fi
+}
+
+#=============================================================================
+# ISSUE MANAGEMENT FUNCTIONS
+#=============================================================================
+
+update_issue_status() {
+    local issue_num="$1"
+    local column="$2"
+    
+    if [ -z "$issue_num" ] || [ -z "$column" ]; then
+        output_error "Usage: update-status <issue_num> <status>"
+    fi
+    
+    # Validate inputs
+    if ! [[ "$issue_num" =~ ^[0-9]+$ ]]; then
+        output_error "Invalid issue number: $issue_num. Must be numeric."
+    fi
+    
+    if [ -z "$REPO" ]; then
+        load_config
+    fi
+
+    ensure_project_board
+    
+    # Verify issue exists
+    if ! gh issue view "$issue_num" --repo "$REPO" >/dev/null 2>&1; then
+        output_error "Issue #$issue_num not found in repo $REPO"
+    fi
+    
+    # Map old column names to new status options for backward compatibility
+    local status_value
+    case "$column" in
+        "Backlog"|"Todo"|"Next Milestone")
+            status_value="Backlog"
+            ;;
+        "Ready")
+            status_value="Ready"
+            ;;    
+        "In Progress")
+            status_value="In Progress"
+            ;;
+        "AI Review")
+            status_value="AI Review"
+            ;;
+        "Review")
+            status_value="Review"
+            ;;
+        "Done")
+            status_value="Done"
+            ;;
+        *)
+            output_error "Invalid status: $column. Available: Backlog, Ready, In Progress, AI Review, Review, Done (or legacy: Todo, Next Milestone)"
+            ;;
+    esac
+    
+    # Check if issue is already in the project
+    local issue_items_response=$(gh project item-list "$PROJECT_NUMBER" --owner "$REPO_OWNER" --format json 2>/dev/null)
+    local issue_item_id=""
+    
+    if [ $? -eq 0 ] && [ -n "$issue_items_response" ]; then
+        # Find the project item for this issue
+        issue_item_id=$(echo "$issue_items_response" | jq -r --arg issue "$issue_num" --arg repo "$REPO" '[.items[] | select(.content.type == "Issue" and .content.repository == $repo and (.content.number | tostring) == $issue)] | .[0].id // empty')
+    fi
+    
+    # Add issue to project if not already there
+    if [ -z "$issue_item_id" ] || [ "$issue_item_id" = "null" ]; then
+        log_info "Adding issue to project..."
+        local add_response=$(gh project item-add "$PROJECT_NUMBER" --owner "$REPO_OWNER" --url "https://github.com/$REPO/issues/$issue_num" --format json 2>&1)
+        
+        if [ $? -ne 0 ]; then
+            output_error "Failed to add issue to project: $add_response"
+        fi
+        
+        issue_item_id=$(echo "$add_response" | jq -r '.id // empty')
+        if [ -z "$issue_item_id" ] || [ "$issue_item_id" = "null" ]; then
+            output_error "Failed to parse item ID from add response"
+        fi
+    fi
+    
+    # Get the option ID for the status value
+    local status_option_id=$(gh api graphql -f query='
+query($projectId: ID!) {
+  node(id: $projectId) {
+    ... on ProjectV2 {
+      fields(first: 20) {
+        nodes {
+          ... on ProjectV2SingleSelectField {
+            id
+            name
+            options {
+              id
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+}' -f projectId="$PROJECT_ID" | jq -r --arg status "$status_value" '.data.node.fields.nodes[] | select(.name == "Status") | .options[] | select(.name == $status) | .id // empty')
+
+    if [ -z "$status_option_id" ] || [ "$status_option_id" = "null" ]; then
+        output_error "Failed to find option ID for status: $status_value"
+    fi
+
+    # Update the Status field for this issue
+    log_info "Setting status to: $status_value (from $column)"
+    local update_response=$(gh project item-edit --id "$issue_item_id" --project-id "$PROJECT_ID" --field-id "$STATUS_FIELD_ID" --single-select-option-id "$status_option_id" 2>&1)
+    
+    if [ $? -eq 0 ]; then
+        output_json "{\"success\": \"Issue status updated to $status_value\", \"item_id\": \"$issue_item_id\", \"original_column\": \"$column\"}"
+    else
+        output_error "Failed to update status: $update_response"
+    fi
+}
+
+list_issues() {
+    local issue_type=""
+    local parent_num=""
+    local search_term=""
+    local legacy_filter=""
+    
+    if [ -z "$REPO" ]; then
+        load_config
+    fi
+    
+    # Parse arguments
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --issue-type)
+                if [ $# -lt 2 ]; then
+                    output_error "--issue-type requires an argument: epic, sub-epic, feature, or task"
+                fi
+                issue_type="$2"
+                shift 2
+                ;;
+            --parent)
+                if [ $# -lt 2 ]; then
+                    output_error "--parent requires an issue number"
+                fi
+                parent_num="$2"
+                shift 2
+                ;;
+            --search)
+                if [ $# -lt 2 ]; then
+                    output_error "--search requires a search term"
+                fi
+                search_term="$2"
+                shift 2
+                ;;
+            *)
+                # Legacy filter support for backward compatibility
+                legacy_filter="$1"
+                shift
+                ;;
+        esac
+    done
+    
+    local filter_desc=""
+    local output=""
+    
+    # Use native GitHub Issue Types via GraphQL when --issue-type is specified
+    if [ -n "$issue_type" ]; then
+        case "$issue_type" in
+            epic|sub-epic|feature|task)
+                filter_desc="issue_type:$issue_type"
+                log_info "Listing issues with filter: $filter_desc"
+                output=$(list_issues_by_native_type "$issue_type" "$search_term")
+                ;;
+            *)
+                output_error "Invalid issue type: $issue_type. Valid types: epic, sub-epic, feature, task"
+                ;;
+        esac
+        
+        # Filter by parent if specified (post-filter the GraphQL results)
+        if [ -n "$parent_num" ]; then
+            # Validate parent_num is numeric
+            if ! [[ "$parent_num" =~ ^[0-9]+$ ]]; then
+                output_error "Invalid parent issue number: $parent_num. Must be numeric."
+            fi
+            
+            # Get parent issue labels to extract slug
+            local parent_labels=$(gh issue view "$parent_num" --repo "$REPO" --json labels --jq '.labels[].name' 2>/dev/null)
+            local slug_label=$(echo "$parent_labels" | grep -E "^(epic|feature):" | head -1)
+            
+            if [ -n "$slug_label" ]; then
+                # Filter output to only include issues that have this parent's slug label
+                output=$(echo "$output" | jq --arg slug "$slug_label" '[.[] | select(.labels | index($slug))]')
+                filter_desc="${filter_desc} parent:$parent_num"
+            else
+                log_warning "Parent issue #$parent_num has no epic: or feature: label, parent filtering skipped"
+            fi
+        fi
+    else
+        # No issue type specified - use legacy gh issue list approach
+        local gh_args="--state open"
+        
+        if [ -n "$legacy_filter" ]; then
+            # Parse legacy filter format
+            if [[ "$legacy_filter" == *"label:"* ]]; then
+                local label=$(echo "$legacy_filter" | sed -n 's/.*label:\([^ ]*\).*/\1/p')
+                if [ -n "$label" ]; then
+                    gh_args="$gh_args --label \"$label\""
+                fi
+            fi
+            filter_desc="$legacy_filter"
+        else
+            # Default to all open issues
+            filter_desc="state:open"
+        fi
+        
+        # Filter by parent using epic:slug or feature:slug labels
+        if [ -n "$parent_num" ]; then
+            # Validate parent_num is numeric
+            if ! [[ "$parent_num" =~ ^[0-9]+$ ]]; then
+                output_error "Invalid parent issue number: $parent_num. Must be numeric."
+            fi
+            
+            # Get parent issue labels to extract slug
+            local parent_labels=$(gh issue view "$parent_num" --repo "$REPO" --json labels --jq '.labels[].name' 2>/dev/null)
+            if [ -z "$parent_labels" ]; then
+                output_error "Parent issue #$parent_num not found or has no labels"
+            fi
+            
+            local slug_label=$(echo "$parent_labels" | grep -E "^(epic|feature):" | head -1)
+            if [ -n "$slug_label" ]; then
+                gh_args="$gh_args --label \"$slug_label\""
+                filter_desc="${filter_desc} parent:$parent_num"
+            else
+                log_warning "Parent issue #$parent_num has no epic: or feature: label, listing may be incomplete"
+            fi
+        fi
+        
+        # Search in title/body
+        if [ -n "$search_term" ]; then
+            gh_args="$gh_args --search \"$search_term in:title,body\""
+            filter_desc="${filter_desc} search:$search_term"
+        fi
+        
+        # List issues using gh CLI
+        log_info "Listing issues with filter: $filter_desc"
+        output=$(eval "gh issue list $gh_args --json number,title,body,labels,state,assignees,milestone --limit 100 --repo \"$REPO\"" 2>&1)
+        if [ $? -ne 0 ]; then
+            output_error "Failed to list issues: $output"
+        fi
+    fi
+    
+    # Validate JSON output
+    if ! echo "$output" | jq . >/dev/null 2>&1; then
+        output_error "Invalid JSON response"
+    fi
+    
+    # Check if output is empty array (this is normal, not an error)
+    local issue_count=$(echo "$output" | jq '. | length')
+    if [ "$issue_count" -eq 0 ]; then
+        output_json "{\"result\": [], \"count\": 0, \"message\": \"No issues found matching filter: $filter_desc\"}"
+        return 0
+    fi
+    
+    # Return successful result with metadata
+    echo "$output" | jq --arg filter "$filter_desc" --arg count "$issue_count" '{result: ., count: ($count | tonumber), filter: $filter}'
+}
+
+get_issue_context() {
+    local issue_num="$1"
+    
+    if [ -z "$issue_num" ]; then
+        output_error "Usage: get-issue-context <issue_num>"
+    fi
+    
+    # Validate issue number
+    if ! [[ "$issue_num" =~ ^[0-9]+$ ]]; then
+        output_error "Invalid issue number: $issue_num. Must be numeric."
+    fi
+    
+    if [ -z "$REPO" ]; then
+        load_config
+    fi
+    
+    # Verify issue exists and get comprehensive data
+    log_info "Fetching context for issue #$issue_num..."
+    local issue_data=$(gh issue view "$issue_num" --repo "$REPO" --json number,title,state,body,labels,assignees,milestone,createdAt,updatedAt,closedAt,url 2>&1)
+    
+    if [ $? -ne 0 ]; then
+        output_error "Issue #$issue_num not found in repo $REPO"
+    fi
+    
+    # Validate JSON
+    if ! echo "$issue_data" | jq . >/dev/null 2>&1; then
+        output_error "Issue #$issue_num not found or invalid response from GitHub"
+    fi
+    
+    # Extract basic metadata
+    local title=$(echo "$issue_data" | jq -r '.title // empty')
+    local state=$(echo "$issue_data" | jq -r '.state // empty')
+    local body=$(echo "$issue_data" | jq -r '.body // empty')
+    local url=$(echo "$issue_data" | jq -r '.url // empty')
+    local labels_json=$(echo "$issue_data" | jq '.labels')
+    
+    if [ -z "$title" ]; then
+        output_error "Failed to extract issue metadata for #$issue_num"
+    fi
+    
+    # Determine issue type from labels
+    local issue_type="unknown"
+    local labels_names=$(echo "$labels_json" | jq -r '.[].name' 2>/dev/null)
+    
+    if echo "$labels_names" | grep -q "^task$"; then
+        issue_type="task"
+    elif echo "$labels_names" | grep -q "^feature$"; then
+        issue_type="feature"
+    elif echo "$labels_names" | grep -q "^epic$"; then
+        # Check if it's a sub-epic (has Parent Epic in body)
+        if echo "$body" | grep -qi "Parent Epic:"; then
+            issue_type="sub-epic"
+        else
+            issue_type="epic"
+        fi
+    fi
+    
+    # Extract parent information from body
+    local parent_info="null"
+    local parent_match=$(echo "$body" | grep -E "(Parent Epic|Parent feature|Parent Feature):" | head -1)
+    if [ -n "$parent_match" ]; then
+        local parent_num=$(echo "$parent_match" | grep -o '#[0-9]\+' | head -1 | sed 's/#//')
+        if [ -n "$parent_num" ]; then
+            # Fetch parent issue basic info
+            local parent_data=$(gh issue view "$parent_num" --repo "$REPO" --json number,title,state,url 2>/dev/null)
+            if [ $? -eq 0 ] && [ -n "$parent_data" ]; then
+                parent_info="$parent_data"
+            fi
+        fi
+    fi
+    
+    # Get sub-issues (children) using GraphQL if available
+    log_info "Fetching children (sub-issues)..."
+    local node_id=$(gh api "repos/$REPO/issues/$issue_num" --jq '.node_id' 2>/dev/null)
+    local children="[]"
+    
+    if [ -n "$node_id" ] && [ "$node_id" != "null" ]; then
+        log_info "Issue node ID: $node_id"
+        
+        # Query sub-issues using GitHub's sub-issue API (subIssues field)
+        local sub_issues_data=$(gh api graphql -f query='
+            query($nodeId: ID!) {
+                node(id: $nodeId) {
+                    ... on Issue {
+                        subIssues(first: 50) {
+                            nodes {
+                                number
+                                title
+                                state
+                                url
+                            }
+                        }
+                    }
+                }
+            }' -f nodeId="$node_id" 2>&1)
+        
+        local query_status=$?
+        if [ $query_status -eq 0 ] && [ -n "$sub_issues_data" ]; then
+            # Check for GraphQL errors
+            local has_errors=$(echo "$sub_issues_data" | jq -r '.errors // empty' 2>/dev/null)
+            if [ -n "$has_errors" ] && [ "$has_errors" != "null" ]; then
+                log_warning "GraphQL query returned errors: $has_errors"
+                log_info "Sub-issues API may not be available for this repository"
+            else
+                children=$(echo "$sub_issues_data" | jq '[.data.node.subIssues.nodes[] // empty]' 2>/dev/null)
+                local child_count=$(echo "$children" | jq 'length' 2>/dev/null)
+                log_info "Found $child_count sub-issue(s)"
+            fi
+        else
+            log_warning "Failed to query sub-issues (status: $query_status)"
+        fi
+    else
+        log_warning "Could not get node ID for issue #$issue_num"
+    fi
+    
+    # Build result matching SKILL.md specification:
+    # {"number": N, "type": "feature", "title": "...", "body": "...", "parent": {...}, "children": [...]}
+    local result=$(jq -n \
+        --arg num "$issue_num" \
+        --arg type "$issue_type" \
+        --arg title "$title" \
+        --arg body "$body" \
+        --argjson parent "$parent_info" \
+        --argjson children "$children" \
+        --argjson labels "$labels_json" \
+        --arg state "$state" \
+        --arg url "$url" \
+        '{
+            number: ($num | tonumber),
+            type: $type,
+            title: $title,
+            body: $body,
+            state: $state,
+            url: $url,
+            labels: $labels,
+            parent: $parent,
+            children: $children
+        }')
+    
+    log_success "Successfully retrieved context for issue #$issue_num"
+    output_json "$result"
+}
+
+# Alias for backward compatibility
+get_feature_context() {
+    get_issue_context "$@"
+}
+
+#=============================================================================
+# MIGRATION FUNCTIONS
+#=============================================================================
+
+migrate_md_to_issues() {
+    if [ -z "$REPO" ]; then
+        load_config
+    fi
+
+    ensure_project_board
+    
+    # Find feature directory using project root
+    local feature_dir="$PROJECT_ROOT/docs/stories"
+    
+    if [ ! -d "$feature_dir" ]; then
+        output_error "feature directory not found at $feature_dir"
+    fi
+    
+    # Check if directory has any .md files
+    if ! ls "$feature_dir"/*.md >/dev/null 2>&1; then
+        log_warning "No .md files found in $feature_dir"
+        output_json "{\"success\": \"Migration completed\", \"epic_count\": 0, \"feature_count\": 0, \"message\": \"No files to migrate\"}"
+        return 0
+    fi
+    
+    log_info "Starting migration of Markdown stories to GitHub issues..."
+    log_info "feature directory: $feature_dir"
+    
+    # Array to track created issues
+    declare -A epic_issues
+    declare -A feature_issues
+    
+    local migration_log="migration-log-$(date +%Y%m%d-%H%M%S).json"
+    echo "{\"migration_started\": \"$(date -Iseconds)\", \"results\": [" > "$migration_log"
+    
+    local first_result=true
+    
+    # Function to extract section content from markdown
+    extract_section() {
+        local file="$1"
+        local section="$2"
+        
+        # Use awk to extract content between ## Section and next ## or end of file
+        awk -v section="$section" '
+            BEGIN { in_section = 0; content = "" }
+            /^##/ {
+                if (in_section) exit
+                if ($0 ~ "^## " section) in_section = 1
+                next
+            }
+            in_section {
+                if (content != "") content = content "\n"
+                content = content $0
+            }
+            END { print content }
+        ' "$file"
+    }
+    
+    # Function to parse epic/feature numbers from filename
+    parse_filename() {
+        local filename="$1"
+        # Extract pattern like 1.2.feature-title.md -> epic=1, feature=2
+        if [[ $filename =~ ^([0-9]+)\.([0-9]+)\. ]]; then
+            local epic_num="${BASH_REMATCH[1]}"
+            local feature_num="${BASH_REMATCH[2]}"
+            echo "$epic_num $feature_num"
+            return 0
+        fi
+        return 1
+    }
+    
+    # Function to log result
+    log_result() {
+        local type="$1"
+        local file="$2"
+        local issue_num="$3"
+        local status="$4"
+        local message="$5"
+        
+        if [ "$first_result" = false ]; then
+            echo "," >> "$migration_log"
+        fi
+        first_result=false
+        
+        echo "  {" >> "$migration_log"
+        echo "    \"type\": \"$type\"," >> "$migration_log"
+        echo "    \"file\": \"$file\"," >> "$migration_log"
+        echo "    \"issue_number\": $issue_num," >> "$migration_log"
+        echo "    \"status\": \"$status\"," >> "$migration_log"
+        echo "    \"message\": \"$message\"," >> "$migration_log"
+        echo "    \"timestamp\": \"$(date -Iseconds)\"" >> "$migration_log"
+        echo -n "  }" >> "$migration_log"
+    }
+    
+    # First pass: Create epic issues if they don't exist
+    log_info "Phase 1: Creating epic issues..."
+    for feature_file in "$feature_dir"/*.md; do
+        [ -f "$feature_file" ] || continue
+        
+        local filename=$(basename "$feature_file")
+        local parsed=$(parse_filename "$filename")
+        if [ $? -eq 0 ]; then
+            local epic_num=$(echo "$parsed" | cut -d' ' -f1)
+            if [ -z "${epic_issues[$epic_num]}" ]; then
+                log_info "Creating epic issue for Epic $epic_num..."
+                
+                # Create basic epic issue
+                local epic_title="Epic $epic_num: Migration from Markdown"
+                local epic_body="This epic was migrated from existing Markdown stories.
+
+Stories in this epic:
+$(find "$feature_dir" -name "$epic_num.*.md" -exec basename {} \; | sort)"
+                
+                local epic_slug="epic-$epic_num"
+                local result=$(create_epic_issue "$epic_title" "$epic_body" "$epic_slug" 2>&1)
+                if echo "$result" | jq -e '.epic_number' >/dev/null 2>&1; then
+                    local epic_issue_num=$(echo "$result" | jq -r '.epic_number')
+                    epic_issues[$epic_num]=$epic_issue_num
+                    log_success "Created epic issue #$epic_issue_num for Epic $epic_num"
+                    log_result "epic" "Epic $epic_num" "$epic_issue_num" "created" "Epic migrated successfully"
+                else
+                    log_error "Failed to create epic issue for Epic $epic_num: $result"
+                    log_result "epic" "Epic $epic_num" "null" "failed" "Epic creation failed: $result"
+                fi
+            fi
+        fi
+    done
+    
+    # Second pass: Create feature issues
+    log_info "Phase 2: Creating feature issues..."
+    for feature_file in "$feature_dir"/*.md; do
+        [ -f "$feature_file" ] || continue
+        
+        local filename=$(basename "$feature_file")
+        log_info "Processing feature file: $filename"
+        
+        local parsed=$(parse_filename "$filename")
+        if [ $? -eq 0 ]; then
+            local epic_num=$(echo "$parsed" | cut -d' ' -f1)
+            local feature_num=$(echo "$parsed" | cut -d' ' -f2)
+            local epic_issue_num=${epic_issues[$epic_num]}
+            if [ -z "$epic_issue_num" ]; then
+                log_warning "No epic issue found for Epic $epic_num, skipping feature"
+                log_result "feature" "$filename" "null" "skipped" "No parent epic issue found"
+                continue
+            fi
+            
+            # Extract feature content
+            local feature_title=$(head -n 1 "$feature_file" | sed 's/^# *//')
+            if [ -z "$feature_title" ]; then
+                feature_title="feature $epic_num.$feature_num"
+            fi
+            
+            # Build feature body from markdown sections
+            local feature_section=$(extract_section "$feature_file" "feature")
+            local ac_section=$(extract_section "$feature_file" "Acceptance Criteria")
+            local tasks_section=$(extract_section "$feature_file" "Tasks")
+            local dev_notes=$(extract_section "$feature_file" "Dev Notes")
+            
+            local feature_body="# $feature_title
+
+## feature
+$feature_section
+
+## Acceptance Criteria
+$ac_section
+
+## Tasks / Subtasks
+$tasks_section
+
+## Dev Notes
+$dev_notes
+
+---
+*Migrated from: $filename*"
+            
+            log_info "Creating feature issue: $feature_title"
+            # Generate slugs for migration
+            local epic_slug="epic-$epic_num"
+            local feature_slug="feature-$epic_num-$feature_num"
+            # Use new argument order: title, body, feature_slug, epic_num, epic_slug
+            local result=$(create_feature_issue "$feature_title" "$feature_body" "$feature_slug" "$epic_issue_num" "$epic_slug" 2>&1)
+            
+            if echo "$result" | jq -e '.feature_number' >/dev/null 2>&1; then
+                local feature_issue_num=$(echo "$result" | jq -r '.feature_number')
+                feature_issues["$epic_num.$feature_num"]=$feature_issue_num
+                log_success "Created feature issue #$feature_issue_num for $filename"
+                log_result "feature" "$filename" "$feature_issue_num" "created" "feature migrated successfully"
+            else
+                log_error "Failed to create feature issue for $filename: $result"
+                log_result "feature" "$filename" "null" "failed" "feature creation failed: $result"
+            fi
+        else
+            log_warning "Could not parse filename format: $filename"
+            log_result "feature" "$filename" "null" "skipped" "Filename format not recognized"
+        fi
+    done
+    
+    # Close migration log
+    echo "" >> "$migration_log"
+    echo "], \"migration_completed\": \"$(date -Iseconds)\"}" >> "$migration_log"
+    
+    log_success "Migration completed!"
+    
+    # Get accurate counts using array length
+    local epic_count=${#epic_issues[@]}
+    local feature_count=${#feature_issues[@]}
+    
+    log_info "Created $epic_count epic issues"
+    log_info "Created $feature_count feature issues"
+    log_info "Migration log saved to: $migration_log"
+    
+    output_json "{\"success\": \"Migration completed\", \"epic_count\": $epic_count, \"feature_count\": $feature_count, \"log_file\": \"$migration_log\", \"feature_dir\": \"$feature_dir\"}"
+}
+
+#=============================================================================
+# ARGUMENT PARSING HELPERS
+#=============================================================================
+
+# Parse create-feature arguments
+# Syntax: create-feature <title> <body> <feature_slug> [--parent <parent_num> <parent_slug>]
+parse_create_feature_args() {
+    local title=""
+    local body=""
+    local feature_slug=""
+    local parent_num=""
+    local parent_slug=""
+    
+    if [ $# -lt 3 ]; then
+        output_error "Usage: create-feature <title> <body> <feature_slug> [--parent <parent_num> <parent_slug>]"
+    fi
+    
+    title="$1"
+    body="$2"
+    feature_slug="$3"
+    shift 3
+    
+    # Parse optional flags
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --parent|--epic)
+                if [ $# -lt 3 ]; then
+                    output_error "--parent requires two arguments: <parent_num> <parent_slug>"
+                fi
+                parent_num="$2"
+                parent_slug="$3"
+                shift 3
+                ;;
+            *)
+                output_error "Unknown option: $1"
+                ;;
+        esac
+    done
+    
+    # Call create_feature_issue with parameter order: title, body, feature_slug, parent_num, parent_slug
+    create_feature_issue "$title" "$body" "$feature_slug" "$parent_num" "$parent_slug"
+}
+
+# Parse create-task arguments
+# Syntax: create-task <title> <body> [--parent <feature_num> <feature_slug>]
+parse_create_task_args() {
+    local title=""
+    local body=""
+    local feature_num=""
+    local feature_slug=""
+    local epic_slug=""
+    
+    if [ $# -lt 2 ]; then
+        output_error "Usage: create-task <title> <body> [--parent <feature_num> <feature_slug>]"
+    fi
+    
+    title="$1"
+    body="$2"
+    shift 2
+    
+    # Parse optional flags
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --parent|--feature)
+                if [ $# -lt 3 ]; then
+                    output_error "--parent requires two arguments: <feature_num> <feature_slug>"
+                fi
+                feature_num="$2"
+                feature_slug="$3"
+                shift 3
+                ;;
+            *)
+                output_error "Unknown option: $1"
+                ;;
+        esac
+    done
+    
+    # Call create_task_issue with parameter order: title, body, feature_num, feature_slug, epic_slug
+    create_task_issue "$title" "$body" "$feature_num" "$feature_slug" "$epic_slug"
+}
+
+# Parse create-sub-epic arguments
+# Syntax: create-sub-epic <title> <body> <sub_epic_slug> --parent <parent_epic_num> <parent_epic_slug>
+parse_create_sub_epic_args() {
+    local title=""
+    local body=""
+    local sub_epic_slug=""
+    local parent_epic_num=""
+    local parent_epic_slug=""
+    
+    if [ $# -lt 3 ]; then
+        output_error "Usage: create-sub-epic <title> <body> <sub_epic_slug> --parent <parent_epic_num> <parent_epic_slug>"
+    fi
+    
+    title="$1"
+    body="$2"
+    sub_epic_slug="$3"
+    shift 3
+    
+    # Parse required --parent flag
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --parent)
+                if [ $# -lt 3 ]; then
+                    output_error "--parent requires two arguments: <parent_epic_num> <parent_epic_slug>"
+                fi
+                parent_epic_num="$2"
+                parent_epic_slug="$3"
+                shift 3
+                ;;
+            *)
+                output_error "Unknown option: $1"
+                ;;
+        esac
+    done
+    
+    # Call create_sub_epic_issue with parameter order: title, body, sub_epic_slug, parent_epic_num, parent_epic_slug
+    create_sub_epic_issue "$title" "$body" "$sub_epic_slug" "$parent_epic_num" "$parent_epic_slug"
+}
+
+#=============================================================================
+# MAIN COMMAND HANDLER
+#=============================================================================
+
+main() {
+    if [ $# -eq 0 ]; then
+        print_usage
+        exit 1
+    fi
+    
+    local command="$1"
+    shift
+    
+    case "$command" in
+        "create-epic")
+            if [ $# -lt 3 ]; then
+                output_error "Usage: create-epic <title> <body> <epic_slug>"
+            fi
+            create_epic_issue "$1" "$2" "$3"
+            ;;
+        "create-sub-epic")
+            parse_create_sub_epic_args "$@"
+            ;;
+        "create-feature")
+            parse_create_feature_args "$@"
+            ;;
+        "create-task")
+            parse_create_task_args "$@"
+            ;;
+        "update-status")
+            if [ $# -lt 2 ]; then
+                output_error "Usage: update-status <issue_num> <status>"
+            fi
+            update_issue_status "$1" "$2"
+            ;;
+        "list-issues")
+            list_issues "$@"
+            ;;
+        "migrate-issues")
+            migrate_md_to_issues
+            ;;
+        "get-issue-context")
+            if [ $# -lt 1 ]; then
+                output_error "Usage: get-issue-context <issue_num>"
+            fi
+            get_issue_context "$1"
+            ;;
+        "get-feature-context")
+            # Backward compatibility alias
+            if [ $# -lt 1 ]; then
+                output_error "Usage: get-feature-context <issue_num>"
+            fi
+            get_issue_context "$1"
+            ;;
+        "help"|"-h"|"--help")
+            print_usage
+            ;;
+        "version"|"-v"|"--version")
+            print_version
+            ;;
+        *)
+            log_error "Unknown command: $command"
+            echo ""
+            print_usage
+            exit 1
+            ;;
+    esac
+}
+
+# Execute main function with all arguments
+main "$@"
