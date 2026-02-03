@@ -4,7 +4,7 @@ description: This skill ties in to the github-board-manager skill in this reposi
 
 This skill generates GitHub issues and provides project board integration, in combination with the seperate skill "github-board-manager". It contains 4 workflows to generate 4 different types of GitHub issues. Epics, sub-epics, features, and tasks. For epics and sub-epics it is possible, but not necessary, to contain multiple user sories for different roles. Tasks are the smallest units of work. Epics can be a parent of sub-epics and features. Sub-epics are a child of an epic and have features as children. Features have an epic or sub-epic as a child and has tasks as children. Tasks have features as a parent.
 
-Use when user wants to (1) create epics, sub-epics, features, or tasks. (2) Get context for the creation of new issues based on existing issues on the Github project board using the "github-board-manager" skill. (3) Create a new issue with sub-issues. (4) Add newly created issues to the Github project board using the "github-board-manager" skill. (5) Update existing Github issues using the "github-board-manager" skill. (6) Link issues to other issues as sub-issues using the "github-board-manager" skill. (7) Suggest missing features based on existing issues on the Github project board and trhe codebase in the repositories of the project. Triggers on phrases like "create an epic", "create a sub-epic", "create a new feature", "create new task".
+Use when user wants to (1) create epics, sub-epics, features, or tasks. (2) Get context for the creation of new issues based on existing issues on the Github project board using the "github-board-manager" skill. (3) Create a new issue with sub-issues. (4) Add newly created issues to the Github project board using the "github-board-manager" skill. (5) Update existing Github issues using the "github-board-manager" skill. (6) Link issues to other issues as sub-issues using the "github-board-manager" skill. (7) Suggest missing features based on existing issues on the Github project board and trhe codebase in the repositories of the project. Triggers on phrases like "create an epic", "create a sub-epic", "create a new feature", "create new task", "improve existing issue", "improve feature", "improve epic".
 ---
 
 
@@ -239,7 +239,7 @@ For example, ‘As Student (S) I want to read (V) books (O)’.-->
 11. Use the github-board-manager skill workflow "create feature" to create the new feature and link it to the chosen epic or sub-epic.
 
 ## Workflow 4: Create new Task
-This workflow is for generating tasks, the smallest unit of work. Tasks describe concrete functionalities that need to be implemented for the value described in the feature to be realized. Tasks need to have a feature as a parent. The template is very simple and mainly consists of requirements. The workflow is as follows.
+This workflow is for generating tasks, the smallest unit of work. Tasks describe concrete functionalities that need to be implemented for the value described in the feature to be realized. Tasks need to be small. Only a few lines describing the functionality and short requirements that need to be realized. Tasks need to have a feature as a parent. The workflow is as follows:
 
 1. Ask the title of the parent feature of which it the newly created task needs to be a sub-issue.
 2. Retrieve the parent feature using the github-board-manager skill workflow "Retrieve issues".
@@ -263,6 +263,29 @@ This workflow is for generating tasks, the smallest unit of work. Tasks describe
 1. [ ] ...
 "
 
+## Workflow 5: Improve existing issue
+This workflow is for improving existing issues on the project board. It needs to be able to improve on all existing native GitHub issue types on the project board: Epic, Sub-Epic, Feature and Task. The respective templates for Epic, Sub-Epic, Feature and Task types described above in Workflow 1, Workflow 2, Workflow 3, Workflow 4 and Workflow 5. These templates need to be used to improve the existing issue.
+
+This workflow is to get the existing issue, the related issues and based on that and the templates for the types of issues described above (Epic, Sub-Epic, Feature or Task) make suggestions for improvement.
+
+1. Ask the title and number of the issue. 
+2. Retrieve the issue using the github-board-manager skill workflow "Retrieve issues".
+3. Confirm with the user if this is the right issue by showing the title, description and user story. If not approved retry.
+4. When approved, use the "github-board-manager" skill workflow "Retrieve issues" to retreive parent issues and child issues (sub-issue).
+5. Improve the issue based on this context and show it to the user. Write the new issue into a markdown file in a top-level folder called "issue-drafts". Give the follwoing options:
+
+* Correct manually in .md file and wait to publish for user approval
+* Provide feedback and improve
+* Update on GitHub project board
+* Continue improving with more context
+
+If last option "Continue improving with more context" is chosen
+6. Use the "github-board-manager" skill workflow "Retrieve issues" to check if the projectboard contains existing epics, sub-epic, features or tasks that relate or overlap with the intent of the feature and are not a parent or a child of the issue to be improved.
+7. If so, show the user a list of matching issues. Also, ask the user if they want to provide reference to issues that should relate to the feature.
+8. Improve the issue, based on the provided context. Write the new issue into a markdown file in a top-level folder called "issue-drafts". Present the improved description to the user and give them the following options:
+
+* Accept new description and generate full feature based on the format below.
+* The user gets to provide instructions and corrections. Use this input to further improve the new description, and repeat asking the user for next steps.
 ## Advanced Reference
 
 For migration workflows, bulk operations, and troubleshooting, refer to the script usage help:
