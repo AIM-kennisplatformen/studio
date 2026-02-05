@@ -269,10 +269,11 @@ This workflow is for improving existing issues on the project board. It needs to
 This workflow is to get the existing issue, the related issues and based on that and the templates for the types of issues described above (Epic, Sub-Epic, Feature or Task) make suggestions for improvement.
 
 1. Ask the title and number of the issue. 
-2. Retrieve the issue using the github-board-manager skill workflow "Retrieve issues".
+2. Retrieve the issue using the github-board-manager skill workflow "Retrieve issues". Also get the native GitHub issue type. This type should be matched with the template that should be used to improve the issue.
 3. Confirm with the user if this is the right issue by showing the title, description and user story. If not approved retry.
 4. When approved, use the "github-board-manager" skill workflow "Retrieve issues" to retreive parent issues and child issues (sub-issue).
-5. Improve the issue based on this context and show it to the user. Write the new issue into a markdown file in a top-level folder called "issue-drafts". Give the follwoing options:
+5. Improve the issue based on this context, the template described above for the GitHub issue type and show it to the user. 
+6. Write the new issue into a markdown file in a top-level folder called "issue-drafts". Give the follwoing options:
 
 * Correct manually in .md file and wait to publish for user approval
 * Provide feedback and improve
