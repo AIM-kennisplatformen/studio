@@ -126,15 +126,7 @@ llm_worker = ""
 # Linux tasks (POSIX, Bash-only where needed)
 # ====================================
 [tool.pixi.target.linux-64.tasks]
-frontend_build = """
-bash -c 'set -a; source .env; set +a; \
-rm -rf kg && \
-cd src/frontend && \
-echo "VITE_BACKEND_BASE_URL=$BACKEND_BASE_URL" > .env.production && \
-npm install && npm run build && \
-rm .env.production && \
-mv dist ../../kg'
-"""
+frontend_build = "python scripts/build_frontend.py"
 
 backend_no_docker = """
 BASE_URL=http://localhost:10090 PYTHONPATH=src \
@@ -148,16 +140,7 @@ llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
 # macOS x86 tasks
 # ====================================
 [tool.pixi.target.osx-64.tasks]
-frontend_build = """
-bash -c 'set -a; source .env; set +a; \
-rm -rf kg && \
-cd src/frontend && \
-echo "VITE_BACKEND_BASE_URL=$BACKEND_BASE_URL" > .env.production && \
-npm install && npm run build && \
-rm .env.production && \
-mv dist ../../kg'
-"""
-
+frontend_build = "python scripts/build_frontend.py"
 backend_no_docker = """
 BASE_URL=http://localhost:10090 PYTHONPATH=src \
 python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
