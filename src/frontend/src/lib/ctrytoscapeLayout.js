@@ -3,11 +3,14 @@ import cytoscape from 'cytoscape';
 import avsdf from 'cytoscape-avsdf';
 import cola from 'cytoscape-cola';
 import fcose from 'cytoscape-fcose';
+import dagre from 'cytoscape-dagre'; 
 
 // Register the layout extensions
 cytoscape.use(avsdf);
 cytoscape.use(cola);
 cytoscape.use(fcose);
+cytoscape.use(dagre);
+
 
 /**
  * Convert React Flow nodes and edges to Cytoscape format
@@ -239,6 +242,47 @@ export function applyFcoseLayout(nodes, edges, options = {}) {
       x: pos.x,
       y: pos.y
     };
+  });
+  
+  return newPositions;
+}
+
+/**
+ * Apply dagre layout using cytoscape.js in headless mode
+ * Dagre is a hierarchical layout algorithm for directed graphs
+ * @param {Array} nodes - React Flow nodes
+ * @param {Array} edges - React Flow edges
+ * @param {Object} options - Layout options (optional)
+ * @returns {Object} Map of node IDs to new positions
+ */
+export function applyDagreLayout(nodes, edges, options = {}) {
+  const cy = cytoscape({
+    headless: true,
+    elements: reactFlowToCytoscape(nodes, edges)
+  });
+  
+  const layout = cy.layout({
+    name: 'dagre',
+    animate: false,
+    // Direction: TB (top-bottom), LR (left-right), BT, RL
+    rankDir: options.rankDir || 'TB',
+    // Node separation (horizontal for TB, vertical for LR)
+    nodeSep: options.nodeSep || 200,  // Increased to prevent overlap with 160px wide nodes
+    edgeSep: options.edgeSep || 10,
+    // Rank separation (vertical for TB, horizontal for LR)
+    rankSep: options.rankSep || 150,
+    ranker: options.ranker || 'network-simplex',
+    fit: true,
+    padding: options.padding || 30,
+    ...options
+  });
+  
+  layout.run();
+  
+  const newPositions = {};
+  cy.nodes().forEach(node => {
+    const pos = node.position();
+    newPositions[node.id()] = { x: pos.x, y: pos.y };
   });
   
   return newPositions;
