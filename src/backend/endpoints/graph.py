@@ -137,7 +137,7 @@ async def get_node_context(
         if not question:
             await push_chat_message(
                 user_id,
-                "Do you want to ask an question, answered by the full body of literature?"
+                "Do you want to ask an question, answered by the full body of literature? "
                 "Please proceed, by asking me your question?" 
             )
         else:
