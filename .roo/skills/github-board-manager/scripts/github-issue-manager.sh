@@ -57,6 +57,15 @@ COMMANDS:
         Update issue status on project board.
         Valid statuses: Backlog, Ready, In Progress, AI Review, Review, Done
 
+    update-issue <issue_num> [options]
+        Update issue title, body, and/or type.
+        Options:
+          --title <title>       New issue title
+          --body <body>         New issue body (inline text)
+          --body-file <file>    New issue body from file
+          --issue-type <type>   Update GitHub issue type: epic, sub-epic, feature, task
+                                (Default: keeps existing type)
+
     list-issues [options]
         List issues with filtering options.
         Options:
@@ -100,6 +109,9 @@ EXAMPLES:
 
     # Other commands
     ${SCRIPT_NAME} update-status 42 "In Progress"
+    ${SCRIPT_NAME} update-issue 42 --title "New Title" --body "Updated description"
+    ${SCRIPT_NAME} update-issue 42 --body-file ./issue-drafts/epic-42.md
+    ${SCRIPT_NAME} update-issue 42 --issue-type epic
     ${SCRIPT_NAME} get-issue-context 42
     ${SCRIPT_NAME} migrate-issues
 
@@ -1705,6 +1717,188 @@ parse_create_sub_epic_args() {
 }
 
 #=============================================================================
+# UPDATE ISSUE FUNCTIONS
+#=============================================================================
+
+# Update an existing issue's title, body, and/or type
+update_issue() {
+    local issue_num="$1"
+    local title="$2"
+    local body="$3"
+    local body_file="$4"
+    local issue_type="$5"
+    
+    if [ -z "$issue_num" ]; then
+        output_error "Usage: update-issue <issue_num> [--title <title>] [--body <body>] [--body-file <file>] [--issue-type <type>]"
+    fi
+    
+    # Validate issue number
+    if ! [[ "$issue_num" =~ ^[0-9]+$ ]]; then
+        output_error "Invalid issue number: $issue_num. Must be numeric."
+    fi
+    
+    if [ -z "$REPO" ]; then
+        load_config
+    fi
+    
+    # Verify issue exists
+    if ! gh issue view "$issue_num" --repo "$REPO" >/dev/null 2>&1; then
+        output_error "Issue #$issue_num not found in repo $REPO"
+    fi
+    
+    log_info "Updating issue #$issue_num..."
+    
+    # Build gh issue edit command arguments
+    local gh_args=()
+    gh_args+=("$issue_num")
+    gh_args+=("--repo" "$REPO")
+    
+    if [ -n "$title" ]; then
+        gh_args+=("--title" "$title")
+        log_info "Updating title to: $title"
+    fi
+    
+    if [ -n "$body_file" ]; then
+        if [ ! -f "$body_file" ]; then
+            output_error "Body file not found: $body_file"
+        fi
+        gh_args+=("--body-file" "$body_file")
+        log_info "Updating body from file: $body_file"
+    elif [ -n "$body" ]; then
+        gh_args+=("--body" "$body")
+        log_info "Updating body (inline)"
+    fi
+    
+    # Execute the update if there are changes to title or body
+    if [ -n "$title" ] || [ -n "$body" ] || [ -n "$body_file" ]; then
+        local result=$(gh issue edit "${gh_args[@]}" 2>&1)
+        if [ $? -ne 0 ]; then
+            output_error "Failed to update issue: $result"
+        fi
+    fi
+    
+    # Update issue type if specified
+    if [ -n "$issue_type" ]; then
+        log_info "Updating issue type to: $issue_type"
+        
+        # Map issue type string to proper name
+        local type_name
+        case "$issue_type" in
+            "epic"|"Epic")
+                type_name="Epic"
+                ;;
+            "sub-epic"|"Sub-Epic"|"subepic")
+                type_name="Sub-Epic"
+                ;;
+            "feature"|"Feature")
+                type_name="Feature"
+                ;;
+            "task"|"Task")
+                type_name="Task"
+                ;;
+            *)
+                output_error "Invalid issue type: $issue_type. Valid types: epic, sub-epic, feature, task"
+                ;;
+        esac
+        
+        # Get the type ID
+        local type_id=$(get_issue_type_id "$type_name")
+        if [ -z "$type_id" ] || [ "$type_id" = "null" ]; then
+            log_warning "Issue type '$type_name' not available in this repository. Skipping type update."
+        else
+            # Get issue node ID
+            local issue_node_id=$(gh api "repos/$REPO/issues/$issue_num" --jq '.node_id' 2>/dev/null)
+            
+            if [ -n "$issue_node_id" ] && [ "$issue_node_id" != "null" ]; then
+                # Update the issue type using GraphQL
+                local type_result=$(gh api graphql -f query='
+                    mutation($issueId: ID!, $issueTypeId: ID!) {
+                        updateIssue(input: {id: $issueId, issueTypeId: $issueTypeId}) {
+                            issue {
+                                id
+                                issueType {
+                                    name
+                                }
+                            }
+                        }
+                    }' -f issueId="$issue_node_id" -f issueTypeId="$type_id" 2>&1)
+                
+                if [ $? -ne 0 ]; then
+                    log_warning "Failed to update issue type: $type_result"
+                else
+                    log_success "Issue type updated to: $type_name"
+                fi
+            fi
+        fi
+    fi
+    
+    log_success "Successfully updated issue #$issue_num"
+    output_json "{\"updated\": true, \"issue_number\": $issue_num, \"url\": \"https://github.com/$REPO/issues/$issue_num\"}"
+}
+
+# Parse update-issue arguments
+# Syntax: update-issue <issue_num> [--title <title>] [--body <body>] [--body-file <file>] [--issue-type <type>]
+parse_update_issue_args() {
+    local issue_num=""
+    local title=""
+    local body=""
+    local body_file=""
+    local issue_type=""
+    
+    if [ $# -lt 1 ]; then
+        output_error "Usage: update-issue <issue_num> [--title <title>] [--body <body>] [--body-file <file>] [--issue-type <type>]"
+    fi
+    
+    issue_num="$1"
+    shift
+    
+    # Parse optional flags
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --title)
+                if [ $# -lt 2 ]; then
+                    output_error "--title requires an argument"
+                fi
+                title="$2"
+                shift 2
+                ;;
+            --body)
+                if [ $# -lt 2 ]; then
+                    output_error "--body requires an argument"
+                fi
+                body="$2"
+                shift 2
+                ;;
+            --body-file)
+                if [ $# -lt 2 ]; then
+                    output_error "--body-file requires an argument"
+                fi
+                body_file="$2"
+                shift 2
+                ;;
+            --issue-type)
+                if [ $# -lt 2 ]; then
+                    output_error "--issue-type requires an argument"
+                fi
+                issue_type="$2"
+                shift 2
+                ;;
+            *)
+                output_error "Unknown option: $1"
+                ;;
+        esac
+    done
+    
+    # Validate that at least one update option is provided
+    if [ -z "$title" ] && [ -z "$body" ] && [ -z "$body_file" ] && [ -z "$issue_type" ]; then
+        output_error "At least one of --title, --body, --body-file, or --issue-type must be provided"
+    fi
+    
+    # Call update_issue with parsed arguments
+    update_issue "$issue_num" "$title" "$body" "$body_file" "$issue_type"
+}
+
+#=============================================================================
 # MAIN COMMAND HANDLER
 #=============================================================================
 
@@ -1738,6 +1932,9 @@ main() {
                 output_error "Usage: update-status <issue_num> <status>"
             fi
             update_issue_status "$1" "$2"
+            ;;
+        "update-issue")
+            parse_update_issue_args "$@"
             ;;
         "list-issues")
             list_issues "$@"

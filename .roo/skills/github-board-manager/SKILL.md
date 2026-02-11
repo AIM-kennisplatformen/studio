@@ -3,12 +3,12 @@ name: github-board-manager
 description: >
   Executes GitHub project board operations for the github-issues-generator skill.
   Handles CRUD operations for GitHub issues with type classification (epic, sub-epic, feature, task).
-  Supports filtering/retrieval by issue type, parent-child linking, and project board status updates.
+  Supports filtering/retrieval by issue type, parent-child linking, project board status updates, and issue content updates.
   Use when you need to (1) post/publish issues to GitHub, (2) retrieve issues filtered by type,
-  (3) link issues to parent issues, (4) update issue status on project boards.
+  (3) link issues to parent issues, (4) update issue status on project boards, (5) update issue content (title, body, type).
   NOTE: For content generation (drafting epics, features, etc.), use github-issues-generator skill first.
   Triggers: "post this epic", "publish this feature", "retrieve all features", "link to parent",
-  "update status", "list epics", "move issue to In Progress", "list issues", "get issue context".
+  "update status", "update issue", "list epics", "move issue to In Progress", "list issues", "get issue context".
 ---
 
 # GitHub Board Manager
@@ -62,6 +62,7 @@ This skill operates on 4 issue types that must be specified when creating or ret
 | List by Parent | `list-issues --parent <num>` | `[{issue}, ...]` |
 | Get Context | `get-issue-context <num>` | `{issue with hierarchy}` |
 | Update Status | `update-status <num> <status>` | `{"updated": true}` |
+| Update Issue | `update-issue <num> [--title <title>] [--body <body>] [--body-file <file>] [--issue-type <type>]` | `{"updated": true, "issue_number": N}` |
 
 Run script at: `scripts/github-issue-manager.sh` (relative to this skill directory)
 
@@ -195,6 +196,45 @@ Valid statuses: `Backlog`, `Ready`, `In Progress`, `AI Review`, `Review`, `Done`
 ```bash
 ./github-issue-manager.sh update-status 16 "In Progress"
 # Returns: {"updated": true}
+```
+
+### Workflow 7: Update Issue
+
+**Input:** Issue number, and at least one of: title, body, body-file, issue-type
+**Output:** `{"updated": true, "issue_number": N, "url": "..."}`
+
+Update an existing issue's title, body content, and/or GitHub issue type.
+
+#### Update Title
+
+```bash
+./github-issue-manager.sh update-issue 42 --title "New Issue Title"
+# Returns: {"updated": true, "issue_number": 42, "url": "https://github.com/owner/repo/issues/42"}
+```
+
+#### Update Body (Inline)
+
+```bash
+./github-issue-manager.sh update-issue 42 --body "New issue body content..."
+```
+
+#### Update Body (From File)
+
+```bash
+./github-issue-manager.sh update-issue 42 --body-file ./issue-drafts/epic-42.md
+```
+
+#### Update Issue Type
+
+```bash
+./github-issue-manager.sh update-issue 42 --issue-type epic
+# Valid types: epic, sub-epic, feature, task
+```
+
+#### Combined Update
+
+```bash
+./github-issue-manager.sh update-issue 42 --title "Updated Epic Title" --body-file ./issue-drafts/epic-42.md --issue-type epic
 ```
 
 For migration workflows, bulk operations, and troubleshooting, refer to the script usage help:
