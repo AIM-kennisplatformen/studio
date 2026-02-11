@@ -1,0 +1,4 @@
+Feature: qavajs framework
+  Scenario: Open qavajs docs
+    Given I open 'https://qavajs.github.io/' url
+    Then I expect text of 'Body' to contain 'qavajs'
