@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useAtom } from "jotai";
+import { useSetAtom } from "jotai";
 import { messagesAtom } from "./atoms";
 import { io } from "socket.io-client";
 
 const SOCKET_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
 export function useChatWebSocket(setStatus) {
-  const [messages, setMessages] = useAtom(messagesAtom);
+  const setMessages = useSetAtom(messagesAtom);
   const socketRef = useRef(null);
 
   const streamingKeyRef = useRef(null);
@@ -33,8 +33,6 @@ export function useChatWebSocket(setStatus) {
     });
 
     socket.on("message", (data) => {
-      console.log("SOCKET MESSAGE:", data);
-
       if (data.role !== "chatbot") return;
 
       const token = data.content || "";
@@ -52,10 +50,19 @@ export function useChatWebSocket(setStatus) {
         streamingKeyRef.current = newKey;
 
         return [
-          { key: newKey, name: "chatbot", value: token },
+          { key: newKey, name: "chatbot", value: token, reasoning: null },
           ...prev,
         ];
       });
+    });
+
+    socket.on("event", (payload) => {
+      if (payload.data === "") {
+        setStatus("streaming");
+      }
+      else {
+        setStatus("ready");
+      }
     });
 
     socket.on("done", () => {

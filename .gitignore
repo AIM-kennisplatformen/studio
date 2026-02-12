@@ -217,7 +217,9 @@ ollama/
 kg/
 llm_worker_config.toml
 
-
 node_modules/
 
 report/
+
+# Remove auto-generated pycache folder
+src/studio

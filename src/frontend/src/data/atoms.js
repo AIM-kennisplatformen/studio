@@ -38,3 +38,6 @@ export const nodesAtom = atom([]);
 export const edgesAtom = atom([]);
 export const selectedNodeAtom = atom(null);
 export const draggingNodeIdAtom = atom(null);
+export const centerNodeAtom = atom(1);
+export const dataAtom = atom(null);
+export const layoutNodesAtom = atom([]);

@@ -1,4 +1,9 @@
 import React from "react";
+import {
+  BaseEdge,
+  EdgeLabelRenderer,
+  getSmoothStepPath,
+} from "@xyflow/react";
 
 export const SolidEdge = ({
   id,
@@ -6,18 +11,62 @@ export const SolidEdge = ({
   sourceY,
   targetX,
   targetY,
+  sourcePosition,
+  targetPosition,
   style = {},
   markerEnd,
+  label,
+  labelStyle,
+  labelBgStyle,
 }) => {
+  const [edgePath, labelX, labelY] = getSmoothStepPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+  });
+
   return (
-    <path
-      id={id}
-      d={`M${sourceX},${sourceY} L${targetX},${targetY}`}
-      stroke="#000"          // black line
-      strokeWidth={4}        // thickness
-      fill="none"
-      markerEnd={markerEnd}  // optional arrowhead
-      style={style}          // allow inline overrides if needed
-    />
+    <>
+      <BaseEdge
+        id={id}
+        path={edgePath}
+        style={{
+          ...style,
+          stroke: "#038061",
+          strokeWidth: 2,
+          strokeDasharray: "none",
+        }}
+        markerEnd={markerEnd}
+      />
+
+      {label && (
+        <EdgeLabelRenderer>
+          <div
+            className="nodrag nopan"
+            style={{
+              position: "absolute",
+              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+              fontSize: "12px",
+              pointerEvents: "all",
+              ...labelStyle,
+            }}
+          >
+            <div
+              style={{
+                background: "white",
+                padding: "2px 4px",
+                borderRadius: "3px",
+                ...labelBgStyle,
+              }}
+            >
+              {label}
+            </div>
+          </div>
+        </EdgeLabelRenderer>
+      )}
+    </>
   );
 };

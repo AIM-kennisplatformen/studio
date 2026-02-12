@@ -6,6 +6,7 @@ import {
   PromptInputTextarea,
   PromptInputToolbar,
 } from "@/components/shadcn-io/ai/prompt-input";
+import { FeedbackButton } from "@/components/FeedbackButton";
 
 import { Response } from "@/components/shadcn-io/ai/response";
 import { Message, MessageContent } from "@/components/shadcn-io/ai/message";
@@ -13,12 +14,10 @@ import { Message, MessageContent } from "@/components/shadcn-io/ai/message";
 import {
   Conversation,
   ConversationContent,
-  ConversationScrollButton,
 } from "@/components/shadcn-io/ai/conversation";
 
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
-  chatIdAtom,
   messagesAtom,
   textAtom,
   textStatusAtom,
@@ -26,25 +25,35 @@ import {
 
 import { useChatWebSocket } from "./data/chatWebsocket";
 import { useRef, useEffect } from "react";
+import { Reasoning, ReasoningTrigger } from "@/components/shadcn-io/ai/reasoning";
 
 export default function Chat() {
   return (
-    <div className="flex flex-col min-h-screen bg-white">
-      {/* Messages container */}
-      <div className="flex flex-col overflow-y-auto justify-end p-4 flex-1 pb-5">
+    <div className="flex flex-col h-screen bg-white">
+      {/* Messages container - scrollable */}
+      <div className="flex-1 overflow-y-auto p-4">
         <Messages />
       </div>
 
-      {/* Sticky bottom input bar */}
-      <div className="w-full bg-white border-t sticky bottom-0 z-10">
-        <InputArea />
+      {/* Bottom row: Feedback button + InputArea - sticky at bottom */}
+      <div className="flex border-t border-gray-200 bg-white">
+        {/* Left-side Feedback Button */}
+        <div className="flex flex-col justify-end -ml-22 pb-18">
+          <FeedbackButton />
+        </div>
+
+        {/* Input area takes full remaining width */}
+        <div className="flex-1 -ml-9">
+          <InputArea />
+        </div>
       </div>
     </div>
   );
 }
 
+
+
 function InputArea() {
-  const chatId = useAtomValue(chatIdAtom);  // preserved if you need it
   const [text, setText] = useAtom(textAtom);
   const [status, setStatus] = useAtom(textStatusAtom);
   const setMessages = useSetAtom(messagesAtom);
@@ -59,7 +68,8 @@ function InputArea() {
     // Add user message instantly
     setMessages((prev) => [
       { key: prev.length + 1, value: text, name: "user" },
-      ...prev,
+        ...prev,
+
     ]);
 
     // Update UI state
@@ -96,6 +106,7 @@ function InputArea() {
 
 function Messages() {
   const messages = useAtomValue(messagesAtom);
+  const status = useAtomValue(textStatusAtom);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -103,8 +114,10 @@ function Messages() {
   }, [messages]);
 
   return (
+    <div className="flex flex-col h-full">
     <Conversation>
-      <ConversationContent className="flex flex-col overflow-y-auto">
+      <ConversationContent className="flex flex-col overflow-y-auto h-full gap-4">
+        <div className="flex-1"></div>
         {[...messages].reverse().map(({ key, value, name }) =>
           name === "chatbot" ? (
             <div key={key} className="flex items-start gap-2 justify-start pr-20">
@@ -126,12 +139,20 @@ function Messages() {
               </MessageContent>
             </Message>
           )
+          
         )}
-
+          {status === "streaming" && (
+            <div>
+              <Reasoning isStreaming={status === "streaming"}>
+                <ReasoningTrigger style={{ backgroundColor: "transparent", color: "black", border: "none", padding: "0", outline: "none", cursor: "text" }}>
+                  🧠 Thinking...
+                </ReasoningTrigger>
+              </Reasoning>
+            </div>
+          )}
         <div ref={bottomRef} />
       </ConversationContent>
-
-      <ConversationScrollButton className="text-white hover:text-white" />
     </Conversation>
+    </div>
   );
 }

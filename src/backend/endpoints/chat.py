@@ -1,4 +1,3 @@
-import asyncio
 import json
 import time
 from collections import defaultdict
@@ -8,17 +7,17 @@ import httpx
 import socketio
 from fastapi import APIRouter
 
-from backend.config import LLM_WORKER_URL, BASE_URL
+from backend.config import LLM_WORKER_URL, LLM_WORKER_PORT, BASE_URL
 from backend.endpoints.graph import (
     user_graph_contexts,
-    SUBNODES,
-    prefetch_subnode,
+    _default_user_graph_context
 )
-
+from backend.endpoints.graph import fetch_subnode_stream
 from src.backend.utility.chat_util import (
     register_socketio,
     bind_user,
     unbind_sid,
+    push_chat_message_stream,
     sid_connections,
 )
 
@@ -72,7 +71,8 @@ async def connect(sid, environ, auth):
 
     user_id = user["sub"]
     bind_user(user_id, sid)
-
+    user_graph_contexts[user_id] = _default_user_graph_context()
+    
     print(f"✓ Socket connected: {sid} user={user_id}")
 
 
@@ -85,112 +85,135 @@ async def disconnect(sid):
 # =====================================================
 # MAIN MESSAGE HANDLER
 # =====================================================
-
 @sio.event
 async def send_message(sid, data):
-    """
-    Frontend emits:
-        socket.emit("send_message", { message: "..." })
-
-    This function:
-    - resolves user_id
-    - updates session & graph context
-    - streams LLM response token-by-token
-    - kicks off subnode prefetch tasks
-    """
-
-    # --- Resolve user ---
     user_id = sid_connections.get(sid)
     if not user_id:
-        print(f"❌ No user mapped to sid {sid}")
         return
 
-    user_msg = data.get("message", "")
-    print(f"[{user_id}] USER:", user_msg)
+    user_msg = (data.get("message") or "").strip()
+    if not user_msg:
+        return
 
-    # --- Update session ---
-    session = user_sessions[user_id]
-    session["history"].append({"role": "user", "message": user_msg})
-    session["last_seen"] = time.time()
-
-    # --- Update graph context ---
+    session = user_sessions.setdefault(user_id, {"history": []})
     ctx = user_graph_contexts[user_id]
+
+    selected_subnode = ctx.get("selected_subnode", "root")
+    dialogue_state_asked = bool(ctx.get("dialogue_state_asked", False))
+    prefetched = (ctx.get("prefetched") or {}).get(selected_subnode)
+
+    if dialogue_state_asked:
+        try:
+            if user_msg.lower() == "yes":
+                # Use prefetched if available
+                if prefetched:
+                    await push_chat_message_stream(
+                        user_id,
+                        "on_chat_model_stream",
+                        prefetched,
+                        selected_subnode,
+                    )
+                    await push_chat_message_stream(
+                        user_id,
+                        "done",
+                        prefetched,
+                        selected_subnode,
+                    )
+                    return
+
+                question = ctx.get("latest_question") or ctx.get("previous_question")
+            else:
+                ctx["latest_question"] = user_msg
+                ctx["prefetched"] = {}
+                question = ctx["latest_question"]
+
+            await fetch_subnode_stream(user_id, question, selected_subnode)
+            await push_chat_message_stream(
+                    user_id,
+                    "done",
+                    ctx.get("prefetched", {}).get(selected_subnode),
+                    selected_subnode,
+                )
+            return
+
+        finally:
+            ctx["dialogue_state_asked"] = False
+
+
+    # --------------------------------------------------
+    # NORMAL ROOT WORKFLOW (user asked a new question in chat)
+    # --------------------------------------------------
+    session["history"].append({"role": "user", "message": user_msg})
+
+    ctx["previous_question"] = ctx.get("latest_question")
     ctx["latest_question"] = user_msg
     ctx["selected_subnode"] = "root"
+    ctx["dialogue_state_asked"] = False
 
-    # --- Build LLM prompt ---
     synthetic_prompt = (
         "SYSTEM META-INSTRUCTION:\n"
         "Use the `paper_search` MCP tool to identify sources relevant to the question.\n\n"
         f"full_question:\n\"{user_msg}\"\n\n"
-        "keywords_related_to_question=\"Best practices || Target groups || Strategic overview\" "
+        "keywords_related_to_question=\"Best practices || Target groups || Strategic overview\"\n"
         "Provide an evidence-informed explanation when possible.\n"
     )
 
-    # =====================================================
-    # STREAM ROOT RESPONSE FROM LLM WORKER
-    # =====================================================
+    worker_url = f"{LLM_WORKER_URL}:{LLM_WORKER_PORT}"
+    full_response = ""
 
-    async with httpx.AsyncClient(timeout=httpx.Timeout(300)) as client:
-        resp = await client.post(
-            f"{LLM_WORKER_URL}/ask_stream",
+    async with httpx.AsyncClient(timeout=None) as client:
+        async with client.stream(
+            "POST",
+            f"{worker_url}/ask_stream",
             json={
                 "chat_id": "default",
                 "message": synthetic_prompt,
                 "user_id": user_id,
             },
-        )
+        ) as resp:
 
-    if resp.status_code != 200:
-        await sio.emit(
-            "message",
-            {"role": "chatbot", "content": "Error: worker unavailable"},
-            to=sid,
-        )
-        return
+            if resp.status_code != 200:
+                err = "❌ Error: worker unavailable"
+                await push_chat_message_stream(user_id, "on_chat_model_stream", err, "root")
+                await push_chat_message_stream(user_id, "done", err, "root")
+                return
 
-    full_response = ""
+            async for line in resp.aiter_lines():
+                if not line.startswith("data:"):
+                    continue
 
-    async for line in resp.aiter_lines():
-        if not line.strip():
-            continue
+                raw = line.removeprefix("data:").strip()
+                if raw == "[DONE]":
+                    break
 
-        try:
-            payload = json.loads(line)
-        except json.JSONDecodeError:
-            continue
+                try:
+                    payload = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
 
-        # --- Streaming tokens ---
-        if "token" in payload:
-            token = payload["token"]
-            full_response += token
-            await sio.emit("message", {"role": "chatbot", "content": token}, to=sid)
-            continue
+                event_type = payload.get("type")
+                event_data = payload.get("data") or ""
 
-        # --- Optional metadata ---
-        if "topic" in payload:
-            session["last_topic"] = payload["topic"]
+                # Forward events (tool/status/etc.) to frontend event channel
+                # NOTE: your push_chat_message_stream will emit these via "event"
+                if event_type != "on_chat_model_stream":
+                    await push_chat_message_stream(user_id, event_type, event_data, "root")
+                    continue
 
-        # --- Completion ---
-        if payload.get("done"):
-            await sio.emit("done", {"full_response": full_response}, to=sid)
-            break
+                # Stream tokens to chat UI
+                if event_data:
+                    await push_chat_message_stream(
+                        user_id,
+                        "on_chat_model_stream",
+                        event_data,
+                        "root",
+                    )
+                    full_response += event_data
 
-    # --- Store full root answer ---
-    ctx["prefetched"]["root"] = full_response
-    session["history"].append(
-        {"role": "assistant", "message": full_response}
-    )
+    # --------------------------------------------------
+    # FINALIZE ROOT RESPONSE
+    # --------------------------------------------------
+    session["history"].append({"role": "assistant", "message": full_response})
+    ctx.setdefault("prefetched", {})["root"] = full_response
 
-    # =====================================================
-    # KICK OFF SUBNODE PREFETCH (async background tasks)
-    # =====================================================
-    for subnode in SUBNODES:
-        if subnode not in ctx["pending"] and subnode not in ctx["prefetched"]:
-            ctx["pending"][subnode] = asyncio.create_task(
-                prefetch_subnode(
-                    user_id=user_id,
-                    question=user_msg,
-                    subnode=subnode,
-                )
-            )
+    await push_chat_message_stream(user_id, "done", full_response, "root")

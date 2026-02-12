@@ -28,39 +28,56 @@ class QdrantSource:
         """Retrieve semantically similar chunks from Qdrant using local Jina embeddings."""
         with torch.no_grad():
             embedding = self.embedding_model.encode(
-                [query_text], convert_to_numpy=True, normalize_embeddings=True
+                [query_text],
+                convert_to_numpy=True,
+                normalize_embeddings=True,
             )[0]
-            results = self.qdrant.search(
-                collection_name=self.collection,
-                query_vector=embedding.tolist(),
-                limit=limit,
-            )
-            return [
-        (r.payload or {}) | {"score": float(r.score)} for r in results ]
+
+        response = self.qdrant.query_points(
+            collection_name=self.collection,
+            query=embedding.tolist(),
+            limit=limit,
+            with_payload=True,
+            with_vectors=False,
+        )
+
+        return [
+            (point.payload or {}) | {"score": float(point.score)}
+            for point in response.points
+        ]
+
+
 
     def query_on_subset(
         self, question: str, subset: list[str], limit: int = 30
     ) -> list[dict]:
         with torch.no_grad():
             embedding = self.embedding_model.encode(
-                [question], convert_to_numpy=True, normalize_embeddings=True
+                [question],
+                convert_to_numpy=True,
+                normalize_embeddings=True,
             )[0]
 
         filt = Filter(
             must=[
                 FieldCondition(
                     key="zotero_hash",
-                    match=MatchAny(any=subset),  # <-- FIXED
+                    match=MatchAny(any=subset),
                 )
             ]
         )
 
-        results = self.qdrant.search(
+        response = self.qdrant.query_points(
             collection_name=self.collection,
-            query_vector=embedding.tolist(),
+            query=embedding.tolist(),
             limit=limit,
             query_filter=filt,
+            with_payload=True,
+            with_vectors=False,
         )
 
-        return [ (r.payload or {}) | {"score": float(r.score)}   for r in results ]
+        return [
+            (point.payload or {}) | {"score": float(point.score)}
+            for point in response.points
+        ]
 
