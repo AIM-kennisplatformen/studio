@@ -323,3 +323,9 @@ Check:
 * `BACKEND_BASE_URL` in `.env`
 
 ---
+
+
+
+# tests
+
+pixi run qava_test

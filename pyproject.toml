@@ -117,6 +117,8 @@ frontend_build = ""
 backend_no_docker = ""
 mcp_server = ""
 llm_worker = ""
+qava_test = ""
+
 
 # ====================================
 # Linux tasks (POSIX, Bash-only where needed)
@@ -140,6 +142,15 @@ python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 mcp_server = "PYTHONPATH=src python src/mcp_servers/main.py"
 llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
 
+
+qava_test = """
+npx concurrently --success first --kill-others --names "MCP,LLM,BKE,TST" --prefix-colors "magenta,cyan,blue,green" \
+  "pixi run mcp_server" \
+  "npx wait-on tcp:8000 && pixi run llm_worker" \
+  "npx wait-on tcp:7000 && pixi run backend_no_docker" \
+  "npx wait-on tcp:10090 && npx @qavajs/cli run --config tests/bdd/config.mjs"
+"""
+
 # ====================================
 # macOS x86 tasks
 # ====================================
@@ -161,6 +172,14 @@ python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 
 mcp_server = "PYTHONPATH=src python src/mcp_servers/main.py"
 llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
+
+qava_test = """
+npx concurrently --success first --kill-others --names "MCP,LLM,BKE,TST" --prefix-colors "magenta,cyan,blue,green" \
+  "pixi run mcp_server" \
+  "npx wait-on tcp:8000 && pixi run llm_worker" \
+  "npx wait-on tcp:7000 && pixi run backend_no_docker" \
+  "npx wait-on tcp:10090 && npx @qavajs/cli run --config tests/bdd/config.mjs"
+"""
 
 # ====================================
 # macOS ARM tasks
@@ -184,6 +203,16 @@ python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 mcp_server = "PYTHONPATH=src python src/mcp_servers/main.py"
 llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
 
+
+qava_test = """
+npx concurrently --success first --kill-others --names "MCP,LLM,BKE,TST" --prefix-colors "magenta,cyan,blue,green" \
+  "pixi run mcp_server" \
+  "npx wait-on tcp:8000 && pixi run llm_worker" \
+  "npx wait-on tcp:7000 && pixi run backend_no_docker" \
+  "npx wait-on tcp:10090 && npx @qavajs/cli run --config tests/bdd/config.mjs"
+"""
+
+
 # ====================================
 # Windows (cmd.exe)
 # ====================================
@@ -206,6 +235,15 @@ python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 
 mcp_server = 'set PYTHONPATH=src && python src\mcp_servers\main.py'
 llm_worker  = 'set PYTHONPATH=src && python src\llm_worker\main.py'
+
+qava_test = '''
+pixi run frontend_build && ^
+npx concurrently --success first --kill-others --names "MCP,LLM,BKE,TST" --prefix-colors "magenta,cyan,blue,green" ^
+  "pixi run mcp_server" ^
+  "npx wait-on tcp:8000 && pixi run llm_worker" ^
+  "npx wait-on tcp:7000 && pixi run backend_no_docker" ^
+  "npx wait-on tcp:10090 && npx @qavajs/cli run --config tests/bdd/config.mjs"
+'''
 
 # ====================================
 # Pixi activation environment

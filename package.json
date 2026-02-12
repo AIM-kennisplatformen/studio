@@ -1,18 +1,15 @@
 {
-  "name": "qavajs_project",
-  "version": "1.0.0",
-  "description": "qavajs project",
-  "scripts": {
-    "test": "qavajs run"
-  },
-  "dependencies": {
+  "devDependencies": {
     "@cucumber/cucumber": "^12.6.0",
+    "@qavajs/cli": "^1.0.1",
     "@qavajs/console-formatter": "^1.1.1",
     "@qavajs/core": "^2.13.0",
     "@qavajs/html-formatter": "^1.0.0",
+    "@qavajs/memory": "^1.10.3",
     "@qavajs/steps-api": "^2.4.0",
     "@qavajs/steps-memory": "^2.0.1",
     "@qavajs/steps-playwright": "^2.14.1"
   },
   "type": "module"
 }
+
