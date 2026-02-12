@@ -329,3 +329,5 @@ Check:
 # tests
 
 pixi run qava_test
+
+cd studio && docker compose -f docker-compose-authentik.yml -f docker-compose.yml up -d

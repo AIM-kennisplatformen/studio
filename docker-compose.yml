@@ -11,7 +11,8 @@ services:
       PYTHONPATH: "src"
       BACKEND_BASE_URL:    "${BACKEND_BASE_URL}"
       # NOTE: Uses Docker service name for inter-container communication
-      LLM_WORKER_URL:      "http://llm-worker:7000"
+      LLM_WORKER_URL:      "http://llm-worker"
+      LLM_WORKER_PORT:     "7000"
       OAUTH_CLIENT_ID:     "${OAUTH_CLIENT_ID}"
       OAUTH_CLIENT_SECRET: "${OAUTH_CLIENT_SECRET}"
       # Uses external IP so browser redirects work; extra_hosts maps it to Authentik inside Docker
@@ -79,6 +80,11 @@ services:
       LANGFUSE_SECRET_KEY: "${LANGFUSE_SECRET_KEY}"
       LANGFUSE_HOST:       "${LANGFUSE_HOST}"
       LLM_WORKER_URL:      "${LLM_WORKER_URL}"
+      LLM_WORKER_PORT:     "7000"
+      MCP_TOOL_CONFIG_PATH: "/app/scepa_tools_docker.json"
+      OPENAI_HOST:         "${OPENAI_HOST}"
+      OPENAI_API_KEY:      "${OPENAI_API_KEY}"
+      LLM_MODEL:           "${LLM_MODEL}"
     ports:
       - "7000:7000"
     volumes:
