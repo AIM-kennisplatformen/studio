@@ -1,0 +1,99 @@
+services:
+  # ─── Authentik PostgreSQL ───────────────────────────────
+  authentik-postgresql:
+    image: docker.io/library/postgres:16-alpine
+    container_name: authentik-postgresql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 5s
+    volumes:
+      - authentik_database:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: ${PG_PASS:?PG_PASS not set}
+      POSTGRES_USER: authentik
+      POSTGRES_DB: authentik
+    networks:
+      - studio-net
+
+  # ─── Authentik Redis ────────────────────────────────────
+  authentik-redis:
+    image: docker.io/library/redis:7-alpine
+    container_name: authentik-redis
+    command: --save 60 1 --loglevel warning
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+    volumes:
+      - authentik_redis:/data
+    networks:
+      - studio-net
+
+  # ─── Authentik Server (web UI + API) ────────────────────
+  authentik-server:
+    image: ghcr.io/goauthentik/server:2024.12.3
+    container_name: authentik-server
+    restart: unless-stopped
+    command: server
+    environment:
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?AUTHENTIK_SECRET_KEY not set}
+      AUTHENTIK_REDIS__HOST: authentik-redis
+      AUTHENTIK_POSTGRESQL__HOST: authentik-postgresql
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+    volumes:
+      - authentik_media:/media
+      - authentik_templates:/templates
+    ports:
+      - "9000:9000"
+      - "9443:9443"
+    depends_on:
+      authentik-postgresql:
+        condition: service_healthy
+      authentik-redis:
+        condition: service_healthy
+    networks:
+      - studio-net
+
+  # ─── Authentik Worker (background tasks) ────────────────
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:2024.12.3
+    container_name: authentik-worker
+    restart: unless-stopped
+    command: worker
+    environment:
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_REDIS__HOST: authentik-redis
+      AUTHENTIK_POSTGRESQL__HOST: authentik-postgresql
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+    volumes:
+      - authentik_media:/media
+      - authentik_templates:/templates
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      authentik-postgresql:
+        condition: service_healthy
+      authentik-redis:
+        condition: service_healthy
+    networks:
+      - studio-net
+
+networks:
+  studio-net:
+    name: studio-net
+
+volumes:
+  authentik_database:
+  authentik_redis:
+  authentik_media:
+  authentik_templates:

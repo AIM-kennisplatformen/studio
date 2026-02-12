@@ -10,14 +10,22 @@ services:
     environment:
       PYTHONPATH: "src"
       BACKEND_BASE_URL:    "${BACKEND_BASE_URL}"
-      LLM_WORKER_URL:      "${LLM_WORKER_URL}"
+      # NOTE: Uses Docker service name for inter-container communication
+      LLM_WORKER_URL:      "http://llm-worker:7000"
       OAUTH_CLIENT_ID:     "${OAUTH_CLIENT_ID}"
       OAUTH_CLIENT_SECRET: "${OAUTH_CLIENT_SECRET}"
+      # Uses external IP so browser redirects work; extra_hosts maps it to Authentik inside Docker
       OAUTH_DISCOVERY_URL: "${OAUTH_DISCOVERY_URL}"
     ports:
       - "10090:10090"
+    extra_hosts:
+      # NOTE: Maps the VM external IP to the Docker host so the backend can reach Authentik
+      # Change to "host-gateway" or remove if running on your own PC (localhost)
+      - "145.38.190.150:host-gateway"
     volumes:
       - .:/app
+    networks:
+      - studio-net
     command:
       - pixi
       - run
@@ -41,12 +49,15 @@ services:
       ZOTERO_API_KEY: "${ZOTERO_API_KEY}"
       ZOTERO_LIBRARY_ID: "${ZOTERO_LIBRARY_ID}"
       ZOTERO_COLLECTION_ID: "${ZOTERO_COLLECTION_ID}"
-      QDRANT_URL: "${QDRANT_URL}"
+      # NOTE: Uses Docker service name for inter-container communication
+      QDRANT_URL: "qdrant"
       QDRANT_PORT: "${QDRANT_PORT}"
     ports:
       - "8000:8000"
     volumes:
       - .:/app
+    networks:
+      - studio-net
     command:
       - pixi
       - run
@@ -58,6 +69,9 @@ services:
       context: .
       dockerfile: dockerfiles/Dockerfile.llm_worker
     container_name: llm-worker
+    restart: on-failure
+    depends_on:
+      - mcp-server
     env_file: [.env]
     environment:
       PYTHONPATH: "src"
@@ -70,6 +84,8 @@ services:
     volumes:
       - .:/app
       - ./llm_worker_config.toml:/app/llm_worker_config.toml
+    networks:
+      - studio-net
     command:
       - pixi
       - run
@@ -85,6 +101,12 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_paper_data:/qdrant/storage:Z
-  
+    networks:
+      - studio-net
+
+networks:
+  studio-net:
+    name: studio-net
+
 volumes:
   qdrant_paper_data:
