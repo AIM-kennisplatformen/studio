@@ -81,7 +81,7 @@ services:
       LANGFUSE_HOST:       "${LANGFUSE_HOST}"
       LLM_WORKER_URL:      "${LLM_WORKER_URL}"
       LLM_WORKER_PORT:     "7000"
-      MCP_TOOL_CONFIG_PATH: "/app/scepa_tools_docker.json"
+      MCP_TOOL_CONFIG_PATH: "/app/scepa_tools.json"
       OPENAI_HOST:         "${OPENAI_HOST}"
       OPENAI_API_KEY:      "${OPENAI_API_KEY}"
       LLM_MODEL:           "${LLM_MODEL}"

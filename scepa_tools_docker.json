@@ -1,7 +1,0 @@
-{
-"mcpServers": {
-        "paper": {
-                "url": "http://mcp-server:8000/sse"
-        }
-}
-}
