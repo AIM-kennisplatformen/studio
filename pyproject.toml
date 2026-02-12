@@ -143,13 +143,14 @@ mcp_server = "PYTHONPATH=src python src/mcp_servers/main.py"
 llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
 
 
-qava_test = """
-npx concurrently --success first --kill-others --names "MCP,LLM,BKE,TST" --prefix-colors "magenta,cyan,blue,green" \
-  "pixi run mcp_server" \
-  "npx wait-on tcp:8000 && pixi run llm_worker" \
-  "npx wait-on tcp:7000 && pixi run backend_no_docker" \
-  "npx wait-on tcp:10090 && npx @qavajs/cli run --config tests/bdd/config.mjs"
-"""
+qava_test = { cmd = """
+docker compose up -d --build && \
+npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
+npx @qavajs/cli run --config tests/bdd/config.mjs; \
+EXIT_CODE=$?; \
+docker compose stop; \
+exit $EXIT_CODE
+""" }
 
 # ====================================
 # macOS x86 tasks
@@ -173,13 +174,14 @@ python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 mcp_server = "PYTHONPATH=src python src/mcp_servers/main.py"
 llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
 
-qava_test = """
-npx concurrently --success first --kill-others --names "MCP,LLM,BKE,TST" --prefix-colors "magenta,cyan,blue,green" \
-  "pixi run mcp_server" \
-  "npx wait-on tcp:8000 && pixi run llm_worker" \
-  "npx wait-on tcp:7000 && pixi run backend_no_docker" \
-  "npx wait-on tcp:10090 && npx @qavajs/cli run --config tests/bdd/config.mjs"
-"""
+qava_test = { cmd = """
+docker compose up -d --build && \
+npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
+npx @qavajs/cli run --config tests/bdd/config.mjs; \
+EXIT_CODE=$?; \
+docker compose stop; \
+exit $EXIT_CODE
+""" }
 
 # ====================================
 # macOS ARM tasks
@@ -204,13 +206,14 @@ mcp_server = "PYTHONPATH=src python src/mcp_servers/main.py"
 llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
 
 
-qava_test = """
-npx concurrently --success first --kill-others --names "MCP,LLM,BKE,TST" --prefix-colors "magenta,cyan,blue,green" \
-  "pixi run mcp_server" \
-  "npx wait-on tcp:8000 && pixi run llm_worker" \
-  "npx wait-on tcp:7000 && pixi run backend_no_docker" \
-  "npx wait-on tcp:10090 && npx @qavajs/cli run --config tests/bdd/config.mjs"
-"""
+qava_test = { cmd = """
+docker compose up -d --build && \
+npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
+npx @qavajs/cli run --config tests/bdd/config.mjs; \
+EXIT_CODE=$?; \
+docker compose stop; \
+exit $EXIT_CODE
+""" }
 
 
 # ====================================
@@ -236,14 +239,14 @@ python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 mcp_server = 'set PYTHONPATH=src && python src\mcp_servers\main.py'
 llm_worker  = 'set PYTHONPATH=src && python src\llm_worker\main.py'
 
-qava_test = '''
-pixi run frontend_build && ^
-npx concurrently --success first --kill-others --names "MCP,LLM,BKE,TST" --prefix-colors "magenta,cyan,blue,green" ^
-  "pixi run mcp_server" ^
-  "npx wait-on tcp:8000 && pixi run llm_worker" ^
-  "npx wait-on tcp:7000 && pixi run backend_no_docker" ^
-  "npx wait-on tcp:10090 && npx @qavajs/cli run --config tests/bdd/config.mjs"
-'''
+qava_test = { cmd = """
+docker compose up -d --build && \
+npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
+npx @qavajs/cli run --config tests/bdd/config.mjs; \
+$lastCode = $?; \
+docker compose stop; \
+if (!$lastCode) { exit 1 }
+""" }
 
 # ====================================
 # Pixi activation environment
