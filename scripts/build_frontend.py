@@ -2,7 +2,6 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-import os
 
 root = Path(__file__).resolve().parents[1]
 frontend = root / "src" / "frontend"
