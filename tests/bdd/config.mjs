@@ -17,7 +17,10 @@ export default {
     pageObject: new App(),
     browser: {
         capabilities: {
-            browserName: "chromium"
+            browserName: "chromium",
+            // Map host.docker.internal to localhost so OAuth redirects work
+            // (Authentik returns URLs with host.docker.internal when accessed from Docker)
+            args: ["--host-resolver-rules=MAP host.docker.internal 127.0.0.1"]
         }
     }
 }

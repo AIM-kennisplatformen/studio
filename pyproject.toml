@@ -141,11 +141,14 @@ llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
 
 
 qava_test = { cmd = """
+docker compose -f docker-compose-authentik.yml up -d && \
+bash scripts/setup_authentik.sh && \
 docker compose up -d --build && \
 npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
 npx qavajs run --config tests/bdd/config.mjs; \
 EXIT_CODE=$?; \
 docker compose stop; \
+docker compose -f docker-compose-authentik.yml stop; \
 exit $EXIT_CODE
 """ }
 
@@ -163,11 +166,14 @@ mcp_server = "PYTHONPATH=src python src/mcp_servers/main.py"
 llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
 
 qava_test = { cmd = """
+docker compose -f docker-compose-authentik.yml up -d && \
+bash scripts/setup_authentik.sh && \
 docker compose up -d --build && \
 npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
 npx qavajs run --config tests/bdd/config.mjs; \
 EXIT_CODE=$?; \
 docker compose stop; \
+docker compose -f docker-compose-authentik.yml stop; \
 exit $EXIT_CODE
 """ }
 
@@ -195,11 +201,14 @@ llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
 
 
 qava_test = { cmd = """
+docker compose -f docker-compose-authentik.yml up -d && \
+bash scripts/setup_authentik.sh && \
 docker compose up -d --build && \
 npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
 npx qavajs run --config tests/bdd/config.mjs; \
 EXIT_CODE=$?; \
 docker compose stop; \
+docker compose -f docker-compose-authentik.yml stop; \
 exit $EXIT_CODE
 """ }
 
@@ -237,7 +246,7 @@ kg=frontend.parent.parent/'kg';
 shutil.move(str(frontend/'dist'), kg)
 "
 '''
-backend_no_docker = ''' 
+backend_no_docker = '''
 PYTHONPATH=src python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 '''
 
@@ -245,11 +254,14 @@ mcp_server = 'set PYTHONPATH=src && python src\mcp_servers\main.py'
 llm_worker  = 'set PYTHONPATH=src && python src\llm_worker\main.py'
 
 qava_test = { cmd = """
+docker compose -f docker-compose-authentik.yml up -d && \
+bash scripts/setup_authentik.sh && \
 docker compose up -d --build && \
 npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
 npx qavajs run --config tests/bdd/config.mjs; \
 $lastCode = $?; \
 docker compose stop; \
+docker compose -f docker-compose-authentik.yml stop; \
 if (!$lastCode) { exit 1 }
 """ }
 

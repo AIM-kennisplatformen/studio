@@ -49,9 +49,14 @@ services:
       AUTHENTIK_POSTGRESQL__USER: authentik
       AUTHENTIK_POSTGRESQL__NAME: authentik
       AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+      # Bootstrap credentials for the default akadmin user (used by BDD tests)
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD:-admin}
+      AUTHENTIK_BOOTSTRAP_EMAIL: ${AUTHENTIK_BOOTSTRAP_EMAIL:-admin@localhost}
+      AUTHENTIK_BOOTSTRAP_TOKEN: ${AUTHENTIK_BOOTSTRAP_TOKEN:-test-api-token}
     volumes:
       - authentik_media:/media
       - authentik_templates:/templates
+      - ./authentik-blueprints:/blueprints/custom
     ports:
       - "9000:9000"
       - "9443:9443"
@@ -79,6 +84,7 @@ services:
     volumes:
       - authentik_media:/media
       - authentik_templates:/templates
+      - ./authentik-blueprints:/blueprints/custom
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       authentik-postgresql:

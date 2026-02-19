@@ -15,14 +15,11 @@ services:
       LLM_WORKER_PORT:     "7000"
       OAUTH_CLIENT_ID:     "${OAUTH_CLIENT_ID}"
       OAUTH_CLIENT_SECRET: "${OAUTH_CLIENT_SECRET}"
-      # Uses external IP so browser redirects work; extra_hosts maps it to Authentik inside Docker
       OAUTH_DISCOVERY_URL: "${OAUTH_DISCOVERY_URL}"
     ports:
       - "10090:10090"
     extra_hosts:
-      # NOTE: Maps the VM external IP to the Docker host so the backend can reach Authentik
-      # Change to "host-gateway" or remove if running on your own PC (localhost)
-      - "145.38.190.150:host-gateway"
+      - "host.docker.internal:host-gateway"
     volumes:
       - .:/app
     networks:
