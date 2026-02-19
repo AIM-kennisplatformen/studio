@@ -2,6 +2,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import os
 
 root = Path(__file__).resolve().parents[1]
 frontend = root / "src" / "frontend"
@@ -30,8 +31,8 @@ env_prod = frontend / ".env.production"
 env_prod.write_text(f"VITE_BACKEND_BASE_URL={backend_url}")
 
 # Run npm
-subprocess.run(["npm", "install"], cwd=frontend, check=True)
-subprocess.run(["npm", "run", "build"], cwd=frontend, check=True)
+subprocess.run(["npm", "install"], cwd=frontend, check=True, shell=True)
+subprocess.run(["npm", "run", "build"], cwd=frontend, check=True, shell=True)
 
 # Cleanup + move dist
 env_prod.unlink(missing_ok=True)

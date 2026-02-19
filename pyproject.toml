@@ -138,16 +138,7 @@ llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
 # macOS ARM tasks
 # ====================================
 [tool.pixi.target.osx-arm64.tasks]
-frontend_build = """
-bash -c 'set -a; source .env; set +a; \
-rm -rf kg && \
-cd src/frontend && \
-echo "VITE_BACKEND_BASE_URL=$BACKEND_BASE_URL" > .env.production && \
-npm install && npm run build && \
-rm .env.production && \
-mv dist ../../kg'
-"""
-
+frontend_build = "python scripts/build_frontend.py"
 backend_no_docker = """
 BASE_URL=http://localhost:10090 PYTHONPATH=src \
 python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
@@ -160,35 +151,7 @@ llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
 # Windows (cmd.exe)
 # ====================================
 [tool.pixi.target.win-64.tasks]
-frontend_build = '''
-python -c "from pathlib import Path; import shutil;
-root=Path.cwd();
-frontend=root/'src'/'frontend';
-kg=root/'kg';
-
-shutil.rmtree(kg, ignore_errors=True);
-
-env={};
-for l in (root/'.env').read_text().splitlines():
-    l=l.strip();
-    if l and not l.startswith('#'):
-        k,v=l.split('=',1); env[k]=v;
-
-(frontend/'.env.production').write_text(
-    f\"VITE_BACKEND_BASE_URL={env['BACKEND_BASE_URL']}\"
-)
-"
-&& cd src/frontend
-&& npm install
-&& npm run build
-&& python -c "from pathlib import Path; import shutil;
-frontend=Path.cwd();
-kg=frontend.parent.parent/'kg';
-
-(frontend/'.env.production').unlink(missing_ok=True);
-shutil.move(str(frontend/'dist'), kg)
-"
-'''
+frontend_build = "python scripts/build_frontend.py"
 backend_no_docker = ''' 
 PYTHONPATH=src python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 '''
@@ -202,8 +165,10 @@ llm_worker  = 'set PYTHONPATH=src && python src\llm_worker\main.py'
 [tool.pixi.activation.env]
 PYTHONNOUSERSITE = "1"
 LD_LIBRARY_PATH  = "$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
-npm_config_script_shell = "bash"
 
+
+[tool.pixi.target.linux-64.activation.env]
+npm_config_script_shell = "bash"
 
 # ====================================
 # Platform-specific dependencies
