@@ -164,18 +164,13 @@ llm_worker  = 'set PYTHONPATH=src && python src\llm_worker\main.py'
 # ====================================
 [tool.pixi.activation.env]
 PYTHONNOUSERSITE = "1"
-LD_LIBRARY_PATH  = "$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
-
-
-[tool.pixi.target.linux-64.activation.env]
-npm_config_script_shell = "bash"
+# LD_LIBRARY_PATH  = "$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 
 # ====================================
 # Platform-specific dependencies
 # ====================================
 [tool.pixi.target.linux-64.dependencies]
 python-devtools = ">=0.12.2"
-bash = "*"
 
 # ====================================
 # Mypy config
