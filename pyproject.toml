@@ -40,14 +40,15 @@ dependencies = [
   "ollama>=0.4.5",
   "python-dotenv>=1.0.1",
   "qdrant-client>=1.15.1",
-  "sentence-transformers>=5.1.2",
   "pyzotero>=1.7.3",
   "uvicorn[standard]>=0.38.0,<0.39",
   "python-socketio>=5.15.0,<6", 
   "langchain-openai>=1.1.3,<2", 
   "mcp-use>=1.5.0,<2", 
   "langchain>=1.1.3,<2", 
-  "typing-extensions",
+  "typing-extensions", 
+  "torch>=2.10.0,<3", 
+  "sentence-transformers==5.1.2", # Do not update! This will break the Jina model
 ]
 
 # ====================================
@@ -59,8 +60,7 @@ dev = [
   "mypy>=1.18.2",
   "nest-asyncio",
   "ruff>=0.14.5",
-  "toml-sort>=0.24.3",
-  "typing-extensions>=4.15.0",
+  "toml-sort>=0.24.3"
 ]
 
 # ====================================
@@ -79,7 +79,7 @@ channels = [
   "https://repo.prefix.dev/pypdfium2-public",
   "https://repo.prefix.dev/pytorch",
 ]
-platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
+platforms = ["linux-64", "osx-arm64", "win-64"]
 
 
 # ====================================
@@ -98,7 +98,6 @@ lychee = ">=0.15.1"
 # Smaller libs
 einops = ">=0.8.1"
 itsdangerous = ">=2.2.0,<3"
-typing_extensions = ">=4.14.0"
 
 # Tools duplicated in project/dev groups (ok for Pixi env)
 ruff = ">=0.11.13"
@@ -106,7 +105,6 @@ isort = ">=6.0.1"
 mypy = ">=1.16.0"
 loguru = ">=0.7.3,<0.8"
 python-dotenv = ">=1.1.0"
-
 # ====================================
 # Shared Pixi tasks (placeholders unless overridden)
 # ====================================
@@ -137,32 +135,10 @@ mcp_server = "PYTHONPATH=src python src/mcp_servers/main.py"
 llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
 
 # ====================================
-# macOS x86 tasks
-# ====================================
-[tool.pixi.target.osx-64.tasks]
-frontend_build = "python scripts/build_frontend.py"
-backend_no_docker = """
-BASE_URL=http://localhost:10090 PYTHONPATH=src \
-python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
-"""
-
-mcp_server = "PYTHONPATH=src python src/mcp_servers/main.py"
-llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
-
-# ====================================
 # macOS ARM tasks
 # ====================================
 [tool.pixi.target.osx-arm64.tasks]
-frontend_build = """
-bash -c 'set -a; source .env; set +a; \
-rm -rf kg && \
-cd src/frontend && \
-echo "VITE_BACKEND_BASE_URL=$BACKEND_BASE_URL" > .env.production && \
-npm install && npm run build && \
-rm .env.production && \
-mv dist ../../kg'
-"""
-
+frontend_build = "python scripts/build_frontend.py"
 backend_no_docker = """
 BASE_URL=http://localhost:10090 PYTHONPATH=src \
 python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
@@ -175,35 +151,7 @@ llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
 # Windows (cmd.exe)
 # ====================================
 [tool.pixi.target.win-64.tasks]
-frontend_build = '''
-python -c "from pathlib import Path; import shutil;
-root=Path.cwd();
-frontend=root/'src'/'frontend';
-kg=root/'kg';
-
-shutil.rmtree(kg, ignore_errors=True);
-
-env={};
-for l in (root/'.env').read_text().splitlines():
-    l=l.strip();
-    if l and not l.startswith('#'):
-        k,v=l.split('=',1); env[k]=v;
-
-(frontend/'.env.production').write_text(
-    f\"VITE_BACKEND_BASE_URL={env['BACKEND_BASE_URL']}\"
-)
-"
-&& cd src/frontend
-&& npm install
-&& npm run build
-&& python -c "from pathlib import Path; import shutil;
-frontend=Path.cwd();
-kg=frontend.parent.parent/'kg';
-
-(frontend/'.env.production').unlink(missing_ok=True);
-shutil.move(str(frontend/'dist'), kg)
-"
-'''
+frontend_build = "python scripts/build_frontend.py"
 backend_no_docker = ''' 
 PYTHONPATH=src python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 '''
@@ -216,15 +164,13 @@ llm_worker  = 'set PYTHONPATH=src && python src\llm_worker\main.py'
 # ====================================
 [tool.pixi.activation.env]
 PYTHONNOUSERSITE = "1"
-LD_LIBRARY_PATH  = "$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
-npm_config_script_shell = "bash"
+# LD_LIBRARY_PATH  = "$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 
 # ====================================
 # Platform-specific dependencies
 # ====================================
 [tool.pixi.target.linux-64.dependencies]
 python-devtools = ">=0.12.2"
-bash = "*"
 
 # ====================================
 # Mypy config
