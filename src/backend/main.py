@@ -11,6 +11,14 @@ from backend.endpoints.auth import auth_router
 from backend.endpoints.chat import chat_router, socket_app
 from backend.endpoints.graph import graph_router
 
+# Build list of allowed CORS origins
+cors_origins = [BASE_URL]
+# Add common development URLs
+if BASE_URL != "http://localhost:10090":
+    cors_origins.append("http://localhost:10090")
+if BASE_URL != "http://host.docker.internal:10090":
+    cors_origins.append("http://host.docker.internal:10090")
+
 
 
 @asynccontextmanager
@@ -42,7 +50,7 @@ app.add_middleware(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[BASE_URL],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

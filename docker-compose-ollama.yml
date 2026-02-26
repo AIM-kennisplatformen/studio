@@ -9,16 +9,44 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
+    networks:
+      - studio-net
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list | grep -q '${LLM_MODEL:-mistral}'"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 10s
+
+    # if you have an NVIDIA GPU and want to use it with Ollama, uncomment the following lines
+
+    # environment:
+    #   NVIDIA_VISIBLE_DEVICES: "all"
+    #   NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
+    # runtime: nvidia
+
+  # Init service: pulls the LLM model into Ollama on first startup
+  ollama-pull:
+    image: ollama/ollama:latest
+    container_name: ollama-pull
+    depends_on:
+      ollama:
+        condition: service_started
+    networks:
+      - studio-net
+    entrypoint: ["sh", "-c", "sleep 5 && ollama pull ${LLM_MODEL:-mistral}"]
     environment:
-      NVIDIA_VISIBLE_DEVICES: "all"
-      NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
-    runtime: nvidia 
+      OLLAMA_HOST: "http://ollama:11434"
+    restart: "no"
 
   kg-backend:
     environment:
-      LLM_WORKER_URL: "http://llm-worker:7000"
+      LLM_WORKER_URL: "http://llm-worker"
     depends_on:
-      - ollama
+      ollama:
+        condition: service_healthy
+      ollama-pull:
+        condition: service_completed_successfully
 
   mcp-server:
     environment:
@@ -28,10 +56,11 @@ services:
       - ollama
       - qdrant
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 5s
-      timeout: 3s
+      test: ["CMD", "pixi", "run", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/sse')"]
+      interval: 10s
+      timeout: 5s
       retries: 10
+      start_period: 30s
 
   llm-worker:
     environment:
@@ -40,13 +69,24 @@ services:
       mcp-server:
         condition: service_healthy
       ollama:
-        condition: service_started
+        condition: service_healthy
       qdrant:
         condition: service_healthy
 
 
   qdrant:
-    image: qdrant/qdrant:latest
     container_name: qdrant_kg
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c ':> /dev/tcp/localhost/6333'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    
+networks:
+  studio-net:
+    name: studio-net
+
 volumes:
   ollama_data:

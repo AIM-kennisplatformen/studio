@@ -43,6 +43,7 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
+ollama_cache/
 nosetests.xml
 coverage.xml
 *.cover

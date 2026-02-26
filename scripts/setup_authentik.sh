@@ -5,6 +5,19 @@
 
 set -e
 
+# Load environment variables from .env if it exists
+if [ -f .env ]; then
+  export $(grep -v '^#' .env | xargs)
+fi
+
+# Determine the backend base URL for redirect URIs
+# Priority: BACKEND_BASE_URL > VITE_BACKEND_BASE_URL > default to localhost
+BACKEND_URL="${BACKEND_BASE_URL:-${VITE_BACKEND_BASE_URL:-http://localhost:10090}}"
+# Ensure it doesn't have trailing slash
+BACKEND_URL="${BACKEND_URL%/}"
+
+echo "Using BACKEND_URL: $BACKEND_URL"
+
 echo "Waiting for Authentik to be healthy..."
 npx wait-on http-get://localhost:9000/-/health/ready/
 
@@ -60,10 +73,21 @@ except CertificateKeyPair.DoesNotExist:
 scope_mappings = ScopeMapping.objects.filter(scope_name__in=['openid', 'email', 'profile'])
 
 # Build redirect URIs as dataclass instances
+# Dynamically construct redirect URIs based on environment
+backend_url = '$BACKEND_URL'
 redirect_uris = [
+    RedirectURI(matching_mode=RedirectURIMatchingMode.STRICT, url=f'{backend_url}/auth/callback'),
     RedirectURI(matching_mode=RedirectURIMatchingMode.STRICT, url='http://localhost:10090/auth/callback'),
     RedirectURI(matching_mode=RedirectURIMatchingMode.STRICT, url='http://host.docker.internal:10090/auth/callback'),
 ]
+# Remove duplicates while preserving order
+seen = set()
+unique_uris = []
+for uri in redirect_uris:
+    if uri.url not in seen:
+        seen.add(uri.url)
+        unique_uris.append(uri)
+redirect_uris = unique_uris
 
 # Create or update the OAuth2 provider
 provider, created = OAuth2Provider.objects.update_or_create(
@@ -91,7 +115,7 @@ app, created = Application.objects.update_or_create(
     defaults={
         'name': 'Studio',
         'provider': provider,
-        'meta_launch_url': 'http://localhost:10090/',
+        'meta_launch_url': f'{backend_url}/',
     }
 )
 action = 'Created' if created else 'Updated'
@@ -100,6 +124,8 @@ print(f'{action} application (slug={app.slug})')
 
 # Verify
 echo "Verifying discovery endpoint..."
+# Always use localhost for verification since Authentik is exposed on localhost:9000
+# (OAUTH_DISCOVERY_URL may use host.docker.internal which does not resolve on the host)
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:9000/application/o/studio/.well-known/openid-configuration")
 if [ "$HTTP_CODE" = "200" ]; then
   echo "OK: OAuth2 application setup complete!"

@@ -25,9 +25,15 @@ from src.backend.utility.chat_util import (
 # SOCKET.IO SERVER
 # =====================================================
 
+# Build list of allowed CORS origins for Socket.IO
+# In development, allow all origins (tests may run from various IPs)
+# For production, restrict to known origins
+cors_origins = "*"
+
 sio = socketio.AsyncServer(
     async_mode="asgi",
-    cors_allowed_origins=[BASE_URL],
+    cors_allowed_origins=cors_origins,
+    cors_credentials=True,
 )
 
 register_socketio(sio)
