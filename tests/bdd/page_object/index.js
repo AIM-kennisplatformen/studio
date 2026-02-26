@@ -1,7 +1,6 @@
 import { locator } from "@qavajs/steps-playwright/po.js";
 export default class App {
   Body = locator("body");
-  GetStartedButton = locator("a.button[href='/docs/intro']");
 
   // Authentik login page selectors
   AuthentikUsernameInput = locator("input[name='uidField']");

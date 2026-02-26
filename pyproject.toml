@@ -144,12 +144,12 @@ setup_ollama_cache = { cmd = "docker compose -f docker-compose.yml -f docker-com
 qava_test = { cmd = """
 npm install && \
 pixi run frontend_build && \
-docker compose -f docker-compose.yml -f docker-compose-authentik.yml up -d && \
+docker compose -f docker-compose.yml -f docker-compose-nebius.yml -f docker-compose-authentik.yml up -d && \
 bash scripts/setup_authentik.sh && \
 npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
 npx qavajs run --config tests/bdd/config.mjs; \
 EXIT_CODE=$?; \
-docker compose -f docker-compose.yml stop; \
+docker compose -f docker-compose.yml -f docker-compose-nebius.yml stop; \
 docker compose -f docker-compose-authentik.yml stop; \
 exit $EXIT_CODE
 """ }
@@ -177,12 +177,12 @@ docker compose -f docker-compose-ollama.yml stop
 qava_test = { cmd = """
 npm install && \
 pixi run frontend_build && \
-docker compose -f docker-compose.yml -f docker-compose-authentik.yml up -d --build && \
+docker compose -f docker-compose.yml -f docker-compose-nebius.yml -f docker-compose-authentik.yml up -d --build && \
 bash scripts/setup_authentik.sh && \
 npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
 npx qavajs run --config tests/bdd/config.mjs; \
 EXIT_CODE=$?; \
-docker compose -f docker-compose.yml stop; \
+docker compose -f docker-compose.yml -f docker-compose-nebius.yml stop; \
 docker compose -f docker-compose-authentik.yml stop; \
 exit $EXIT_CODE
 """ }
@@ -219,12 +219,12 @@ docker compose -f docker-compose-ollama.yml stop
 qava_test = { cmd = """
 npm install && \
 pixi run frontend_build && \
-docker compose -f docker-compose.yml -f docker-compose-authentik.yml up -d && \
+docker compose -f docker-compose.yml -f docker-compose-nebius.yml -f docker-compose-authentik.yml up -d && \
 bash scripts/setup_authentik.sh && \
 npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
 npx qavajs run --config tests/bdd/config.mjs; \
 EXIT_CODE=$?; \
-docker compose -f docker-compose.yml stop; \
+docker compose -f docker-compose.yml -f docker-compose-nebius.yml stop; \
 docker compose -f docker-compose-authentik.yml stop; \
 exit $EXIT_CODE
 """ }
@@ -275,12 +275,12 @@ setup_ollama_cache = { cmd = "docker compose -f docker-compose.yml -f docker-com
 qava_test = { cmd = """
 npm install && \
 pixi run frontend_build && \
-docker compose -f docker-compose.yml -f docker-compose-authentik.yml up -d && \
+docker compose -f docker-compose.yml -f docker-compose-nebius.yml -f docker-compose-authentik.yml up -d && \
 bash scripts/setup_authentik.sh && \
 npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
 npx qavajs run --config tests/bdd/config.mjs; \
 $lastCode = $?; \
-docker compose -f docker-compose.yml stop; \
+docker compose -f docker-compose.yml -f docker-compose-nebius.yml stop; \
 docker compose -f docker-compose-authentik.yml stop; \
 if (!$lastCode) { exit 1 }
 """ }

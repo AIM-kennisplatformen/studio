@@ -14,7 +14,7 @@ export default {
         ["@qavajs/html-formatter", "report/report.html"]
     ],
     // Increase Cucumber step timeout to 120s (default is 10s)
-    // Needed for steps that wait for LLM responses and Ollama readiness
+    // Needed for steps that wait for LLM responses
     defaultTimeout: 120000,
     memory: new Memory(),
     pageObject: new App(),
