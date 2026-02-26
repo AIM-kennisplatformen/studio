@@ -1,9 +1,71 @@
 /* Copied from PoC-Robert-React-Flow */
 // Helper function to calculate which handles to connect to based on shortest distance
-export function getEdgeHandles(
+export function getEdgeHandles( sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  nodeWidth = 160,
+  nodeHeight = 80,
+  sourceScale = 1,
+  targetScale = 1
 ) {
-  // Always use bottom for source and top for target
-  return { sourceHandle: "bottom", targetHandle: "target-top" };
+   // Apply scale to node dimensions for visual accuracy
+  const scaledSourceWidth = nodeWidth * sourceScale;
+  const scaledSourceHeight = nodeHeight * sourceScale;
+  const scaledTargetWidth = nodeWidth * targetScale;
+  const scaledTargetHeight = nodeHeight * targetScale;
+
+  // Define handle positions relative to node center
+  const sourceHandles = {
+    top: { x: sourceX, y: sourceY - scaledSourceHeight / 2, name: "top" },
+    bottom: { x: sourceX, y: sourceY + scaledSourceHeight / 2, name: "bottom" },
+    left: { x: sourceX - scaledSourceWidth / 2, y: sourceY, name: "left" },
+    right: { x: sourceX + scaledSourceWidth / 2, y: sourceY, name: "right" },
+  };
+
+  const targetHandles = {
+    top: {
+      x: targetX,
+      y: targetY - scaledTargetHeight / 2,
+      name: "target-top",
+    },
+    bottom: {
+      x: targetX,
+      y: targetY + scaledTargetHeight / 2,
+      name: "target-bottom",
+    },
+    left: {
+      x: targetX - scaledTargetWidth / 2,
+      y: targetY,
+      name: "target-left",
+    },
+    right: {
+      x: targetX + scaledTargetWidth / 2,
+      y: targetY,
+      name: "target-right",
+    },
+  };
+
+  // Find the pair of handles with the shortest distance
+  let minDistance = Infinity;
+  let bestSourceHandle = "right";
+  let bestTargetHandle = "target-left";
+
+  Object.values(sourceHandles).forEach((sourceHandle) => {
+    Object.values(targetHandles).forEach((targetHandle) => {
+      const dx = targetHandle.x - sourceHandle.x;
+      const dy = targetHandle.y - sourceHandle.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        bestSourceHandle = sourceHandle.name;
+        bestTargetHandle = targetHandle.name;
+      }
+    });
+  });
+
+  return { sourceHandle: bestSourceHandle, targetHandle: bestTargetHandle };
 }
 
 // Helper function to get emoji and color based on entity type
@@ -85,11 +147,20 @@ export function updateEdgePositions(currentEdges, currentNodes) {
 
     if (!sourceNode || !targetNode) return edge;
 
+     // Use fixed width since scaling is done via CSS transform
+    const { sourceHandle, targetHandle } = getEdgeHandles(
+      sourceNode.position.x,
+      sourceNode.position.y,
+      targetNode.position.x,
+      targetNode.position.y,
+      160, // Fixed width
+      80 // Fixed height
+    );
     //Hardcode handles for dagre layout.
     return {
       ...edge,
-      sourceHandle: 'bottom',
-      targetHandle: 'target-top',
+       sourceHandle,
+      targetHandle,
     };
   });
 }
