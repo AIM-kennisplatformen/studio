@@ -131,8 +131,8 @@ BASE_URL=http://localhost:10090 PYTHONPATH=src \
 python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 """
 
-mcp_server = "PYTHONPATH=src python src/mcp_servers/main.py"
-llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
+mcp_server = 'PYTHONPATH=src python -m src.mcp_servers.main'
+llm_worker  = 'PYTHONPATH=src python -m src.llm_worker.main'
 
 # ====================================
 # macOS ARM tasks
@@ -144,8 +144,8 @@ BASE_URL=http://localhost:10090 PYTHONPATH=src \
 python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 """
 
-mcp_server = "PYTHONPATH=src python src/mcp_servers/main.py"
-llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
+mcp_server = 'PYTHONPATH=src python -m src.mcp_servers.main'
+llm_worker  = 'PYTHONPATH=src python -m src.llm_worker.main'
 
 # ====================================
 # Windows (cmd.exe)
@@ -156,8 +156,9 @@ backend_no_docker = '''
 PYTHONPATH=src python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 '''
 
-mcp_server = 'set PYTHONPATH=src && python src\mcp_servers\main.py'
-llm_worker  = 'set PYTHONPATH=src && python src\llm_worker\main.py'
+mcp_server = 'PYTHONPATH=src python -m src.mcp_servers.main'
+llm_worker  = 'PYTHONPATH=src python -m src.llm_worker.main'
+
 
 # ====================================
 # Pixi activation environment
