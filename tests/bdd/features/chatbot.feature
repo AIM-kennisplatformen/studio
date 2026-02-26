@@ -16,7 +16,7 @@ Feature: Chatbot Messaging
     # Step 4: Wait for redirect back to the app (Authentik → /auth/callback → /app)
     Then I expect current url to contain '/app'
 
-    # Step 5: Wait for the chat interface to load (welcome message is already visible)
+    # Step 5: Wait for the chat interface to load
     Then I expect 'ChatMessageInput' to be visible
     And I expect 'ChatResponse' to be visible
 
@@ -24,12 +24,5 @@ Feature: Chatbot Messaging
     When I type '$testMessage' to 'ChatMessageInput'
     And I click 'ChatSendButton'
 
-    # Wait for LLM response to complete (up to 60 seconds)
-    # The ChatLLMResponse selector will poll until finding actual response or timeout
-    Then I expect 'ChatLLMResponse' to be visible
-    
-    # Debug: Log what's on the page after LLM responds
-    Then I debug chat responses
-
-    # Step 7: Verify the LLM response is not empty
-    Then I expect text of 'ChatLLMResponse' not to equal '$js("")'
+    # Step 7: Wait for and verify an actual LLM response (FAILS if no real response)
+    Then I should receive an LLM response within 90 seconds

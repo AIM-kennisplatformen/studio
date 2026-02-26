@@ -328,7 +328,5 @@ Check:
 
 # tests
 
-Run `pixi run setup_ollama_cache` in studio root to cache the mistral model, this can take a few minutes so we don't want to have to pull this everytime the test runs.
-
 pixi run qava_test
 

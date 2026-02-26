@@ -142,12 +142,14 @@ llm_worker = "PYTHONPATH=src python src/llm_worker/main.py"
 setup_ollama_cache = { cmd = "docker compose -f docker-compose.yml -f docker-compose-ollama.yml up -d ollama && sleep 10 && docker exec ollama ollama pull mistral && docker compose -f docker-compose.yml -f docker-compose-ollama.yml stop" }
 
 qava_test = { cmd = """
-docker compose -f docker-compose.yml -f docker-compose-ollama.yml -f docker-compose-authentik.yml up -d && \
+npm install && \
+pixi run frontend_build && \
+docker compose -f docker-compose.yml -f docker-compose-authentik.yml up -d && \
 bash scripts/setup_authentik.sh && \
-npx wait-on tcp:8000 tcp:7000 tcp:10090 tcp:11434 && \
+npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
 npx qavajs run --config tests/bdd/config.mjs; \
 EXIT_CODE=$?; \
-docker compose -f docker-compose.yml -f docker-compose-ollama.yml stop; \
+docker compose -f docker-compose.yml stop; \
 docker compose -f docker-compose-authentik.yml stop; \
 exit $EXIT_CODE
 """ }
@@ -173,12 +175,14 @@ docker compose -f docker-compose-ollama.yml stop
 """ }
 
 qava_test = { cmd = """
-docker compose -f docker-compose.yml -f docker-compose-ollama.yml -f docker-compose-authentik.yml up -d --build && \
+npm install && \
+pixi run frontend_build && \
+docker compose -f docker-compose.yml -f docker-compose-authentik.yml up -d --build && \
 bash scripts/setup_authentik.sh && \
-npx wait-on tcp:8000 tcp:7000 tcp:10090 tcp:11434 && \
+npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
 npx qavajs run --config tests/bdd/config.mjs; \
 EXIT_CODE=$?; \
-docker compose -f docker-compose.yml -f docker-compose-ollama.yml stop; \
+docker compose -f docker-compose.yml stop; \
 docker compose -f docker-compose-authentik.yml stop; \
 exit $EXIT_CODE
 """ }
@@ -213,12 +217,14 @@ docker compose -f docker-compose-ollama.yml stop
 """ }
 
 qava_test = { cmd = """
-docker compose -f docker-compose.yml -f docker-compose-ollama.yml -f docker-compose-authentik.yml up -d && \
+npm install && \
+pixi run frontend_build && \
+docker compose -f docker-compose.yml -f docker-compose-authentik.yml up -d && \
 bash scripts/setup_authentik.sh && \
-npx wait-on tcp:8000 tcp:7000 tcp:10090 tcp:11434 && \
+npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
 npx qavajs run --config tests/bdd/config.mjs; \
 EXIT_CODE=$?; \
-docker compose -f docker-compose.yml -f docker-compose-ollama.yml stop; \
+docker compose -f docker-compose.yml stop; \
 docker compose -f docker-compose-authentik.yml stop; \
 exit $EXIT_CODE
 """ }
@@ -226,7 +232,7 @@ exit $EXIT_CODE
 
 # ====================================
 # Windows (cmd.exe)
-# ====================================
+# =====================================
 [tool.pixi.target.win-64.tasks]
 frontend_build = '''
 python -c "from pathlib import Path; import shutil;
@@ -267,12 +273,14 @@ llm_worker  = 'set PYTHONPATH=src && python src\llm_worker\main.py'
 setup_ollama_cache = { cmd = "docker compose -f docker-compose.yml -f docker-compose-ollama.yml up -d ollama && timeout /T 10 && docker exec ollama ollama pull mistral && docker compose -f docker-compose.yml -f docker-compose-ollama.yml stop" }
 
 qava_test = { cmd = """
-docker compose -f docker-compose.yml -f docker-compose-ollama.yml -f docker-compose-authentik.yml up -d && \
+npm install && \
+pixi run frontend_build && \
+docker compose -f docker-compose.yml -f docker-compose-authentik.yml up -d && \
 bash scripts/setup_authentik.sh && \
-npx wait-on tcp:8000 tcp:7000 tcp:10090 tcp:11434 && \
+npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
 npx qavajs run --config tests/bdd/config.mjs; \
 $lastCode = $?; \
-docker compose -f docker-compose.yml -f docker-compose-ollama.yml stop; \
+docker compose -f docker-compose.yml stop; \
 docker compose -f docker-compose-authentik.yml stop; \
 if (!$lastCode) { exit 1 }
 """ }
