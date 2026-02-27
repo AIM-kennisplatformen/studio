@@ -2,6 +2,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import os
 
 root = Path(__file__).resolve().parents[1]
 frontend = root / "src" / "frontend"
@@ -10,9 +11,10 @@ kg = root / "kg"
 # Remove old build
 shutil.rmtree(kg, ignore_errors=True)
 
-# Load .env
+# Load env file (.env by default, override with ENV_FILE=.env.test)
+
 env = {}
-env_file = root / ".env"
+env_file = root / os.environ.get("ENV_FILE", ".env")
 if env_file.exists():
     for line in env_file.read_text().splitlines():
         line = line.strip()
@@ -23,7 +25,7 @@ if env_file.exists():
 try:
     backend_url = env["BACKEND_BASE_URL"]
 except KeyError:
-    sys.exit("ERROR: BACKEND_BASE_URL not found in .env")
+    sys.exit(f"ERROR: BACKEND_BASE_URL not found in {env_file}")
 
 # Write frontend env file
 env_prod = frontend / ".env.production"

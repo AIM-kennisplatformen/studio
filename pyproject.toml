@@ -143,14 +143,14 @@ setup_ollama_cache = { cmd = "docker compose -f docker-compose.yml -f docker-com
 
 qava_test = { cmd = """
 npm install && \
-pixi run frontend_build && \
-docker compose -f docker-compose.yml -f docker-compose-nebius.yml -f docker-compose-authentik.yml up -d && \
-bash scripts/setup_authentik.sh && \
+ENV_FILE=.env.test pixi run frontend_build && \
+docker compose --env-file .env.test -f docker-compose.yml -f docker-compose-nebius.yml -f docker-compose-authentik.yml up -d && \
+ENV_FILE=.env.test bash scripts/setup_authentik.sh && \
 npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
 npx qavajs run --config tests/bdd/config.mjs; \
 EXIT_CODE=$?; \
-docker compose -f docker-compose.yml -f docker-compose-nebius.yml stop; \
-docker compose -f docker-compose-authentik.yml stop; \
+docker compose --env-file .env.test -f docker-compose.yml -f docker-compose-nebius.yml stop; \
+docker compose --env-file .env.test -f docker-compose-authentik.yml stop; \
 exit $EXIT_CODE
 """ }
 
@@ -176,14 +176,14 @@ docker compose -f docker-compose-ollama.yml stop
 
 qava_test = { cmd = """
 npm install && \
-pixi run frontend_build && \
-docker compose -f docker-compose.yml -f docker-compose-nebius.yml -f docker-compose-authentik.yml up -d --build && \
-bash scripts/setup_authentik.sh && \
+ENV_FILE=.env.test pixi run frontend_build && \
+docker compose --env-file .env.test -f docker-compose.yml -f docker-compose-nebius.yml -f docker-compose-authentik.yml up -d --build && \
+ENV_FILE=.env.test bash scripts/setup_authentik.sh && \
 npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
 npx qavajs run --config tests/bdd/config.mjs; \
 EXIT_CODE=$?; \
-docker compose -f docker-compose.yml -f docker-compose-nebius.yml stop; \
-docker compose -f docker-compose-authentik.yml stop; \
+docker compose --env-file .env.test -f docker-compose.yml -f docker-compose-nebius.yml stop; \
+docker compose --env-file .env.test -f docker-compose-authentik.yml stop; \
 exit $EXIT_CODE
 """ }
 
@@ -192,7 +192,7 @@ exit $EXIT_CODE
 # ====================================
 [tool.pixi.target.osx-arm64.tasks]
 frontend_build = """
-bash -c 'set -a; source .env; set +a; \
+bash -c 'set -a; source ${ENV_FILE:-.env}; set +a; \
 rm -rf kg && \
 cd src/frontend && \
 echo "VITE_BACKEND_BASE_URL=$BACKEND_BASE_URL" > .env.production && \
@@ -218,14 +218,14 @@ docker compose -f docker-compose-ollama.yml stop
 
 qava_test = { cmd = """
 npm install && \
-pixi run frontend_build && \
-docker compose -f docker-compose.yml -f docker-compose-nebius.yml -f docker-compose-authentik.yml up -d && \
-bash scripts/setup_authentik.sh && \
+ENV_FILE=.env.test pixi run frontend_build && \
+docker compose --env-file .env.test -f docker-compose.yml -f docker-compose-nebius.yml -f docker-compose-authentik.yml up -d && \
+ENV_FILE=.env.test bash scripts/setup_authentik.sh && \
 npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
 npx qavajs run --config tests/bdd/config.mjs; \
 EXIT_CODE=$?; \
-docker compose -f docker-compose.yml -f docker-compose-nebius.yml stop; \
-docker compose -f docker-compose-authentik.yml stop; \
+docker compose --env-file .env.test -f docker-compose.yml -f docker-compose-nebius.yml stop; \
+docker compose --env-file .env.test -f docker-compose-authentik.yml stop; \
 exit $EXIT_CODE
 """ }
 
@@ -235,7 +235,7 @@ exit $EXIT_CODE
 # =====================================
 [tool.pixi.target.win-64.tasks]
 frontend_build = '''
-python -c "from pathlib import Path; import shutil;
+python -c "import os; from pathlib import Path; import shutil;
 root=Path.cwd();
 frontend=root/'src'/'frontend';
 kg=root/'kg';
@@ -243,7 +243,7 @@ kg=root/'kg';
 shutil.rmtree(kg, ignore_errors=True);
 
 env={};
-for l in (root/'.env').read_text().splitlines():
+for l in (root/os.environ.get('ENV_FILE','.env')).read_text().splitlines():
     l=l.strip();
     if l and not l.startswith('#'):
         k,v=l.split('=',1); env[k]=v;
@@ -274,14 +274,14 @@ setup_ollama_cache = { cmd = "docker compose -f docker-compose.yml -f docker-com
 
 qava_test = { cmd = """
 npm install && \
-pixi run frontend_build && \
-docker compose -f docker-compose.yml -f docker-compose-nebius.yml -f docker-compose-authentik.yml up -d && \
-bash scripts/setup_authentik.sh && \
+ENV_FILE=.env.test pixi run frontend_build && \
+docker compose --env-file .env.test -f docker-compose.yml -f docker-compose-nebius.yml -f docker-compose-authentik.yml up -d && \
+ENV_FILE=.env.test bash scripts/setup_authentik.sh && \
 npx wait-on tcp:8000 tcp:7000 tcp:10090 && \
 npx qavajs run --config tests/bdd/config.mjs; \
 $lastCode = $?; \
-docker compose -f docker-compose.yml -f docker-compose-nebius.yml stop; \
-docker compose -f docker-compose-authentik.yml stop; \
+docker compose --env-file .env.test -f docker-compose.yml -f docker-compose-nebius.yml stop; \
+docker compose --env-file .env.test -f docker-compose-authentik.yml stop; \
 if (!$lastCode) { exit 1 }
 """ }
 

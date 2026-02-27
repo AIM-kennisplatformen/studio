@@ -5,9 +5,12 @@
 
 set -e
 
-# Load environment variables from .env if it exists
-if [ -f .env ]; then
-  export $(grep -v '^#' .env | xargs)
+# Load environment variables from .env.test (for tests) or .env (default)
+# Set ENV_FILE=.env.test before calling this script to use test settings.
+ENV_FILE="${ENV_FILE:-.env}"
+if [ -f "$ENV_FILE" ]; then
+  echo "Loading environment from: $ENV_FILE"
+  export $(grep -v '^#' "$ENV_FILE" | grep -v '^$' | xargs)
 fi
 
 # Determine the backend base URL for redirect URIs
