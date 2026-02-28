@@ -1,90 +1,73 @@
 version: "3.9"
 
 services:
-  kg-backend:
+  backend:
     build:
       context: .
-      dockerfile: dockerfiles/Dockerfile.backend
-    container_name: kg-backend
-    env_file: [.env]
-    environment:
-      PYTHONPATH: "src"
-      BACKEND_BASE_URL:    "${BACKEND_BASE_URL}"
-      LLM_WORKER_URL:      "${LLM_WORKER_URL}"
-      OAUTH_CLIENT_ID:     "${OAUTH_CLIENT_ID}"
-      OAUTH_CLIENT_SECRET: "${OAUTH_CLIENT_SECRET}"
-      OAUTH_DISCOVERY_URL: "${OAUTH_DISCOVERY_URL}"
+      dockerfile: dockerfiles/Dockerfile
+    container_name: mcp_backend
+    image: studio-base
+    command: >
+      sh -c "
+      pixi run frontend_build &&
+      pixi run backend_no_docker
+      "
     ports:
       - "10090:10090"
+    env_file:
+      - .env
+    environment:
+      - LLM_WORKER_URL=http://llm_worker
+    depends_on:
+      - llm_worker
+      - mcp_server
     volumes:
       - .:/app
-    command:
-      - pixi
-      - run
-      - python
-      - -m
-      - uvicorn
-      - src.backend.main:app
-      - --host
-      - 0.0.0.0
-      - --port
-      - "10090"
+    networks: [studio_net]
 
-  mcp-server:
-    build:
-      context: .
-      dockerfile: dockerfiles/Dockerfile.mcp
-    container_name: mcp-server
-    env_file: [.env]
-    environment:
-      PYTHONPATH: "src"
-      ZOTERO_API_KEY: "${ZOTERO_API_KEY}"
-      ZOTERO_LIBRARY_ID: "${ZOTERO_LIBRARY_ID}"
-      ZOTERO_COLLECTION_ID: "${ZOTERO_COLLECTION_ID}"
-      QDRANT_URL: "${QDRANT_URL}"
-      QDRANT_PORT: "${QDRANT_PORT}"
+  mcp_server:
+    image: studio-base
+    container_name: mcp_server
+    command: pixi run mcp_server
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
-    command:
-      - pixi
-      - run
-      - python
-      - src/mcp_servers/main.py
-
-  llm-worker:
-    build:
-      context: .
-      dockerfile: dockerfiles/Dockerfile.llm_worker
-    container_name: llm-worker
-    env_file: [.env]
+    env_file:
+      - .env
     environment:
-      PYTHONPATH: "src"
-      LANGFUSE_PUBLIC_KEY: "${LANGFUSE_PUBLIC_KEY}"
-      LANGFUSE_SECRET_KEY: "${LANGFUSE_SECRET_KEY}"
-      LANGFUSE_HOST:       "${LANGFUSE_HOST}"
-      LLM_WORKER_URL:      "${LLM_WORKER_URL}"
-    ports:
-      - "7000:7000"
+      - OTEL_SERVICE_NAME=mcp_server
+      - QDRANT_URL=172.30.0.1
+      - QDRANT_PORT=6333
     volumes:
       - .:/app
-      - ./llm_worker_config.toml:/app/llm_worker_config.toml
-    command:
-      - pixi
-      - run
-      - python
-      - src/llm_worker/main.py
-  qdrant:
-    image: qdrant/qdrant:v1.13.5-unprivileged
-    container_name: qdrant_kg
-    restart: unless-stopped
-    user: "1000:1000"
+      - hf_cache:/root/.cache/huggingface
+    networks: [studio_net]
+  llm_worker:
+    image: studio-base
+    container_name: llm_worker
+    command: pixi run llm_worker
     ports:
-      - "6333:6333"
-      - "6334:6334"
+      - "9200:9200"
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - OTEL_SERVICE_NAME=llm_worker
+      - LLM_WORKER_PORT=9200
+      - MCP_USE_OAUTH=false
+      - MCP_TOOL_CONFIG_PATH=/app/scepa_tools.json
+      - MCP_CALLBACK_PORT=9200
     volumes:
-      - qdrant_paper_data:/qdrant/storage:Z
-  
+      - .:/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks: [studio_net]
 volumes:
-  qdrant_paper_data:
+  hf_cache:
+  
+networks:
+  studio_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16
+          gateway: 172.30.0.1
