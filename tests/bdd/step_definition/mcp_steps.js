@@ -2,12 +2,9 @@ import { Given, Then } from "@cucumber/cucumber";
 import assert from "assert";
 
 /**
- * Injects a WebSocket interceptor via page.addInitScript so that
- * every incoming WebSocket frame is inspected for MCP tool-call events
- * (specifically "on_tool_start").
- *
- * This runs BEFORE any page script on each navigation, so it captures
- * the Socket.IO WebSocket upgrade that happens when the React app mounts.
+ * Sets up Playwright listeners to capture MCP tool-call events from
+ * Socket.IO traffic. Intercepts BOTH HTTP long-polling responses AND
+ * WebSocket frames, since Socket.IO starts with polling before upgrading.
  *
  * Usage in feature:
  *   Given I start capturing MCP tool events
@@ -15,54 +12,49 @@ import assert from "assert";
 Given("I start capturing MCP tool events", async function () {
   const { page } = this.playwright;
 
-  await page.addInitScript(() => {
-    window.__mcpToolCalls = [];
+  // Store captured events on the test context (not in the page)
+  this.mcpToolCalls = [];
 
-    const OrigWebSocket = window.WebSocket;
+  // 1. Intercept HTTP polling responses (Socket.IO starts with polling)
+  page.on("response", async (response) => {
+    try {
+      const url = response.url();
+      if (!url.includes("socket.io")) return;
 
-    // Replace the WebSocket constructor to attach a message listener
-    // that captures any frame containing "on_tool_start".
-    window.WebSocket = function (url, protocols) {
-      const ws =
-        protocols !== undefined
-          ? new OrigWebSocket(url, protocols)
-          : new OrigWebSocket(url);
-
-      ws.addEventListener("message", (event) => {
-        try {
-          if (
-            typeof event.data === "string" &&
-            event.data.includes("on_tool_start")
-          ) {
-            window.__mcpToolCalls.push(event.data);
-          }
-        } catch (e) {
-          // silently ignore parse errors
-        }
-      });
-
-      return ws;
-    };
-
-    // Preserve prototype chain and static properties so Socket.IO
-    // feature-detection (instanceof, readyState constants) still works.
-    window.WebSocket.prototype = OrigWebSocket.prototype;
-    window.WebSocket.CONNECTING = OrigWebSocket.CONNECTING;
-    window.WebSocket.OPEN = OrigWebSocket.OPEN;
-    window.WebSocket.CLOSING = OrigWebSocket.CLOSING;
-    window.WebSocket.CLOSED = OrigWebSocket.CLOSED;
+      const body = await response.text().catch(() => "");
+      if (body.includes("on_tool_start")) {
+        this.mcpToolCalls.push(body);
+      }
+    } catch (e) {
+      // ignore — response may already be disposed
+    }
   });
 
-  console.log("[MCP] Init script injected — capturing tool events");
+  // 2. Intercept WebSocket frames (after Socket.IO upgrades)
+  page.on("websocket", (ws) => {
+    ws.on("framereceived", (frame) => {
+      try {
+        if (
+          typeof frame.payload === "string" &&
+          frame.payload.includes("on_tool_start")
+        ) {
+          this.mcpToolCalls.push(frame.payload);
+        }
+      } catch (e) {
+        // ignore
+      }
+    });
+  });
+
+  console.log("[MCP] Capturing tool events via HTTP polling + WebSocket");
 });
 
 /**
- * Asserts that at least one "on_tool_start" event was received over the
- * WebSocket connection during the chat interaction.
+ * Asserts that at least one "on_tool_start" event was received during
+ * the chat interaction, proving the MCP tool was invoked.
  *
- * Because the LLM agent calls the MCP tool BEFORE generating its response,
- * this step should be placed AFTER the "I should receive an LLM response"
- * step to ensure all events have already arrived.
+ * This step should be placed AFTER "I should receive an LLM response"
+ * to ensure all events have already arrived.
  *
  * Usage in feature:
  *   Then the MCP tool 'get_literature_supported_knowledge' should have been called
@@ -70,22 +62,20 @@ Given("I start capturing MCP tool events", async function () {
 Then(
   "the MCP tool {string} should have been called",
   async function (toolName) {
-    const { page } = this.playwright;
-
-    const captures = await page.evaluate(() => window.__mcpToolCalls || []);
+    const captures = this.mcpToolCalls || [];
 
     console.log(`\n[MCP] Checking for tool '${toolName}'...`);
     console.log(`[MCP] Captured ${captures.length} on_tool_start event(s)`);
 
     if (captures.length > 0) {
-      console.log("[MCP] Sample frame:", captures[0].substring(0, 200));
+      console.log("[MCP] Sample frame:", captures[0].substring(0, 300));
     }
 
     assert(
       captures.length > 0,
       `Expected MCP tool '${toolName}' to be called, but no on_tool_start events ` +
-        `were detected on the WebSocket. The LLM may not have used the tool, ` +
-        `or the MCP server may be unavailable.`
+        `were detected in Socket.IO traffic (polling + WebSocket). ` +
+        `The LLM may not have used the tool, or the MCP server may be unavailable.`
     );
 
     console.log(
