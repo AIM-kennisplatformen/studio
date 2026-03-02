@@ -9,4 +9,7 @@ export default class Memory {
 
   // Chat test data
   testMessage = 'Hello, can you help me?';
+
+  // MCP tool test data — a research question that should trigger paper_search
+  mcpTestMessage = 'What are the best practices for blended learning?';
 }

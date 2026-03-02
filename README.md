@@ -324,9 +324,3 @@ Check:
 
 ---
 
-
-
-# tests
-
-pixi run qava_test
-
