@@ -1,7 +1,7 @@
 {
 "mcpServers": {
         "paper": {
-                "url": "http://mcp-server:8000/sse"
+                "url": "https://kp.mads-han.src.surf-hosted.nl/sse"
         }
 }
 }
