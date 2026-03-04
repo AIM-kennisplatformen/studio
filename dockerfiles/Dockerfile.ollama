@@ -1,7 +1,0 @@
-FROM ollama/ollama:latest-cuda
-
-# Preload models into the image (optional)
-# Example:
-RUN ollama pull qwen2.5:7b
-
-CMD ["ollama", "serve"]

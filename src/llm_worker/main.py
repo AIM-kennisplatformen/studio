@@ -5,7 +5,7 @@ import uvicorn
 from fastapi import FastAPI
 from loguru import logger
 
-from endpoints.ask import llm_worker_router
+from .endpoints.ask import llm_worker_router
 
 
 # =====================================================
