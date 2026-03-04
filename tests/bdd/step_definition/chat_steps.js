@@ -3,12 +3,9 @@ import assert from "assert";
 
 
 /**
- * Custom step that waits for an actual LLM response in the chat.
- * FAILS the test if no real response appears within the timeout.
- *
- * It distinguishes real LLM responses from:
- *  - The welcome message ("Welcome to the knowledge platform")
- *  - The thinking indicator ("🧠 Thinking...")
+ * Custom step that waits for a NEW LLM response in the chat.
+ * Automatically snapshots how many response containers already exist,
+ * so it ignores pre-existing responses from earlier test scenarios.
  *
  * Usage in feature:
  *   Then I should receive an LLM response within 90 seconds
@@ -21,6 +18,10 @@ Then(
     const pollInterval = 2000;
     const startTime = Date.now();
 
+    // Snapshot existing responses so we only detect NEW ones
+    const existing = await page.locator("div[class*='bg-gray-50']").all();
+    const baseline = existing.length;
+
     // Patterns that indicate a non-real response
     const SKIP_PATTERNS = [
       "Welcome to the knowledge platform",
@@ -28,7 +29,7 @@ Then(
       "🧠 Thinking",
     ];
 
-    console.log(`\nWaiting up to ${timeoutSeconds}s for LLM response...`);
+    console.log(`\nWaiting up to ${timeoutSeconds}s for LLM response (${baseline} pre-existing containers)...`);
 
     let lastResponseCount = 0;
 
@@ -37,7 +38,9 @@ Then(
       const responses = await page.locator("div[class*='bg-gray-50']").all();
       lastResponseCount = responses.length;
 
-      for (const elem of responses) {
+      // Only check responses beyond the baseline (skip pre-existing ones)
+      for (let i = baseline; i < responses.length; i++) {
+        const elem = responses[i];
         const text = (await elem.innerText()).trim();
 
         // Skip known non-response elements
@@ -50,7 +53,7 @@ Then(
           continue;
         }
 
-          // We found a real LLM response!
+        // We found a real LLM response!
         const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
         console.log(`\nReceived LLM response after ${elapsed}s:`);
         console.log(text.substring(0, 300));

@@ -23,7 +23,7 @@ Feature: MCP Function Invocation
     Then I expect 'ChatMessageInput' to be visible
     And I expect 'ChatResponse' to be visible
 
-    # Step 7: Send a research question that should trigger the paper_search MCP tool
+    # Step 7: Send a research question that should trigger the MCP tool
     When I type '$mcpTestMessage' to 'ChatMessageInput'
     And I click 'ChatSendButton'
 

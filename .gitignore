@@ -43,7 +43,6 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
-ollama_cache/
 nosetests.xml
 coverage.xml
 *.cover
@@ -214,7 +213,6 @@ data-node/
 uploads/
 client/
 data/*
-ollama/
 .DS_Store
 kg/
 llm_worker_config.toml

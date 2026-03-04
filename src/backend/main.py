@@ -13,11 +13,6 @@ from backend.endpoints.graph import graph_router
 
 # Build list of allowed CORS origins
 cors_origins = [BASE_URL]
-# Add common development URLs
-if BASE_URL != "http://localhost:10090":
-    cors_origins.append("http://localhost:10090")
-if BASE_URL != "http://host.docker.internal:10090":
-    cors_origins.append("http://host.docker.internal:10090")
 
 
 
