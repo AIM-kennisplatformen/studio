@@ -115,7 +115,7 @@ frontend_build = ""
 backend_no_docker = ""
 mcp_server = ""
 llm_worker = ""
-qava_test = ""
+qava_test = "python scripts/run_qava_test.py"
 
 
 # ====================================
@@ -132,19 +132,6 @@ python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 mcp_server = 'PYTHONPATH=src python -m src.mcp_servers.main'
 llm_worker  = 'PYTHONPATH=src python -m src.llm_worker.main'
 
-qava_test = { cmd = """
-npm install && \
-ENV_FILE=.env.test pixi run frontend_build && \
-docker compose --env-file .env.test -f docker-compose.yml -f tests/bdd/containers/docker-compose-authentik.yml up -d && \
-ENV_FILE=.env.test bash scripts/setup_authentik.sh && \
-npx wait-on tcp:8000 tcp:9200 tcp:10090 && \
-npx qavajs run --config tests/bdd/config.mjs; \
-EXIT_CODE=$?; \
-docker compose --env-file .env.test -f docker-compose.yml stop; \
-docker compose --env-file .env.test -f tests/bdd/containers/docker-compose-authentik.yml stop; \
-exit $EXIT_CODE
-""" }
-
 # ====================================
 # macOS ARM tasks
 # ====================================
@@ -158,19 +145,6 @@ python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 mcp_server = 'PYTHONPATH=src python -m src.mcp_servers.main'
 llm_worker  = 'PYTHONPATH=src python -m src.llm_worker.main'
 
-qava_test = { cmd = """
-npm install && \
-ENV_FILE=.env.test pixi run frontend_build && \
-docker compose --env-file .env.test -f docker-compose.yml -f tests/bdd/containers/docker-compose-authentik.yml up -d && \
-ENV_FILE=.env.test bash scripts/setup_authentik.sh && \
-npx wait-on tcp:8000 tcp:9200 tcp:10090 && \
-npx qavajs run --config tests/bdd/config.mjs; \
-EXIT_CODE=$?; \
-docker compose --env-file .env.test -f docker-compose.yml stop; \
-docker compose --env-file .env.test -f tests/bdd/containers/docker-compose-authentik.yml stop; \
-exit $EXIT_CODE
-""" }
-
 
 # ====================================
 # Windows (cmd.exe)
@@ -183,19 +157,6 @@ PYTHONPATH=src python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 1009
 
 mcp_server = 'PYTHONPATH=src python -m src.mcp_servers.main'
 llm_worker  = 'PYTHONPATH=src python -m src.llm_worker.main'
-
-qava_test = { cmd = """
-npm install && \
-ENV_FILE=.env.test pixi run frontend_build && \
-docker compose --env-file .env.test -f docker-compose.yml -f tests/bdd/containers/docker-compose-authentik.yml up -d && \
-ENV_FILE=.env.test bash scripts/setup_authentik.sh && \
-npx wait-on tcp:8000 tcp:9200 tcp:10090 && \
-npx qavajs run --config tests/bdd/config.mjs; \
-$lastCode = $?; \
-docker compose --env-file .env.test -f docker-compose.yml stop; \
-docker compose --env-file .env.test -f tests/bdd/containers/docker-compose-authentik.yml stop; \
-if (!$lastCode) { exit 1 }
-""" }
 
 # ====================================
 # Pixi activation environment
