@@ -10,6 +10,10 @@ export default class Memory {
   // Chat test data
   testMessage = 'Hello, can you help me?';
 
-  // MCP tool test data — a research question that should trigger paper_search
+  // MCP test user credentials (separate user to avoid session state leaking between tests)
+  mcpUsername = 'mcpuser';
+  mcpPassword = 'mcppass';
+
+  // MCP tool test data — a research question that should trigger mcp tool call
   mcpTestMessage = 'What are the best practices for blended learning?';
 }

@@ -50,6 +50,22 @@ user.save()
 print('Password set for akadmin')
 " 2>&1 | grep -E "^Password" || true
 
+echo "Creating second test user (mcpuser)..."
+docker exec authentik-server ak shell -c "
+from authentik.core.models import User
+user, created = User.objects.get_or_create(
+    username='mcpuser',
+    defaults={
+        'name': 'MCP Test User',
+        'email': 'mcpuser@localhost',
+    }
+)
+user.set_password('mcppass')
+user.save()
+action = 'Created' if created else 'Updated'
+print(f'{action} mcpuser')
+" 2>&1 | grep -E "^(Created|Updated)" || true
+
 echo "Creating OAuth2 provider and application..."
 docker exec authentik-server ak shell -c "
 from authentik.flows.models import Flow

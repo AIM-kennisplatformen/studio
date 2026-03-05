@@ -9,11 +9,11 @@ Feature: MCP Function Invocation
     Given I open '$loginUrl' url
 
     # Step 3: Fill in username on Authentik login page and submit
-    When I type '$authentikUsername' to 'AuthentikUsernameInput'
+    When I type '$mcpUsername' to 'AuthentikUsernameInput'
     And I click 'AuthentikSubmitButton'
 
     # Step 4: Fill in password on Authentik login page and submit
-    When I type '$authentikPassword' to 'AuthentikPasswordInput'
+    When I type '$mcpPassword' to 'AuthentikPasswordInput'
     And I click 'AuthentikSubmitButton'
 
     # Step 5: Wait for redirect back to the app (Authentik → /auth/callback → /app)
