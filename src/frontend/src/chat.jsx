@@ -63,7 +63,7 @@ function InputArea() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!text) return;
+    if (!text || status === "streaming") return;
 
     // Add user message instantly
     setMessages((prev) => [
@@ -94,7 +94,7 @@ function InputArea() {
 
         <PromptInputToolbar className="ml-2">
           <PromptInputSubmit
-            disabled={!text}
+            disabled={!text || status === "streaming"}
             status={status}
             style={{ backgroundColor: "#038061", color: "white" }}
           />
