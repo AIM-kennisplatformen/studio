@@ -190,8 +190,7 @@ def verify_discovery() -> None:
 
 
 def main() -> None:
-    env_file = os.environ.get("ENV_FILE", ".env")
-    load_env(env_file)
+    load_env(".env")
 
     backend_url = os.environ.get(
         "BACKEND_BASE_URL",

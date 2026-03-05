@@ -2,7 +2,7 @@
 
 Steps:
 1. npm install
-2. Build the frontend (with .env.test)
+2. Build the frontend
 3. Start docker compose (app + authentik)
 4. Setup Authentik OAuth2
 5. Wait for services
@@ -21,7 +21,7 @@ COMPOSE_FILES = [
     "docker-compose.yml",
     "tests/bdd/containers/docker-compose-authentik.yml",
 ]
-ENV_FILE = ".env.test"
+ENV_FILE = ".env"
 
 
 def run(cmd: str | list[str], *, check: bool = True, env: dict | None = None) -> int:
@@ -45,13 +45,11 @@ def compose_cmd(*args: str) -> list[str]:
 
 
 def main() -> int:
-    os.environ["ENV_FILE"] = ENV_FILE
-
     # 1. npm install
     run(["npm", "install"])
 
     # 2. Build frontend
-    run([sys.executable, "scripts/build_frontend.py"], env={"ENV_FILE": ENV_FILE})
+    run([sys.executable, "scripts/build_frontend.py"])
 
     # 3. Start containers
     run(compose_cmd("up", "-d"))

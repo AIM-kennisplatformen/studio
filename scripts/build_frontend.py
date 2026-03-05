@@ -2,7 +2,6 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-import os
 
 root = Path(__file__).resolve().parents[1]
 frontend = root / "src" / "frontend"
@@ -11,10 +10,10 @@ kg = root / "kg"
 # Remove old build
 shutil.rmtree(kg, ignore_errors=True)
 
-# Load env file (.env by default, override with ENV_FILE=.env.test)
+# Load .env file
 
 env = {}
-env_file = root / os.environ.get("ENV_FILE", ".env")
+env_file = root / ".env"
 if env_file.exists():
     for line in env_file.read_text().splitlines():
         line = line.strip()

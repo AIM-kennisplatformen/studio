@@ -8,14 +8,14 @@ https://qavajs.github.io/
 - [Node.js](https://nodejs.org/) (for npm/npx)
 - [Pixi](https://pixi.sh/) (if using `pixi run qava_test`)
 - [Docker & Docker Compose](https://docs.docker.com/get-docker/) (for containerised services)
-- A valid `.env.test` file in the project root (see [Environment Setup](#environment-setup))
+- A valid `.env` file in the project root (see [Environment Setup](#environment-setup))
 
 ## Environment Setup
 
 Copy the sample file and fill in the required secrets:
 
 ```bash
-cp .env.test.sample .env.test
+cp .env.sample .env
 ```
 
 ## Install Modules
