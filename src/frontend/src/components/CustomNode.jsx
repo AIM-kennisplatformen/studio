@@ -146,8 +146,7 @@ export function CustomNode({ data, isConnectable, selected }) {
           style={{
             padding: data.padding || "10px",
             background,
-            borderTopRightRadius: data.borderRadius || "3px",
-            borderBottomRightRadius: data.borderRadius || "3px",
+            borderRadius: data.borderRadius || "3px",
           }}
         >
           {data.label}
