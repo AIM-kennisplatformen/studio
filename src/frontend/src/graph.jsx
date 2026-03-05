@@ -25,7 +25,6 @@ import { sendNodeSelection } from "./data/api";
 export default function Graph({ data, width }) {
   const [nodes, setNodes] = useAtom(nodesAtom);
   const [edges, setEdges] = useAtom(edgesAtom);
-  const [, setDraggingNodeId] = useAtom(draggingNodeIdAtom);
   const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom);
   const [, setCenterNodeId] = useAtom(centerNodeAtom);
   const [layoutNodes, setLayoutNodes] = useAtom(layoutNodesAtom);
@@ -40,7 +39,7 @@ export default function Graph({ data, width }) {
     if (!data?.nodes || !data?.edges) return;
 
     const previousPositions = new Map(
-      layoutNodes.map((n) => [n.id, n.position])
+      layoutNodes.map((n) => [n.id, n.position]),
     );
     const nodeMap = new Map();
 
@@ -79,7 +78,7 @@ export default function Graph({ data, width }) {
           sourceNode.position.x,
           sourceNode.position.y,
           targetNode.position.x,
-          targetNode.position.y
+          targetNode.position.y,
         );
 
         return {
@@ -95,35 +94,36 @@ export default function Graph({ data, width }) {
         };
       })
       .filter(Boolean);
-        const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
+    const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
 
- // Apply dagre layout to new nodes, keeping fixed nodes in place
-  const layoutPositions = applyDagreLayout(newNodes, newEdges, {
-    quality: "proof",
-    nodeSeparation: 200,
-    idealEdgeLength: 300,
-    nodeRepulsion: 50000,
-    maxIterations: 2000,
-    animationDuration: 1000,
-    gravity: 0.05,
-    numIter: 5000,
-    tile: true,
-    tilingPaddingVertical: 20,
-    tilingPaddingHorizontal: 20,
-    incremental: true,
-    nodeDimensionsIncludeLabels: true,
-    fixedNodeConstraint: fixedNodes.map((n) => ({
-      nodeId: n.id,
-      position: n.position,
-    })),
-  });
-  // Merge positions: keep old positions, use fcose positions for new
-  const mergedNodes = newNodes.map((n) => ({
-    ...n,
-    position: previousPositions.get(n.id) || layoutPositions[n.id] || n.position,
-  }));
+    // Apply dagre layout to new nodes, keeping fixed nodes in place
+    const layoutPositions = applyDagreLayout(newNodes, newEdges, {
+      quality: "proof",
+      nodeSeparation: 200,
+      idealEdgeLength: 300,
+      nodeRepulsion: 50000,
+      maxIterations: 2000,
+      animationDuration: 1000,
+      gravity: 0.05,
+      numIter: 5000,
+      tile: true,
+      tilingPaddingVertical: 20,
+      tilingPaddingHorizontal: 20,
+      incremental: true,
+      nodeDimensionsIncludeLabels: true,
+      fixedNodeConstraint: fixedNodes.map((n) => ({
+        nodeId: n.id,
+        position: n.position,
+      })),
+    });
+    // Merge positions: keep old positions, use fcose positions for new
+    const mergedNodes = newNodes.map((n) => ({
+      ...n,
+      position:
+        previousPositions.get(n.id) || layoutPositions[n.id] || n.position,
+    }));
 
-  setLayoutNodes(mergedNodes);
+    setLayoutNodes(mergedNodes);
     nodesRef.current = mergedNodes;
     edgesRef.current = newEdges;
 
@@ -158,35 +158,22 @@ export default function Graph({ data, width }) {
         targetNode.position.x,
         targetNode.position.y,
         160,
-        80
+        80,
       );
 
       return { ...edge, sourceHandle, targetHandle };
     });
   }, []);
 
-  /** Node/edge handlers */
-  const onNodesChange = useCallback(
-    (changes) => {
-      setNodes((currentNodes) => {
-        const updatedNodes = applyNodeChanges(changes, currentNodes);
-        edgesRef.current = updateEdges(updatedNodes, edgesRef.current);
-        setEdges(edgesRef.current);
-        return updatedNodes;
-      });
-    },
-    [updateEdges, setEdges, setNodes]
-  );
-
   const onEdgesChange = useCallback(
     (changes) =>
       setEdges((currentEdges) => applyEdgeChanges(changes, currentEdges)),
-    [setEdges]
+    [setEdges],
   );
 
   const onConnect = useCallback(
     (params) => setEdges((es) => addEdge(params, es)),
-    [setEdges]
+    [setEdges],
   );
 
   const onNodeClick = useCallback(
@@ -196,16 +183,7 @@ export default function Graph({ data, width }) {
       centerNodeInView(node);
       sendNodeSelection(node.id);
     },
-    [setCenterNodeId, setSelectedNode]
-  );
-
-  const onNodeDragStart = useCallback(
-    (e, node) => setDraggingNodeId(node.id),
-    [setDraggingNodeId]
-  );
-  const onNodeDragStop = useCallback(
-    () => setDraggingNodeId(null),
-    [setDraggingNodeId]
+    [setCenterNodeId, setSelectedNode],
   );
 
   /** Center a node in the viewport */
@@ -225,10 +203,10 @@ export default function Graph({ data, width }) {
             containerRef.current.clientHeight / 2 - nodeCenterY * viewport.zoom,
           zoom: viewport.zoom,
         },
-        { duration: 500, easing: (t) => t * (2 - t) }
+        { duration: 500, easing: (t) => t * (2 - t) },
       );
     },
-    [getViewport, setViewport]
+    [getViewport, setViewport],
   );
 
   /** Fit view on container resize */
@@ -237,7 +215,7 @@ export default function Graph({ data, width }) {
     if (!container) return;
 
     const ro = new ResizeObserver(() =>
-      fitView({ padding: 0.1, duration: 150 })
+      fitView({ padding: 0.1, duration: 150 }),
     );
     ro.observe(container);
     return () => ro.disconnect();
@@ -250,11 +228,8 @@ export default function Graph({ data, width }) {
         edges={edges}
         nodeTypes={{ custom: CustomNode }}
         edgeTypes={{ solid: SolidEdge }}
-        onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onNodeDragStart={onNodeDragStart}
-        onNodeDragStop={onNodeDragStop}
         onNodeClick={onNodeClick}
         selectNodesOnDrag={false}
         fitView
