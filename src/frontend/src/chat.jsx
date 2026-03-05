@@ -63,7 +63,7 @@ function InputArea() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!text || status === "streaming") return;
+    if (!text || status !== "ready") return;
 
     // Add user message instantly
     setMessages((prev) => [
@@ -73,7 +73,7 @@ function InputArea() {
     ]);
 
     // Update UI state
-    setStatus("streaming");
+    setStatus("thinking");
 
     // Send to WebSocket server
     send(text);
@@ -94,8 +94,8 @@ function InputArea() {
 
         <PromptInputToolbar className="ml-2">
           <PromptInputSubmit
-            disabled={!text || status === "streaming"}
-            status={status}
+            disabled={!text || status !== "ready"}
+            status={status === "thinking" ? "submitted" : status}
             style={{ backgroundColor: "#038061", color: "white" }}
           />
         </PromptInputToolbar>
@@ -141,9 +141,9 @@ function Messages() {
           )
           
         )}
-          {status === "streaming" && (
+          {status === "thinking" && (
             <div>
-              <Reasoning isStreaming={status === "streaming"}>
+              <Reasoning isStreaming={status === "thinking"}>
                 <ReasoningTrigger style={{ backgroundColor: "transparent", color: "black", border: "none", padding: "0", outline: "none", cursor: "text" }}>
                   🧠 Thinking...
                 </ReasoningTrigger>
