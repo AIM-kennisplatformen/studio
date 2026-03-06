@@ -12,6 +12,7 @@ export function useChatWebSocket(setStatus) {
   const socketRef = useRef(null);
 
   const streamingKeyRef = useRef(null);
+  const chatModelStartCountRef = useRef(0);
 
   useEffect(() => {
     const socket = io(SOCKET_URL, {
@@ -57,11 +58,12 @@ export function useChatWebSocket(setStatus) {
     });
 
     socket.on("event", (payload) => {
-      if (payload.data === "") {
-        setStatus("streaming");
-      }
-      else {
-        setStatus("ready");
+      console.log(payload);
+      if (payload.type === "on_chat_model_start") {
+        chatModelStartCountRef.current += 1;
+        if (chatModelStartCountRef.current >= 2) {
+          setStatus("streaming");
+        }
       }
     });
 
@@ -75,7 +77,8 @@ export function useChatWebSocket(setStatus) {
 
   const send = (msg) => {
     streamingKeyRef.current = null;
-    setStatus("streaming");
+    chatModelStartCountRef.current = 0;
+    setStatus("thinking");
     socketRef.current?.emit("send_message", { message: msg });
   };
 
