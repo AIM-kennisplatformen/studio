@@ -16,4 +16,7 @@ export default class Memory {
 
   // MCP tool test data — a research question that should trigger mcp tool call
   mcpTestMessage = 'What are the best practices for blended learning?';
+
+  // Langfuse observation name for LLM generations
+  langfuseGenerationName = 'ChatOpenAI';
 }

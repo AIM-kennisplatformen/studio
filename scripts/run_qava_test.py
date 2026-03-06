@@ -15,6 +15,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from dotenv import dotenv_values
+
 root = Path(__file__).resolve().parents[1]
 
 COMPOSE_FILES = [
@@ -22,6 +24,10 @@ COMPOSE_FILES = [
     "tests/bdd/containers/docker-compose-authentik.yml",
 ]
 ENV_FILE = ".env"
+
+# Load .env so Langfuse credentials (and other vars) are available to subprocesses
+_dotenv = dotenv_values(root / ENV_FILE)
+os.environ.update(_dotenv)
 
 
 tests_dir = root / "tests" / "bdd"

@@ -2,7 +2,7 @@ Feature: MCP Function Invocation
 
   Scenario: Verify paper_search MCP tool is called during chat
 
-    # Step 1: Set up WebSocket interception to capture MCP tool events
+    # Step 1: Record the start time for Langfuse observation lookup
     Given I start capturing MCP tool events
 
     # Step 2: Navigate to the backend login URL (triggers OAuth redirect to Authentik)
@@ -30,5 +30,8 @@ Feature: MCP Function Invocation
     # Step 8: Wait for and verify an actual LLM response
     Then I should receive an LLM response within 90 seconds
 
-    # Step 9: Verify the MCP tool was invoked during the response generation
+    # Step 9: Verify the LLM response was logged in Langfuse
+    Then the LLM response should be logged in Langfuse
+
+    # Step 10: Verify the MCP tool was invoked during the response generation
     And the MCP tool 'get_literature_supported_knowledge' should have been called
