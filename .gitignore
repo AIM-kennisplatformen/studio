@@ -218,7 +218,7 @@ llm_worker_config.toml
 
 node_modules/
 
-report/
+tests/bdd/report/
 
 # Remove auto-generated pycache folder
 src/studio

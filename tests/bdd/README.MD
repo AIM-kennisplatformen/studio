@@ -20,6 +20,8 @@ cp .env.sample .env
 
 ## Install Modules
 
+From the `tests/bdd/` directory:
+
 ```bash
 npm install
 ```
@@ -36,10 +38,10 @@ pixi run qava_test
 
 ### Option 2: Tests only (containers/services already running)
 
-If you already have the services running locally (e.g. via `docker compose up` or dev servers), you can run just the test directly:
+If you already have the services running locally (e.g. via `docker compose up` or dev servers), you can run just the test directly from the `tests/bdd/` directory:
 
 ```bash
-npx qavajs run --config tests/bdd/config.mjs
+npx qavajs run --config config.mjs
 ```
 
 Make sure the following services are reachable before running:
@@ -48,13 +50,13 @@ Make sure the following services are reachable before running:
 |---|---|
 | Backend | `http://localhost:10090` |
 | MCP Server | `http://localhost:8000` |
-| LLM Worker | `http://localhost:7000` |
+| LLM Worker | `http://localhost:9200` |
 | Authentik | `http://localhost:9000` |
 
 ### Run a single feature file
 
 ```bash
-npx qavajs run --config tests/bdd/config.mjs -- tests/bdd/features/chatbot.feature
+npx qavajs run --config config.mjs -- features/chatbot.feature
 ```
 
 ## Test Data

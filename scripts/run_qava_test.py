@@ -24,13 +24,16 @@ COMPOSE_FILES = [
 ENV_FILE = ".env"
 
 
-def run(cmd: str | list[str], *, check: bool = True, env: dict | None = None) -> int:
+tests_dir = root / "tests" / "bdd"
+
+
+def run(cmd: str | list[str], *, check: bool = True, env: dict | None = None, cwd: Path | None = None) -> int:
     """Run a command, return the exit code."""
     merged_env = {**os.environ, **(env or {})}
     if isinstance(cmd, str):
-        result = subprocess.run(cmd, shell=True, cwd=root, env=merged_env)
+        result = subprocess.run(cmd, shell=True, cwd=cwd or root, env=merged_env)
     else:
-        result = subprocess.run(cmd, cwd=root, env=merged_env)
+        result = subprocess.run(cmd, cwd=cwd or root, env=merged_env)
     if check and result.returncode != 0:
         sys.exit(result.returncode)
     return result.returncode
@@ -46,7 +49,7 @@ def compose_cmd(*args: str) -> list[str]:
 
 def main() -> int:
     # 1. npm install
-    run(["npm", "install"])
+    run(["npm", "install"], cwd=tests_dir)
 
     # 2. Build frontend
     run([sys.executable, "scripts/build_frontend.py"])
@@ -59,12 +62,13 @@ def main() -> int:
         run([sys.executable, "scripts/setup_authentik.py"])
 
         # 5. Wait for services
-        run(["npx", "wait-on", "tcp:8000", "tcp:9200", "tcp:10090"])
+        run(["npx", "wait-on", "tcp:8000", "tcp:9200", "tcp:10090"], cwd=tests_dir)
 
         # 6. Run tests
         exit_code = run(
-            ["npx", "qavajs", "run", "--config", "tests/bdd/config.mjs"],
+            ["npx", "qavajs", "run", "--config", "config.mjs"],
             check=False,
+            cwd=tests_dir,
         )
     finally:
         # 7. Tear down

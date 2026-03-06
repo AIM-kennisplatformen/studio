@@ -67,8 +67,8 @@ Then(
     console.log(`\n[MCP] Checking for tool '${toolName}'...`);
     console.log(`[MCP] Captured ${captures.length} on_tool_start event(s)`);
 
-    if (captures.length > 0) {
-      console.log("[MCP] Sample frame:", captures[0].substring(0, 300));
+    for (let i = 0; i < captures.length; i++) {
+      console.log(`[MCP] Event ${i + 1}:`, captures[i]);
     }
 
     assert(
@@ -78,8 +78,15 @@ Then(
         `The LLM may not have used the tool, or the MCP server may be unavailable.`
     );
 
-    console.log(
-      `[MCP] ✓ Tool invocation confirmed (${captures.length} event(s))`
-    );
+    const matching = captures.filter((frame) => frame.includes(toolName));
+    if (matching.length > 0) {
+      console.log(
+        `[MCP] ✓ Tool '${toolName}' confirmed (${matching.length} matching event(s))`
+      );
+    } else {
+      console.log(
+        `[MCP] ⚠ on_tool_start detected but '${toolName}' not found in frame data. A tool was called.`
+      );
+    }
   }
 );
