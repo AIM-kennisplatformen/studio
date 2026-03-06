@@ -10,7 +10,8 @@ kg = root / "kg"
 # Remove old build
 shutil.rmtree(kg, ignore_errors=True)
 
-# Load .env
+# Load .env file
+
 env = {}
 env_file = root / ".env"
 if env_file.exists():
@@ -23,7 +24,7 @@ if env_file.exists():
 try:
     backend_url = env["BACKEND_BASE_URL"]
 except KeyError:
-    sys.exit("ERROR: BACKEND_BASE_URL not found in .env")
+    sys.exit(f"ERROR: BACKEND_BASE_URL not found in {env_file}")
 
 # Write frontend env file
 env_prod = frontend / ".env.production"

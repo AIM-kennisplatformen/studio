@@ -25,9 +25,13 @@ from src.backend.utility.chat_util import (
 # SOCKET.IO SERVER
 # =====================================================
 
+# Build list of allowed CORS origins for Socket.IO
+cors_origins = [BASE_URL]
+
 sio = socketio.AsyncServer(
     async_mode="asgi",
-    cors_allowed_origins=[BASE_URL],
+    cors_allowed_origins=cors_origins,
+    cors_credentials=True,
 )
 
 register_socketio(sio)
@@ -152,7 +156,7 @@ async def send_message(sid, data):
 
     synthetic_prompt = (
         "SYSTEM META-INSTRUCTION:\n"
-        "Use the `paper_search` MCP tool to identify sources relevant to the question.\n\n"
+        "Use the `get_literature_supported_knowledge` MCP tool to identify sources relevant to the question.\n\n"
         f"full_question:\n\"{user_msg}\"\n\n"
         "keywords_related_to_question=\"Best practices || Target groups || Strategic overview\"\n"
         "Provide an evidence-informed explanation when possible.\n"

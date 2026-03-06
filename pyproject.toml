@@ -115,6 +115,8 @@ frontend_build = ""
 backend_no_docker = ""
 mcp_server = ""
 llm_worker = ""
+qava_test = "python scripts/run_qava_test.py"
+
 
 # ====================================
 # Linux tasks (POSIX, Bash-only where needed)
@@ -143,18 +145,18 @@ python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 mcp_server = 'PYTHONPATH=src python -m src.mcp_servers.main'
 llm_worker  = 'PYTHONPATH=src python -m src.llm_worker.main'
 
+
 # ====================================
 # Windows (cmd.exe)
-# ====================================
+# =====================================
 [tool.pixi.target.win-64.tasks]
 frontend_build = "python scripts/build_frontend.py"
-backend_no_docker = ''' 
+backend_no_docker = '''
 PYTHONPATH=src python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 '''
 
 mcp_server = 'PYTHONPATH=src python -m src.mcp_servers.main'
 llm_worker  = 'PYTHONPATH=src python -m src.llm_worker.main'
-
 
 # ====================================
 # Pixi activation environment

@@ -212,10 +212,13 @@ data-node/
 uploads/
 client/
 data/*
-ollama/
 .DS_Store
 kg/
 llm_worker_config.toml
+
+node_modules/
+
+tests/bdd/report/
 
 # Remove auto-generated pycache folder
 src/studio
