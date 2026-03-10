@@ -1,6 +1,7 @@
 ---
 name: github-issues-generator
-description: This skill ties in to the github-board-manager skill in this repository. Where this skill handles the generation of the content if the different types of issues, the github-board-manager is responsible for executing GitHub project board tasks. But, both work in harmony, tying in into each others workflows.
+description: >
+This skill ties in to the github-board-manager skill in this repository. Where this skill handles the generation of the content if the different types of issues, the github-board-manager is responsible for executing GitHub project board tasks. But, both work in harmony, tying in into each others workflows.
 
 This skill generates GitHub issues and provides project board integration, in combination with the seperate skill "github-board-manager". It contains 4 workflows to generate 4 different types of GitHub issues. Epics, sub-epics, features, and tasks. For epics and sub-epics it is possible, but not necessary, to contain multiple user sories for different roles. Tasks are the smallest units of work. Epics can be a parent of sub-epics and features. Sub-epics are a child of an epic and have features as children. Features have an epic or sub-epic as a child and has tasks as children. Tasks have features as a parent.
 
