@@ -23,20 +23,22 @@ This workflow is for the generation of epic issues and post them on the GitHub p
 3. After the epic has been approved, generate a list of candidate user stories. Only the user feature sentence/title. Present the user with the options, so the user can select one or more user stories for the epic. After this selection, generate and present the user with the full epic, according to the following template:
 
 "
-## Title
-
 ## Description
 
-<!--Provide an elaborate description of the context of the epic. Describe the problem space and the solution space. Add relevant literature here. -->
+<!--
+Describe the problem space and solution space of the user or stakeholder problem and the value that alliviating or solving the problem will deliver. Here, the context of the value needs to be intuitively clear for the reader. Needs to be elaborate, but concise in information. Add (scientific) documentation where needed.
+-->
 
-## So that …
+## ..., So that
 
-<!--Give a title in User Story format.
-
+<!--
 Use a Subject Verb Object (SVO) word order (‘Students (S) read (V) books (O)’).
 _S_ are the Stakeholder(s), and do not repeat these in this Description but exclusively list them as Stake Labels.
 Fill in the … in ‘As (S), I want to …’, and keep your Description minimal (e.g., don’t repeat parts that aren't ‘…’).
-For example, ‘As Student (S) I want to read (V) books (O)’.-->
+For example, ‘As Student (S) I want to read (V) books (O)’.
+
+Epics can have multiple user stories for different roles.
+-->
 
 ## Attacker Story
 
@@ -46,15 +48,15 @@ See https://owaspsamm.org/model/verification/requirements-driven-testing/stream-
 
 ## Acceptance criteria
 
-<!--Choose acceptance criteria from the acceptance criteria library.-->
-
-<!--Add specific acceptance criteria where needed.-->
+<!--
+Conditions that need to met to realise the described user value and resolve/alliviate the problem described in the description
+-->
 
 ## Stakeholders and Users
 
 <!--Label as appropriate.-->
 
-This Child Epic was initially reported by …, and … The Stakeholders assigned in the Labels, have the following interests … Decision-makers or buyers are \\\[not\\\] involved, since …
+This Epic was initially reported by …, and … The Stakeholders assigned in the Labels, have the following interests … Decision-makers or buyers are \\\[not\\\] involved, since …
 
 <!--Use official names of Stakeholders as documented in e.g., the domain model.-->
 
@@ -116,20 +118,22 @@ If it is addressed, that will provide **value** in the following way:
 9. After this selection, generate and present the user with the full epic, according to the following template:
 
 "
-## Title
-
 ## Description
 
-<!--Provide an elaborate description of the context of the epic. Describe the problem space and the solution space. Add relevant literature herre. -->
+<!--
+Describe the problem space and solution space of the user or stakeholder problem and the value that alliviating or solving the problem will deliver. Here, the context of the value needs to be intuitively clear for the reader. Needs to be elaborate, but concise in information. Add (scientific) documentation where needed.
+-->
 
-## So that …
+## ..., So that
 
-<!--Give a title in User Story format.
-
+<!--
 Use a Subject Verb Object (SVO) word order (‘Students (S) read (V) books (O)’).
 _S_ are the Stakeholder(s), and do not repeat these in this Description but exclusively list them as Stake Labels.
 Fill in the … in ‘As (S), I want to …’, and keep your Description minimal (e.g., don’t repeat parts that aren't ‘…’).
-For example, ‘As Student (S) I want to read (V) books (O)’.-->
+For example, ‘As Student (S) I want to read (V) books (O)’.
+
+Epics can have multiple user stories for different roles.
+-->
 
 ## Attacker Story
 
@@ -139,15 +143,15 @@ See https://owaspsamm.org/model/verification/requirements-driven-testing/stream-
 
 ## Acceptance criteria
 
-<!--Choose acceptance criteria from the acceptance criteria library.-->
-
-<!--Add specific acceptance criteria where needed.-->
+<!--
+Conditions that need to met to realise the described user value and resolve/alliviate the problem described in the description
+-->
 
 ## Stakeholders and Users
 
 <!--Label as appropriate.-->
 
-This Child Epic was initially reported by …, and … The Stakeholders assigned in the Labels, have the following interests … Decision-makers or buyers are \\\[not\\\] involved, since …
+This Epic was initially reported by …, and … The Stakeholders assigned in the Labels, have the following interests … Decision-makers or buyers are \\\[not\\\] involved, since …
 
 <!--Use official names of Stakeholders as documented in e.g., the domain model.-->
 
@@ -211,22 +215,26 @@ This workflow is for the generation of feature issues and post them on the GitHu
 "
 ## Description
 
-<!--Give a short description of the feature and some context on how it came about-->
+<!--
+Give a short description of the feature and some context on how it came about. Shortly explain the context of the value described in the user story. Preferably relate to how the feature contributes to the solution space described in the parent epic.
+-->
 
 ## ..., so that...
 
-<!--Give a title in User Story format.
-
+<!--
 Use a Subject Verb Object (SVO) word order (‘Students (S) read (V) books (O)’).
 _S_ are the Stakeholder(s), and do not repeat these in this Description but exclusively list them as Stake Labels.
 Fill in the … in ‘As (S), I want to …’, and keep your Description minimal (e.g., don’t repeat parts that aren't ‘…’).
-For example, ‘As Student (S) I want to read (V) books (O)’.-->
+For example, ‘As Student (S) I want to read (V) books (O)’.
+-->
 
 ## Acceptance criteria
 
-<!--Specify the acceptance criteria for the feature. Try to make them as concrete as possible.-->
+<!--
+Break down the user value into different functionalities and/or requirements that need to be realised or met to achieve the user value described in the description and user story. Try to make them as concrete as possible.
 
-<!--[optional] If it can be directly translated into a task, this is to be preferred-->
+[optional] If it can be directly translated into a task, this is preferred
+-->
 
 [ ] ...
 "
@@ -255,10 +263,17 @@ This workflow is for generating tasks, the smallest unit of work. Tasks describe
 "
 ## Description
 
-<!--Preferably in user story format -->
+<!--
+Give a (very) short and concise description of the task. Preferably in user story format.
+-->
+
 ...
 
 ## Requirements
+
+<!--
+Brake down the work in small, sequential steps of components that need to be created.
+-->
 
 1. [ ] ...
 "
