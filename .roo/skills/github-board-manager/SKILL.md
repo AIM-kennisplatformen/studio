@@ -1,14 +1,14 @@
 ---
 name: github-board-manager
 description: >
-  Executes GitHub project board operations for the github-issues-generator skill.
-  Handles CRUD operations for GitHub issues with type classification (epic, sub-epic, feature, task).
-  Supports filtering/retrieval by issue type, parent-child linking, project board status updates, and issue content updates.
-  Use when you need to (1) post/publish issues to GitHub, (2) retrieve issues filtered by type,
-  (3) link issues to parent issues, (4) update issue status on project boards, (5) update issue content (title, body, type).
-  NOTE: For content generation (drafting epics, features, etc.), use github-issues-generator skill first.
-  Triggers: "post this epic", "publish this feature", "retrieve all features", "link to parent",
-  "update status", "update issue", "list epics", "move issue to In Progress", "list issues", "get issue context".
+Executes GitHub project board operations for the github-issues-generator skill.
+Handles CRUD operations for GitHub issues with type classification (epic, sub-epic, feature, task).
+Supports filtering/retrieval by issue type, parent-child linking, project board status updates, and issue content updates.
+Use when you need to (1) post/publish issues to GitHub, (2) retrieve issues filtered by type,
+(3) link issues to parent issues, (4) update issue status on project boards, (5) update issue content (title, body, type).
+NOTE: For content generation (drafting epics, features, etc.), use github-issues-generator skill first.
+Triggers: "post this epic", "publish this feature", "retrieve all features", "link to parent",
+"update status", "update issue", "list epics", "move issue to In Progress", "list issues", "get issue context".
 ---
 
 # GitHub Board Manager
