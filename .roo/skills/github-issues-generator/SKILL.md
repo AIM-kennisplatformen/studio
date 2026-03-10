@@ -1,11 +1,10 @@
 ---
 name: github-issues-generator
-description: >
-This skill ties in to the github-board-manager skill in this repository. Where this skill handles the generation of the content if the different types of issues, the github-board-manager is responsible for executing GitHub project board tasks. But, both work in harmony, tying in into each others workflows.
-
-This skill generates GitHub issues and provides project board integration, in combination with the seperate skill "github-board-manager". It contains 4 workflows to generate 4 different types of GitHub issues. Epics, sub-epics, features, and tasks. For epics and sub-epics it is possible, but not necessary, to contain multiple user sories for different roles. Tasks are the smallest units of work. Epics can be a parent of sub-epics and features. Sub-epics are a child of an epic and have features as children. Features have an epic or sub-epic as a child and has tasks as children. Tasks have features as a parent.
+description: Generates GitHub issues with hierarchical relationships (Epic → Sub-Epic → Feature → Task) and project board integration using the `github-issue-generator.sh` script. It contains 4 workflows to generate 4 different types of GitHub issues. Epics, sub-epics, features, and tasks. For epics and sub-epics it is possible, but not necessary, to contain multiple user sories for different roles. Tasks are the smallest units of work. Epics can be a parent of sub-epics and features. Sub-epics are a child of an epic and have features as children. Features have an epic or sub-epic as a child and has tasks as children. Tasks have features as a parent.
 
 Use when user wants to (1) create epics, sub-epics, features, or tasks. (2) Get context for the creation of new issues based on existing issues on the Github project board using the "github-board-manager" skill. (3) Create a new issue with sub-issues. (4) Add newly created issues to the Github project board using the "github-board-manager" skill. (5) Update existing Github issues using the "github-board-manager" skill. (6) Link issues to other issues as sub-issues using the "github-board-manager" skill. (7) Suggest missing features based on existing issues on the Github project board and trhe codebase in the repositories of the project. Triggers on phrases like "create an epic", "create a sub-epic", "create a new feature", "create new task", "improve existing issue", "improve feature", "improve epic".
+
+This skill ties in to the github-board-manager skill in this repository. Where this skill handles the generation of the content and the different types of issues, the github-board-manager is responsible for executing GitHub project board tasks. But, both work in harmony, tying in into each others workflows.
 ---
 
 

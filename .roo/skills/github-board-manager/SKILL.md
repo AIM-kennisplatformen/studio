@@ -1,7 +1,6 @@
 ---
 name: github-board-manager
-description: >
-Executes GitHub project board operations for the github-issues-generator skill.
+description: Executes GitHub project board operations for the github-issues-generator skill.
 Handles CRUD operations for GitHub issues with type classification (epic, sub-epic, feature, task).
 Supports filtering/retrieval by issue type, parent-child linking, project board status updates, and issue content updates.
 Use when you need to (1) post/publish issues to GitHub, (2) retrieve issues filtered by type,
