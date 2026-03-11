@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useReducer } from "react";
 import "./index.css";
 import Chat from "./chat.jsx";
 import Graph from "./graph.jsx";
@@ -40,8 +40,8 @@ export default function App() {
       if (!containerRef.current) return;
       const containerWidth = containerRef.current.offsetWidth;
       const newWidth =
-        ((startWidth / 100) * containerWidth + (e.clientX - startX)) /
-        containerWidth *
+        (((startWidth / 100) * containerWidth + (e.clientX - startX)) /
+          containerWidth) *
         100;
       if (newWidth > 10 && newWidth < 90) setLeftWidth(newWidth);
     };
@@ -57,7 +57,10 @@ export default function App() {
 
   return (
     <div ref={containerRef} className="flex h-screen w-screen">
-      <div className="h-full bg-gray-100 overflow-hidden" style={{ width: `${leftWidth}%` }}>
+      <div
+        className="h-full bg-gray-100 overflow-hidden"
+        style={{ width: `${leftWidth}%` }}
+      >
         <ReactFlowProvider>
           <Graph data={data} width={leftWidth} />
         </ReactFlowProvider>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import {
   ReactFlow,
   applyEdgeChanges,
@@ -34,6 +34,42 @@ export default function Graph({ data, width }) {
   const containerRef = useRef(null);
   const nodesRef = useRef([]);
   const edgesRef = useRef([]);
+
+  // ------------------------------------------------------------------------------------------------------------
+
+  const reducer = (state, action) => {
+    switch (action.type) {
+      case "add":
+        //check if incoming node is already inside the list of clicked nodes
+        if (state.some((node) => node.id === action.node.id)) {
+          return state;
+        }
+        return [...state, action.node];
+
+      case "filter":
+        return state.filter(
+          (node) => Number(node.id) <= Number(action.node.id)
+        );
+
+      default:
+        break;
+    }
+  };
+
+  const [clickedNodes, dispatch] = useReducer(reducer, []);
+
+  console.log("-----------------------------");
+  clickedNodes.forEach((breadcrumb) => {
+    console.log(breadcrumb.data.label);
+  });
+  console.log("-----------------------------");
+
+  function breadcrumbs(node) {
+    dispatch({ type: "add", node: node });
+
+    dispatch({ type: "filter", node: node });
+  }
+  // -------------------------------------------------------------------------------------------------------------
 
   /** Convert raw data to React Flow nodes & edges */
   const prepareGraphData = useCallback(() => {
@@ -95,35 +131,36 @@ export default function Graph({ data, width }) {
         };
       })
       .filter(Boolean);
-        const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
+    const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
 
- // Apply dagre layout to new nodes, keeping fixed nodes in place
-  const layoutPositions = applyDagreLayout(newNodes, newEdges, {
-    quality: "proof",
-    nodeSeparation: 200,
-    idealEdgeLength: 300,
-    nodeRepulsion: 50000,
-    maxIterations: 2000,
-    animationDuration: 1000,
-    gravity: 0.05,
-    numIter: 5000,
-    tile: true,
-    tilingPaddingVertical: 20,
-    tilingPaddingHorizontal: 20,
-    incremental: true,
-    nodeDimensionsIncludeLabels: true,
-    fixedNodeConstraint: fixedNodes.map((n) => ({
-      nodeId: n.id,
-      position: n.position,
-    })),
-  });
-  // Merge positions: keep old positions, use fcose positions for new
-  const mergedNodes = newNodes.map((n) => ({
-    ...n,
-    position: previousPositions.get(n.id) || layoutPositions[n.id] || n.position,
-  }));
+    // Apply dagre layout to new nodes, keeping fixed nodes in place
+    const layoutPositions = applyDagreLayout(newNodes, newEdges, {
+      quality: "proof",
+      nodeSeparation: 200,
+      idealEdgeLength: 300,
+      nodeRepulsion: 50000,
+      maxIterations: 2000,
+      animationDuration: 1000,
+      gravity: 0.05,
+      numIter: 5000,
+      tile: true,
+      tilingPaddingVertical: 20,
+      tilingPaddingHorizontal: 20,
+      incremental: true,
+      nodeDimensionsIncludeLabels: true,
+      fixedNodeConstraint: fixedNodes.map((n) => ({
+        nodeId: n.id,
+        position: n.position,
+      })),
+    });
+    // Merge positions: keep old positions, use fcose positions for new
+    const mergedNodes = newNodes.map((n) => ({
+      ...n,
+      position:
+        previousPositions.get(n.id) || layoutPositions[n.id] || n.position,
+    }));
 
-  setLayoutNodes(mergedNodes);
+    setLayoutNodes(mergedNodes);
     nodesRef.current = mergedNodes;
     edgesRef.current = newEdges;
 
@@ -195,6 +232,8 @@ export default function Graph({ data, width }) {
       setSelectedNode(node);
       centerNodeInView(node);
       sendNodeSelection(node.id);
+
+      breadcrumbs(node);
     },
     [setCenterNodeId, setSelectedNode]
   );
