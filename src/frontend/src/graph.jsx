@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import {
   ReactFlow,
   applyEdgeChanges,
@@ -37,38 +37,36 @@ export default function Graph({ data, width }) {
 
   // ------------------------------------------------------------------------------------------------------------
 
-  const reducer = (state, action) => {
-    switch (action.type) {
-      case "add":
-        //check if incoming node is already inside the list of clicked nodes
-        if (state.some((node) => node.id === action.node.id)) {
-          return state;
-        }
-        return [...state, action.node];
+  const [breadcrumbs, setBreadcrumbs] = useState([]);
 
-      case "filter":
-        return state.filter(
-          (node) => Number(node.id) <= Number(action.node.id)
-        );
+  const updateBreadcrumbs = (node) => {
+    setBreadcrumbs((prevNodes) => {
+      const selectedId = Number(node.id);
 
-      default:
-        break;
-    }
+      // Remove all nodes that come *after* the selected node.
+      const trimmedNodes = prevNodes.filter((n) => Number(n.id) <= selectedId);
+
+      // If the selected node already exists in the trimmed list,
+      // it means the user clicked a node that is already in the path.
+      // In that case we just return the trimmed list (no duplicate).
+      const alreadySelected = trimmedNodes.some((n) => n.id === node.id);
+
+      if (alreadySelected) {
+        return trimmedNodes;
+      }
+
+      // Otherwise we append the new node to the end of the list.
+      // This extends the current selection path.
+      return [...trimmedNodes, node];
+    });
   };
 
-  const [clickedNodes, dispatch] = useReducer(reducer, []);
-
   console.log("-----------------------------");
-  clickedNodes.forEach((breadcrumb) => {
+  breadcrumbs.forEach((breadcrumb) => {
     console.log(breadcrumb.data.label);
   });
   console.log("-----------------------------");
 
-  function breadcrumbs(node) {
-    dispatch({ type: "add", node: node });
-
-    dispatch({ type: "filter", node: node });
-  }
   // -------------------------------------------------------------------------------------------------------------
 
   /** Convert raw data to React Flow nodes & edges */
@@ -232,8 +230,7 @@ export default function Graph({ data, width }) {
       setSelectedNode(node);
       centerNodeInView(node);
       sendNodeSelection(node.id);
-
-      breadcrumbs(node);
+      updateBreadcrumbs(node);
     },
     [setCenterNodeId, setSelectedNode]
   );
