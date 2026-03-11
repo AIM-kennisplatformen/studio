@@ -12,7 +12,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Global variables (will be set by load_config)
+# Global variables (will be set by load_config or --repo flag)
 REPO=""
 REPO_OWNER=""
 REPO_NAME=""
@@ -23,6 +23,7 @@ PROJECT_ID=""
 PROJECT_NUMBER=""
 STATUS_FIELD_ID=""
 BACKLOG_OPTION_ID=""
+REPO_OVERRIDE=""  # Set when --repo flag is used, skips config file for repo
 
 #=============================================================================
 # UTILITY FUNCTIONS
@@ -33,7 +34,12 @@ print_usage() {
 GitHub Issue Manager v${VERSION}
 
 USAGE:
-    ${SCRIPT_NAME} <command> [options]
+    ${SCRIPT_NAME} [--repo <owner/repo>] <command> [options]
+
+GLOBAL OPTIONS:
+    --repo <owner/repo>   Override repository from config file.
+                          Allows operations on any repository without modifying core-config.yaml.
+                          Example: --repo AIM-kennisplatformen/mcp-hub
 
 COMMANDS:
     create-epic <title> <body> <epic_slug>
@@ -114,6 +120,11 @@ EXAMPLES:
     ${SCRIPT_NAME} update-issue 42 --issue-type epic
     ${SCRIPT_NAME} get-issue-context 42
     ${SCRIPT_NAME} migrate-issues
+
+    # Using --repo flag to work with a different repository
+    ${SCRIPT_NAME} --repo AIM-kennisplatformen/mcp-hub get-issue-context 1
+    ${SCRIPT_NAME} --repo AIM-kennisplatformen/database-builder-libs list-issues --issue-type feature
+    ${SCRIPT_NAME} --repo owner/other-repo update-issue 5 --body-file ./issue-drafts/feature-5.md
 
 For detailed usage examples, see: README github-issue-manager.md
 Slug creation tips: derive from title, lowercase, hyphens instead of spaces, alphanumeric and hyphens only, max 20 characters, use well known abbreviations where possible (e.g., "auth" for "authentication"), avoid stop words (e.g., "the", "and", "of")
@@ -419,10 +430,16 @@ load_config() {
         output_error "core-config.yaml not found at $CONFIG_FILE"
     fi
     
-    # Load repo configuration
-    REPO=$(yq eval '.github.repo' "$CONFIG_FILE" 2>/dev/null || echo "")
-    if [ -z "$REPO" ] || [ "$REPO" = "null" ]; then
-        output_error "No github.repo configured in core-config.yaml"
+    # Check if repo was overridden via --repo flag
+    if [ -n "$REPO_OVERRIDE" ]; then
+        REPO="$REPO_OVERRIDE"
+        log_info "Using repository override: $REPO"
+    else
+        # Load repo configuration from config file
+        REPO=$(yq eval '.github.repo' "$CONFIG_FILE" 2>/dev/null || echo "")
+        if [ -z "$REPO" ] || [ "$REPO" = "null" ]; then
+            output_error "No github.repo configured in core-config.yaml"
+        fi
     fi
     
     # Validate repo format (owner/repo)
@@ -1903,6 +1920,31 @@ parse_update_issue_args() {
 #=============================================================================
 
 main() {
+    if [ $# -eq 0 ]; then
+        print_usage
+        exit 1
+    fi
+    
+    # Parse global --repo flag before command
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --repo)
+                if [ $# -lt 2 ]; then
+                    output_error "--repo requires an argument (owner/repo)"
+                fi
+                REPO_OVERRIDE="$2"
+                # Validate repo format early
+                if [[ ! "$REPO_OVERRIDE" =~ ^[^/]+/[^/]+$ ]]; then
+                    output_error "Invalid repo format. Expected: owner/repo, got: $REPO_OVERRIDE"
+                fi
+                shift 2
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+    
     if [ $# -eq 0 ]; then
         print_usage
         exit 1

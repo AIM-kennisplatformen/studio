@@ -38,6 +38,31 @@ github:
   project_board: "Project Board Name"
 ```
 
+## Repository Override (--repo flag)
+
+You can work with any repository without modifying `core-config.yaml` by using the `--repo` flag:
+
+```bash
+./github-issue-manager.sh --repo owner/other-repo <command> [options]
+```
+
+This is useful when:
+- Working with issues in multiple repositories
+- Retrieving context from related repositories
+- Temporary operations on external repos
+
+**Examples:**
+```bash
+# Get context for issue #1 in mcp-hub repository
+./github-issue-manager.sh --repo AIM-kennisplatformen/mcp-hub get-issue-context 1
+
+# List all features in another repository
+./github-issue-manager.sh --repo AIM-kennisplatformen/database-builder-libs list-issues --issue-type feature
+
+# Update an issue in a different repo
+./github-issue-manager.sh --repo owner/other-repo update-issue 5 --body-file ./issue-drafts/feature-5.md
+```
+
 ## GitHub Issue Types
 
 This skill operates on 4 issue types that must be specified when creating or retrieving issues:
