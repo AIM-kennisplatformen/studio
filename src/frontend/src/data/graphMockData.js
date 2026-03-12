@@ -47,7 +47,7 @@ export const responsesFromId = {
         type: "text",
         title: "Energy Poverty: Intervention strategies",
       },
-       {
+      {
         id: 2,
         type: "text",
         title: "Best practices",
@@ -242,7 +242,7 @@ export const responsesFromId = {
         type: "text",
         title: "Best practices",
       },
-         {
+      {
         id: 7,
         type: "text",
         title: "Project reports",

@@ -22,7 +22,7 @@ import {
 } from "./data/atoms";
 import { sendNodeSelection } from "./data/api";
 
-export default function Graph({ data, width }) {
+export default function Graph({ data, width, setBreadcrumbs }) {
   const [nodes, setNodes] = useAtom(nodesAtom);
   const [edges, setEdges] = useAtom(edgesAtom);
   const [, setDraggingNodeId] = useAtom(draggingNodeIdAtom);
@@ -36,36 +36,30 @@ export default function Graph({ data, width }) {
   const edgesRef = useRef([]);
 
   // ------------------------------------------------------------------------------------------------------------
-
-  const [breadcrumbs, setBreadcrumbs] = useState([]);
+  // const [breadcrumbs, setBreadcrumbs] = useAtom(breadcrumbsAtom);
 
   const updateBreadcrumbs = (node) => {
     setBreadcrumbs((prevNodes) => {
       const selectedId = Number(node.id);
 
-      // Remove all nodes that come *after* the selected node.
       const trimmedNodes = prevNodes.filter((n) => Number(n.id) <= selectedId);
 
-      // If the selected node already exists in the trimmed list,
-      // it means the user clicked a node that is already in the path.
-      // In that case we just return the trimmed list (no duplicate).
       const alreadySelected = trimmedNodes.some((n) => n.id === node.id);
 
       if (alreadySelected) {
         return trimmedNodes;
       }
 
-      // Otherwise we append the new node to the end of the list.
-      // This extends the current selection path.
-      return [...trimmedNodes, node];
+      // return [...trimmedNodes, node];
+      return [...trimmedNodes, { ...node, data: { ...node.data } }];
     });
   };
 
-  console.log("-----------------------------");
-  breadcrumbs.forEach((breadcrumb) => {
-    console.log(breadcrumb.data.label);
-  });
-  console.log("-----------------------------");
+  // console.log("-----------------------------");
+  // breadcrumbs.forEach((breadcrumb) => {
+  //   console.log(breadcrumb.data.label);
+  // });
+  // console.log("-----------------------------");
 
   // -------------------------------------------------------------------------------------------------------------
 
@@ -74,7 +68,7 @@ export default function Graph({ data, width }) {
     if (!data?.nodes || !data?.edges) return;
 
     const previousPositions = new Map(
-      layoutNodes.map((n) => [n.id, n.position])
+      layoutNodes.map((n) => [n.id, n.position]),
     );
     const nodeMap = new Map();
 
@@ -113,7 +107,7 @@ export default function Graph({ data, width }) {
           sourceNode.position.x,
           sourceNode.position.y,
           targetNode.position.x,
-          targetNode.position.y
+          targetNode.position.y,
         );
 
         return {
@@ -193,7 +187,7 @@ export default function Graph({ data, width }) {
         targetNode.position.x,
         targetNode.position.y,
         160,
-        80
+        80,
       );
 
       return { ...edge, sourceHandle, targetHandle };
@@ -210,18 +204,18 @@ export default function Graph({ data, width }) {
         return updatedNodes;
       });
     },
-    [updateEdges, setEdges, setNodes]
+    [updateEdges, setEdges, setNodes],
   );
 
   const onEdgesChange = useCallback(
     (changes) =>
       setEdges((currentEdges) => applyEdgeChanges(changes, currentEdges)),
-    [setEdges]
+    [setEdges],
   );
 
   const onConnect = useCallback(
     (params) => setEdges((es) => addEdge(params, es)),
-    [setEdges]
+    [setEdges],
   );
 
   const onNodeClick = useCallback(
@@ -232,16 +226,16 @@ export default function Graph({ data, width }) {
       sendNodeSelection(node.id);
       updateBreadcrumbs(node);
     },
-    [setCenterNodeId, setSelectedNode]
+    [setCenterNodeId, setSelectedNode],
   );
 
   const onNodeDragStart = useCallback(
     (e, node) => setDraggingNodeId(node.id),
-    [setDraggingNodeId]
+    [setDraggingNodeId],
   );
   const onNodeDragStop = useCallback(
     () => setDraggingNodeId(null),
-    [setDraggingNodeId]
+    [setDraggingNodeId],
   );
 
   /** Center a node in the viewport */
@@ -261,10 +255,10 @@ export default function Graph({ data, width }) {
             containerRef.current.clientHeight / 2 - nodeCenterY * viewport.zoom,
           zoom: viewport.zoom,
         },
-        { duration: 500, easing: (t) => t * (2 - t) }
+        { duration: 500, easing: (t) => t * (2 - t) },
       );
     },
-    [getViewport, setViewport]
+    [getViewport, setViewport],
   );
 
   /** Fit view on container resize */
@@ -273,7 +267,7 @@ export default function Graph({ data, width }) {
     if (!container) return;
 
     const ro = new ResizeObserver(() =>
-      fitView({ padding: 0.1, duration: 150 })
+      fitView({ padding: 0.1, duration: 150 }),
     );
     ro.observe(container);
     return () => ro.disconnect();

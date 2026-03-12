@@ -10,7 +10,7 @@ function generateChatId() {
   const id = nanoid();
   return `${id.slice(0, 5)}-${id.slice(5, 10)}-${id.slice(10, 15)}-${id.slice(
     15,
-    20
+    20,
   )}`;
 }
 
@@ -37,8 +37,10 @@ export const timerAtom = atom(null);
 //Atoms for the graph component
 export const nodesAtom = atom([]);
 export const edgesAtom = atom([]);
-export const selectedNodeAtom = atom({ currentNode: null, previousNode: null });
+export const selectedNodeAtom = atom({ currentNode: null });
 export const draggingNodeIdAtom = atom(null);
 export const centerNodeAtom = atom(1);
 export const dataAtom = atom(null);
 export const layoutNodesAtom = atom([]);
+
+export const breadcrumbsAtom = atom([]);
