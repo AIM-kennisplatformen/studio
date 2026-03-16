@@ -15,7 +15,6 @@ import { useAtom } from "jotai";
 import {
   nodesAtom,
   edgesAtom,
-  draggingNodeIdAtom,
   selectedNodeAtom,
   centerNodeAtom,
   layoutNodesAtom,
