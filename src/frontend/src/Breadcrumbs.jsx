@@ -1,4 +1,4 @@
-import { applyNodeChanges, MiniMap, ReactFlow } from "@xyflow/react";
+import { MiniMap, ReactFlow } from "@xyflow/react";
 
 export function Breadcrumbs({ breadcrumbs }) {
   const positionedNodes = breadcrumbs.map((node, index) => ({
@@ -8,6 +8,12 @@ export function Breadcrumbs({ breadcrumbs }) {
       y: index * 80,
     },
   }));
+
+  // console.log("-----------------------------");
+  // breadcrumbs.forEach((breadcrumb) => {
+  //   console.log(breadcrumb.data);
+  // });
+  // console.log("-----------------------------");
 
   return (
     <>

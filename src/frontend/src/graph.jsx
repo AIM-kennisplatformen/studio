@@ -21,8 +21,9 @@ import {
   layoutNodesAtom,
 } from "./data/atoms";
 import { sendNodeSelection } from "./data/api";
+import { BreadcrumbNode } from "./components/BreadcrumbNode";
 
-export default function Graph({ data, width, setBreadcrumbs }) {
+export default function Graph({ data, width }) {
   const [nodes, setNodes] = useAtom(nodesAtom);
   const [edges, setEdges] = useAtom(edgesAtom);
   const [, setDraggingNodeId] = useAtom(draggingNodeIdAtom);
@@ -36,7 +37,8 @@ export default function Graph({ data, width, setBreadcrumbs }) {
   const edgesRef = useRef([]);
 
   // ------------------------------------------------------------------------------------------------------------
-  // const [breadcrumbs, setBreadcrumbs] = useAtom(breadcrumbsAtom);
+
+  const [breadcrumbs, setBreadcrumbs] = useState([]);
 
   const updateBreadcrumbs = (node) => {
     setBreadcrumbs((prevNodes) => {
@@ -50,25 +52,26 @@ export default function Graph({ data, width, setBreadcrumbs }) {
         return trimmedNodes;
       }
 
-      // return [...trimmedNodes, node];
-      return [...trimmedNodes, { ...node, data: { ...node.data } }];
+      return [...trimmedNodes, node];
     });
   };
 
-  // console.log("-----------------------------");
-  // breadcrumbs.forEach((breadcrumb) => {
-  //   console.log(breadcrumb.data.label);
-  // });
-  // console.log("-----------------------------");
+  console.log("-----------------------------");
+  breadcrumbs.forEach((breadcrumb) => {
+    // if (breadcrumb.type === "breadcrumb") {
+    console.log(breadcrumb.data.label);
+    // }
+  });
+  console.log("-----------------------------");
 
   // -------------------------------------------------------------------------------------------------------------
 
-  /** Convert raw data to React Flow nodes & edges */
+  // /** Convert raw data to React Flow nodes & edges */
   const prepareGraphData = useCallback(() => {
     if (!data?.nodes || !data?.edges) return;
 
     const previousPositions = new Map(
-      layoutNodes.map((n) => [n.id, n.position]),
+      layoutNodes.map((n) => [n.id, n.position])
     );
     const nodeMap = new Map();
 
@@ -107,7 +110,7 @@ export default function Graph({ data, width, setBreadcrumbs }) {
           sourceNode.position.x,
           sourceNode.position.y,
           targetNode.position.x,
-          targetNode.position.y,
+          targetNode.position.y
         );
 
         return {
@@ -187,7 +190,7 @@ export default function Graph({ data, width, setBreadcrumbs }) {
         targetNode.position.x,
         targetNode.position.y,
         160,
-        80,
+        80
       );
 
       return { ...edge, sourceHandle, targetHandle };
@@ -204,18 +207,18 @@ export default function Graph({ data, width, setBreadcrumbs }) {
         return updatedNodes;
       });
     },
-    [updateEdges, setEdges, setNodes],
+    [updateEdges, setEdges, setNodes]
   );
 
   const onEdgesChange = useCallback(
     (changes) =>
       setEdges((currentEdges) => applyEdgeChanges(changes, currentEdges)),
-    [setEdges],
+    [setEdges]
   );
 
   const onConnect = useCallback(
     (params) => setEdges((es) => addEdge(params, es)),
-    [setEdges],
+    [setEdges]
   );
 
   const onNodeClick = useCallback(
@@ -226,16 +229,16 @@ export default function Graph({ data, width, setBreadcrumbs }) {
       sendNodeSelection(node.id);
       updateBreadcrumbs(node);
     },
-    [setCenterNodeId, setSelectedNode],
+    [setCenterNodeId, setSelectedNode]
   );
 
   const onNodeDragStart = useCallback(
     (e, node) => setDraggingNodeId(node.id),
-    [setDraggingNodeId],
+    [setDraggingNodeId]
   );
   const onNodeDragStop = useCallback(
     () => setDraggingNodeId(null),
-    [setDraggingNodeId],
+    [setDraggingNodeId]
   );
 
   /** Center a node in the viewport */
@@ -255,10 +258,10 @@ export default function Graph({ data, width, setBreadcrumbs }) {
             containerRef.current.clientHeight / 2 - nodeCenterY * viewport.zoom,
           zoom: viewport.zoom,
         },
-        { duration: 500, easing: (t) => t * (2 - t) },
+        { duration: 500, easing: (t) => t * (2 - t) }
       );
     },
-    [getViewport, setViewport],
+    [getViewport, setViewport]
   );
 
   /** Fit view on container resize */
@@ -267,7 +270,7 @@ export default function Graph({ data, width, setBreadcrumbs }) {
     if (!container) return;
 
     const ro = new ResizeObserver(() =>
-      fitView({ padding: 0.1, duration: 150 }),
+      fitView({ padding: 0.1, duration: 150 })
     );
     ro.observe(container);
     return () => ro.disconnect();

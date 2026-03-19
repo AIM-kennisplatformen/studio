@@ -1,20 +1,22 @@
-import { useState, useRef, useEffect, useReducer } from "react";
+import { useState, useRef, useEffect } from "react";
 import "./index.css";
 import Chat from "./chat.jsx";
 import Graph from "./graph.jsx";
-import { ReactFlowProvider } from "@xyflow/react";
+import {
+  MiniMap,
+  Panel,
+  ReactFlowProvider,
+  ViewportPortal,
+} from "@xyflow/react";
 import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
 import { useAtom } from "jotai";
-import { breadcrumbsAtom, centerNodeAtom } from "./data/atoms";
-import { Breadcrumbs } from "./Breadcrumbs";
+import { centerNodeAtom } from "./data/atoms";
 
 export default function App() {
   const [leftWidth, setLeftWidth] = useState(66.6);
   const containerRef = useRef(null);
   const [data, setData] = useState(null);
   const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom);
-  // const [breadcrumbs, setBreadcrumbs] = useAtom(breadcrumbsAtom);
-  const [breadcrumbs, setBreadcrumbs] = useState([]);
 
   // Load graph once on mount or when center node changes for the first time
   useEffect(() => {
@@ -65,11 +67,7 @@ export default function App() {
         style={{ width: `${leftWidth}%` }}
       >
         <ReactFlowProvider>
-          <Graph
-            data={data}
-            width={leftWidth}
-            setBreadcrumbs={setBreadcrumbs}
-          />
+          <Graph data={data} width={leftWidth} />
         </ReactFlowProvider>
       </div>
 
@@ -79,10 +77,7 @@ export default function App() {
       />
 
       <div className="flex-1 h-full bg-gray-50 flex flex-col">
-        {/* <Chat /> */}
-        <ReactFlowProvider>
-          <Breadcrumbs breadcrumbs={breadcrumbs} />
-        </ReactFlowProvider>
+        <Chat />
       </div>
     </div>
   );
