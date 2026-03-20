@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   ReactFlow,
   applyEdgeChanges,
@@ -19,9 +19,9 @@ import {
   selectedNodeAtom,
   centerNodeAtom,
   layoutNodesAtom,
+  breadcrumbsAtom,
 } from "./data/atoms";
 import { sendNodeSelection } from "./data/api";
-import { BreadcrumbNode } from "./components/BreadcrumbNode";
 
 export default function Graph({ data, width }) {
   const [nodes, setNodes] = useAtom(nodesAtom);
@@ -38,31 +38,33 @@ export default function Graph({ data, width }) {
 
   // ------------------------------------------------------------------------------------------------------------
 
-  const [breadcrumbs, setBreadcrumbs] = useState([]);
+  const [breadcrumbs, setBreadcrumbs] = useAtom(breadcrumbsAtom);
+  const breadcrumbsCounter = useRef(0);
 
   const updateBreadcrumbs = (node) => {
-    setBreadcrumbs((prevNodes) => {
-      const selectedId = Number(node.id);
+    const generatedId = "bc-" + breadcrumbsCounter.current;
 
-      const trimmedNodes = prevNodes.filter((n) => Number(n.id) <= selectedId);
+    setBreadcrumbs((prev) => {
+      const alreadySelected = prev.some(
+        (n) => Number(n.originNodeId) === Number(node.id)
+      );
 
-      const alreadySelected = trimmedNodes.some((n) => n.id === node.id);
+      if (alreadySelected) return prev;
 
-      if (alreadySelected) {
-        return trimmedNodes;
-      }
-
-      return [...trimmedNodes, node];
+      return [
+        ...prev,
+        {
+          historyId: generatedId,
+          originNodeId: node.id,
+          label: node.data.label,
+        },
+      ];
     });
+
+    breadcrumbsCounter.current++;
   };
 
-  console.log("-----------------------------");
-  breadcrumbs.forEach((breadcrumb) => {
-    // if (breadcrumb.type === "breadcrumb") {
-    console.log(breadcrumb.data.label);
-    // }
-  });
-  console.log("-----------------------------");
+  console.log(breadcrumbs);
 
   // -------------------------------------------------------------------------------------------------------------
 
