@@ -45,14 +45,19 @@ export default function Graph({ data, width }) {
     const generatedId = "bc-" + breadcrumbsCounter.current;
 
     setBreadcrumbs((prev) => {
-      const alreadySelected = prev.some(
+      const trimmedNodes = prev.filter(
+        (n) => Number(n.originNodeId) <= Number(node.id)
+      );
+
+      const alreadySelected = trimmedNodes.some(
         (n) => Number(n.originNodeId) === Number(node.id)
       );
 
-      if (alreadySelected) return prev;
-
+      if (alreadySelected) {
+        return trimmedNodes;
+      }
       return [
-        ...prev,
+        ...trimmedNodes,
         {
           historyId: generatedId,
           originNodeId: node.id,
