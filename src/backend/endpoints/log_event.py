@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from typing import Any
 from langfuse import Langfuse, get_client
@@ -27,7 +27,6 @@ async def log_event(payload: LogEventPayload, user=Depends(get_current_user)):
     langfuse = get_client()
     user_id = user.get("sub", "unknown")
     session_id = user.get("sid", user_id)
-    timestamp = datetime.now(timezone.utc)
 
     trace_id = langfuse.create_trace_id()
 
