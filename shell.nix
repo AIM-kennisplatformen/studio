@@ -4,9 +4,8 @@ pkgs.mkShell {
     (pkgs.python312.withPackages (python-pkgs:
       with python-pkgs; [
         pip
-        autopep8
+        ruff
       ]))
-    pkgs.uv
     pkgs.stdenv.cc.cc.lib
     ];
 

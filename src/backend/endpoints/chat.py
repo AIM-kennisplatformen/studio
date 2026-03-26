@@ -1,7 +1,8 @@
 import json
 import time
 from collections import defaultdict
-from typing import List, TypedDict, DefaultDict
+from typing import Any, List, TypedDict, DefaultDict
+from langfuse import Langfuse
 
 import httpx
 import socketio
@@ -54,6 +55,9 @@ user_sessions: DefaultDict[str, Session] = defaultdict(
     lambda: {"history": [], "last_seen": time.time(), "last_topic": None}
 )
 
+# Langfuse initialization with a dict to start/end traces when users connect/disconnect
+langfuse = Langfuse()
+active_traces: dict[str, Any] = {}
 
 # =====================================================
 # SOCKET.IO EVENT HANDLERS
@@ -79,11 +83,28 @@ async def connect(sid, environ, auth):
     
     print(f"✓ Socket connected: {sid} user={user_id}")
 
+    try:
+        trace = langfuse.start_observation(
+            name="user_session",
+            metadata={"user_id": user_id, "sid": sid},
+        )
+        active_traces[sid] = trace
+        print(f"Langfuse trace started for user_id={user_id}, sid={sid}")
+    except Exception as e:
+        print(f"⚠ Could not start Langfuse trace for session {sid}: {e}")
 
 @sio.event
 async def disconnect(sid):
     user_id = unbind_sid(sid)
     print(f"⚠ Socket disconnected sid={sid} user={user_id}")
+
+    trace = active_traces.pop(sid, None)
+    if trace:
+        try:
+            trace.end()
+            print(f"Langfuse trace ended for sid={sid}")
+        except Exception as e:
+            print(f"Failed to close Langfuse trace for sid={sid}: {e}")
 
 
 # =====================================================
