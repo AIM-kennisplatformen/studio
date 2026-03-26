@@ -46,3 +46,12 @@ class ContextResponse(BaseModel):
     edges: List[Edge] = []
     sources: List[Source] = []
     error: Optional[str] = None
+
+class GraphResponse(BaseModel): 
+    #TODO : figure out what we want to return here? 
+    """Response for full graph endpoint"""
+    message: Optional[str] = None
+    entities: List[Node] = []
+    relations: List[Edge] = []
+    metadata: dict = {}
+    error: Optional[str] = None
