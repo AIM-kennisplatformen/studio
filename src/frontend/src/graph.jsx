@@ -22,6 +22,7 @@ import {
   breadcrumbsAtom,
 } from "./data/atoms";
 import { sendNodeSelection } from "./data/api";
+import { buildBreadcrumbRenderGraph } from "./lib/breadcrumbLayout";
 
 export default function Graph({ data, width }) {
   const [nodes, setNodes] = useAtom(nodesAtom);
@@ -70,6 +71,24 @@ export default function Graph({ data, width }) {
   };
 
   console.log(breadcrumbs);
+
+  const viewport = getViewport();
+
+  buildBreadcrumbRenderGraph(breadcrumbs, viewport, width, {
+    quality: "proof",
+    nodeSeparation: 200,
+    idealEdgeLength: 300,
+    nodeRepulsion: 50000,
+    maxIterations: 2000,
+    animationDuration: 1000,
+    gravity: 0.05,
+    numIter: 5000,
+    tile: true,
+    tilingPaddingVertical: 20,
+    tilingPaddingHorizontal: 20,
+    incremental: true,
+    nodeDimensionsIncludeLabels: true,
+  });
 
   // -------------------------------------------------------------------------------------------------------------
 

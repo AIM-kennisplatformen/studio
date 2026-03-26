@@ -1,13 +1,14 @@
 /* Copied of PoC-Robert-React-Flow */
-import { Handle, Position } from '@xyflow/react';
-import { useRef, useLayoutEffect, useState } from 'react';
+import { Handle, Position } from "@xyflow/react";
+import { useRef, useLayoutEffect, useState } from "react";
+import { NodeBody } from "./NodeBody";
 
 export function CustomNode({ data, isConnectable, selected }) {
-  const nodeBackground = data.background || '#fff';
+  const nodeBackground = data.background || "#fff";
   const distance = data.distance ?? null;
   const contentRef = useRef(null);
   const [contentHeight, setContentHeight] = useState(80); // Default height
-  
+
   // Measure content height on mount and when data changes
   useLayoutEffect(() => {
     if (contentRef.current) {
@@ -15,28 +16,32 @@ export function CustomNode({ data, isConnectable, selected }) {
       setContentHeight(height);
     }
   }, [data.label]); // Re-measure if label changes
-  
+
   // Determine visual state based on distance
   const isSelected = distance === 0;
   const isDistant = distance !== null && distance > 1;
-  
+
   // Calculate scaling - 130% for selected nodes
   const scale = isSelected ? 1.3 : 1.0;
-  
+
   // Base dimensions (inner content size)
   const baseWidth = data.width || 160;
-  
+
   // Wrapper dimensions match the visual size after scaling
   const wrapperWidth = baseWidth * scale;
   const wrapperHeight = contentHeight * scale;
-  
+
   // Calculate styling
-  const fontWeight = isSelected ? 'bold' : (data.fontWeight || 'normal');
-  const zIndex = isSelected ? 1000 : 'auto';
-  
+  const fontWeight = isSelected ? "bold" : data.fontWeight || "normal";
+  const zIndex = isSelected ? 1000 : "auto";
+
   // Distant node styling - using CSS variables
-  const textColor = isDistant ? 'var(--distant-node-text-color)' : (data.color || '#000');
-  const background = isDistant ? 'var(--distant-node-background-color)' : nodeBackground;
+  const textColor = isDistant
+    ? "var(--distant-node-text-color)"
+    : data.color || "#000";
+  const background = isDistant
+    ? "var(--distant-node-background-color)"
+    : nodeBackground;
 
   return (
     <div
@@ -44,8 +49,8 @@ export function CustomNode({ data, isConnectable, selected }) {
       style={{
         width: wrapperWidth,
         height: wrapperHeight,
-        position: 'relative',
-        transition: 'width 300ms ease-out, height 300ms ease-out',
+        position: "relative",
+        transition: "width 300ms ease-out, height 300ms ease-out",
         zIndex,
       }}
     >
@@ -78,7 +83,7 @@ export function CustomNode({ data, isConnectable, selected }) {
         isConnectable={isConnectable}
         className="opacity-0 pointer-events-none"
       />
-      
+
       {/* Target handles on all sides */}
       <Handle
         type="target"
@@ -109,8 +114,20 @@ export function CustomNode({ data, isConnectable, selected }) {
         className="opacity-0 pointer-events-none"
       />
 
+      <NodeBody
+        data={data}
+        selected={selected}
+        contentRef={contentRef}
+        scale={scale}
+        baseWidth={baseWidth}
+        textColor={textColor}
+        background={background}
+        fontWeight={fontWeight}
+        showDragHandle={true}
+      />
+
       {/* Inner content div - centered and scaled */}
-      <div
+      {/* <div
         ref={contentRef}
         className="custom-node"
         style={{
@@ -133,11 +150,11 @@ export function CustomNode({ data, isConnectable, selected }) {
             : data.boxShadow || 'none',
           transition: 'color 300ms ease-out, font-weight 300ms ease-out, transform 300ms ease-out',
         }}
-      >
-        {/* Flexbox container with drag handle and content */}
-        <div className="flex h-full">
-          {/* First child: Drag Handle - fixed width */}
-          <div
+      > */}
+      {/* Flexbox container with drag handle and content */}
+      {/* <div className="flex h-full"> */}
+      {/* First child: Drag Handle - fixed width */}
+      {/* <div
             className="group/handle flex items-center justify-center cursor-move hover:brightness-[0.85] transition-[filter] duration-200 w-6 shrink-0"
             style={{
               background,
@@ -150,10 +167,10 @@ export function CustomNode({ data, isConnectable, selected }) {
               <div className="w-[3px] h-[3px] bg-black/30 rounded-full transition-[width] duration-500 ease-in-out group-hover/handle:w-[15px]" />
               <div className="w-[3px] h-[3px] bg-black/30 rounded-full transition-[width] duration-500 ease-in-out group-hover/handle:w-[15px]" />
             </div>
-          </div>
+          </div> */}
 
-          {/* Second child: Content - takes remaining space */}
-          <div
+      {/* Second child: Content - takes remaining space */}
+      {/* <div
             className="nodrag text-left flex-1 cursor-default"
             style={{
               padding: data.padding || '10px',
@@ -165,7 +182,7 @@ export function CustomNode({ data, isConnectable, selected }) {
             {data.label}
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

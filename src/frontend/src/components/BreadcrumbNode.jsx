@@ -1,6 +1,7 @@
 /* Copied of PoC-Robert-React-Flow */
 import { Handle, Position } from "@xyflow/react";
 import { useRef, useLayoutEffect, useState } from "react";
+import { NodeBody } from "./NodeBody";
 
 export function BreadcrumbNode({ data, isConnectable, selected }) {
   const nodeBackground = data.background || "#fff";
@@ -44,7 +45,7 @@ export function BreadcrumbNode({ data, isConnectable, selected }) {
 
   return (
     <div
-      className="custom-node-wrapper"
+      className="breadcrumb-node-wrapper"
       style={{
         width: wrapperWidth,
         height: wrapperHeight,
@@ -113,64 +114,7 @@ export function BreadcrumbNode({ data, isConnectable, selected }) {
         className="opacity-0 pointer-events-none"
       />
 
-      {/* Inner content div - centered and scaled */}
-      <div
-        ref={contentRef}
-        className="custom-node"
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: `translate(-50%, -50%) scale(${scale})`,
-          transformOrigin: "center center",
-          width: baseWidth,
-          color: textColor,
-          border: selected
-            ? "3px solid #1a73e8"
-            : data.border || "1px solid #000",
-          borderRadius: data.borderRadius || "3px",
-          fontSize: data.fontSize || "12px",
-          fontWeight,
-          whiteSpace: data.whiteSpace || "normal",
-          boxShadow: selected
-            ? "0 0 0 2px rgba(26, 115, 232, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15)"
-            : data.boxShadow || "none",
-          transition:
-            "color 300ms ease-out, font-weight 300ms ease-out, transform 300ms ease-out",
-        }}
-      >
-        {/* Flexbox container with drag handle and content */}
-        <div className="flex h-full">
-          {/* First child: Drag Handle - fixed width */}
-          <div
-            className="group/handle flex items-center justify-center cursor-move hover:brightness-[0.85] transition-[filter] duration-200 w-6 shrink-0"
-            style={{
-              background,
-              borderTopLeftRadius: data.borderRadius || "3px",
-              borderBottomLeftRadius: data.borderRadius || "3px",
-            }}
-          >
-            <div className="flex flex-col gap-0.5">
-              <div className="w-[3px] h-[3px] bg-black/30 rounded-full transition-[width] duration-500 ease-in-out group-hover/handle:w-[15px]" />
-              <div className="w-[3px] h-[3px] bg-black/30 rounded-full transition-[width] duration-500 ease-in-out group-hover/handle:w-[15px]" />
-              <div className="w-[3px] h-[3px] bg-black/30 rounded-full transition-[width] duration-500 ease-in-out group-hover/handle:w-[15px]" />
-            </div>
-          </div>
-
-          {/* Second child: Content - takes remaining space */}
-          <div
-            className="nodrag text-left flex-1 cursor-default"
-            style={{
-              padding: data.padding || "10px",
-              background,
-              borderTopRightRadius: data.borderRadius || "3px",
-              borderBottomRightRadius: data.borderRadius || "3px",
-            }}
-          >
-            {data.label + " isBreadcrumbNode"}
-          </div>
-        </div>
-      </div>
+      <NodeBody data={data} />
     </div>
   );
 }
