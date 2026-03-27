@@ -7,9 +7,11 @@ pkgs.mkShell {
         ruff
       ]))
     pkgs.stdenv.cc.cc.lib
-    ];
+  ];
 
   shellHook = ''
     export LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib:$LD_LIBRARY_PATH
+    python3 -m venv .venv
+    source .venv/bin/activate
   '';
 }
