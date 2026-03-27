@@ -16,10 +16,18 @@ services:
       - "10090:10090"
     env_file:
       - .env
+    environment:
+      - OTEL_SERVICE_NAME=llm_worker
+      - LLM_WORKER_PORT=9200
+      - MCP_USE_OAUTH=false
+      - MCP_TOOL_CONFIG_PATH=/app/scepa_tools.json
+      - MCP_CALLBACK_PORT=9200
     depends_on:
       - mcp_server
     volumes:
       - .:/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks: [studio_net]
 
   mcp_server:
