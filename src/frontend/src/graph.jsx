@@ -356,8 +356,17 @@ export default function Graph({ data, width }) {
 
   const onNodesChange = useCallback(
     (changes) => {
+      const realChanges = changes.filter(
+        (change) => !change.id?.startsWith("bc-")
+      );
+
       setNodes((currentNodes) => {
         const updatedNodes = applyNodeChanges(changes, currentNodes);
+
+        if (realChanges.length === 0) {
+          return updatedNodes;
+        }
+
         const realNodes = updatedNodes.filter(
           (node) => !node.id.startsWith("bc-")
         );
@@ -433,6 +442,18 @@ export default function Graph({ data, width }) {
           return;
         }
 
+        setBreadcrumbs((prev) => {
+          const clickedIndex = prev.findIndex(
+            (entry) => entry.historyId === node.id
+          );
+
+          if (clickedIndex < 0) {
+            return prev;
+          }
+
+          return prev.slice(0, clickedIndex + 1);
+        });
+        latestForwardNodeIdRef.current = node.data.originNodeId;
         setCenterNodeId(Number(node.data.originNodeId));
         setSelectedNode(realNode);
         centerNodeInView(realNode);
@@ -447,7 +468,13 @@ export default function Graph({ data, width }) {
       sendNodeSelection(node.id);
       appendBreadcrumb(node);
     },
-    [appendBreadcrumb, centerNodeInView, setCenterNodeId, setSelectedNode]
+    [
+      appendBreadcrumb,
+      centerNodeInView,
+      setBreadcrumbs,
+      setCenterNodeId,
+      setSelectedNode,
+    ]
   );
 
   const onNodeDragStart = useCallback(
