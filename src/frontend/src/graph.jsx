@@ -468,7 +468,11 @@ export default function Graph({ data, width }) {
     }
 
     const ro = new ResizeObserver(() => {
-      fitView({ padding: 0.1, duration: 150 });
+      fitView({
+        padding: 0.1,
+        duration: 150,
+        nodes: graphNodesRef.current.map((n) => ({ id: n.id })),
+      });
       mergeAndSetRenderGraph();
     });
 
@@ -493,6 +497,11 @@ export default function Graph({ data, width }) {
         onMoveEnd={mergeAndSetRenderGraph}
         selectNodesOnDrag={false}
         fitView
+        fitViewOptions={{
+          padding: 0.5,
+          duration: 150,
+          nodes: graphNodesRef.current.map((n) => ({ id: n.id })),
+        }}
         attributionPosition="bottom-left"
         proOptions={{ hideAttribution: true }}
       />
