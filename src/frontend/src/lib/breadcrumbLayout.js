@@ -1,9 +1,25 @@
+function dedupeBreadcrumbEntries(breadcrumbEntries) {
+  return breadcrumbEntries.reduce((path, entry) => {
+    const existingIndex = path.findIndex(
+      (pathEntry) => pathEntry.originNodeId === entry.originNodeId
+    );
+
+    if (existingIndex >= 0) {
+      return path.slice(0, existingIndex + 1);
+    }
+
+    return [...path, entry];
+  }, []);
+}
+
 export function buildBreadcrumbRenderGraph(
   breadcrumbEntries,
   viewport,
   containerWidth
 ) {
-  const nodes = breadcrumbEntries.map((entry, index) => {
+  const dedupedEntries = dedupeBreadcrumbEntries(breadcrumbEntries);
+
+  const nodes = dedupedEntries.map((entry, index) => {
     const screenX = 20 + index * (160 + 24);
     const screenY = 20;
     const flowPosition = {
@@ -36,10 +52,10 @@ export function buildBreadcrumbRenderGraph(
     };
   });
 
-  const edges = breadcrumbEntries.slice(0, -1).map((entry, index) => ({
-    id: `bc-edge-${entry.historyId}-${breadcrumbEntries[index + 1].historyId}`,
+  const edges = dedupedEntries.slice(0, -1).map((entry, index) => ({
+    id: `bc-edge-${entry.historyId}-${dedupedEntries[index + 1].historyId}`,
     source: entry.historyId,
-    target: breadcrumbEntries[index + 1].historyId,
+    target: dedupedEntries[index + 1].historyId,
     type: "solid",
     sourceHandle: "right",
     targetHandle: "target-left",
@@ -48,4 +64,30 @@ export function buildBreadcrumbRenderGraph(
   }));
 
   return { nodes, edges };
+}
+
+export function buildBridgeEdge(breadcrumbEntries, anchorNodeId) {
+  const dedupedEntries = dedupeBreadcrumbEntries(breadcrumbEntries);
+
+  if (!dedupedEntries.length || anchorNodeId == null) {
+    return null;
+  }
+
+  const lastEntry = dedupedEntries[dedupedEntries.length - 1];
+
+  return {
+    id: `bc-bridge-${lastEntry.historyId}-${String(anchorNodeId)}`,
+    source: lastEntry.historyId,
+    target: String(anchorNodeId),
+    type: "solid",
+    sourceHandle: "bottom",
+    targetHandle: "target-top",
+    style: {
+      stroke: "#038061",
+      strokeWidth: 2,
+      strokeDasharray: "4 4",
+      opacity: 0.6,
+    },
+    zIndex: 1500,
+  };
 }

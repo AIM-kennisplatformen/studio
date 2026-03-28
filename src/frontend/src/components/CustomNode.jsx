@@ -13,7 +13,9 @@ export function CustomNode({ data, isConnectable, selected }) {
   useLayoutEffect(() => {
     if (contentRef.current) {
       const height = contentRef.current.offsetHeight;
-      setContentHeight(height);
+      setContentHeight((currentHeight) =>
+        currentHeight === height ? currentHeight : height
+      );
     }
   }, [data.label]); // Re-measure if label changes
 
