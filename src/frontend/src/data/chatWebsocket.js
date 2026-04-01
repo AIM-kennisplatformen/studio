@@ -2,13 +2,14 @@
 
 import { useEffect, useRef } from "react";
 import { useSetAtom } from "jotai";
-import { messagesAtom } from "./atoms";
+import { messagesAtom, lastDoneMessageKeyAtom } from "./atoms";
 import { io } from "socket.io-client";
 
 const SOCKET_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
 export function useChatWebSocket(setStatus) {
   const setMessages = useSetAtom(messagesAtom);
+  const setLastDoneMessageKey = useSetAtom(lastDoneMessageKeyAtom);
   const socketRef = useRef(null);
 
   const streamingKeyRef = useRef(null);
@@ -68,6 +69,9 @@ export function useChatWebSocket(setStatus) {
     });
 
     socket.on("done", () => {
+      if (streamingKeyRef.current !== null) {
+        setLastDoneMessageKey(streamingKeyRef.current);
+      }
       streamingKeyRef.current = null;
       setStatus("ready");
     });

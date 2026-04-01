@@ -26,6 +26,9 @@ What would you like to explore today?`,
   },
 ]);
 
+// Atom for the last completed chatbot message key (show actions on this message)
+export const lastDoneMessageKeyAtom = atom(null);
+
 //Atoms for the InputArea component
 export const textStatusAtom = atom("ready");
 export const textAtom = atom("");
