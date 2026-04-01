@@ -71,22 +71,6 @@ function areEdgeArraysEqual(currentEdges, nextEdges) {
   });
 }
 
-function applyActiveNodeStyling(nodes, activeNodeId) {
-  return nodes.map((node) => {
-    const isActive = node.id === String(activeNodeId);
-
-    return {
-      ...node,
-      data: {
-        ...node.data,
-        background: isActive ? "#038061" : "#ffffff",
-        color: isActive ? "#ffffff" : "#038061",
-      },
-      selected: isActive,
-    };
-  });
-}
-
 export default function Graph({ data, width }) {
   const [nodes, setNodes] = useAtom(nodesAtom);
   const [edges, setEdges] = useAtom(edgesAtom);
@@ -312,28 +296,24 @@ export default function Graph({ data, width }) {
         layoutPositions[node.id] ||
         node.position,
     }));
-    const styledNodes = applyActiveNodeStyling(
-      mergedNodes,
-      selectedNode?.id ?? centerNodeId
-    );
 
     setLayoutNodes((currentLayoutNodes) =>
-      areNodeArraysEqual(currentLayoutNodes, styledNodes)
+      areNodeArraysEqual(currentLayoutNodes, mergedNodes)
         ? currentLayoutNodes
-        : styledNodes
+        : mergedNodes
     );
-    graphNodesRef.current = styledNodes;
+    graphNodesRef.current = mergedNodes;
     edgesRef.current = newEdges;
 
     if (latestForwardNodeIdRef.current == null) {
       latestForwardNodeIdRef.current =
-        selectedNode?.id || styledNodes[0]?.id || null;
+        selectedNode?.id || mergedNodes[0]?.id || null;
     }
 
     mergeAndSetRenderGraph();
 
     if (!selectedNode) {
-      const nodeToCenter = styledNodes.find((node) => node.id === "1");
+      const nodeToCenter = mergedNodes.find((node) => node.id === "1");
 
       if (nodeToCenter && containerRef.current) {
         centerNodeInView(nodeToCenter);
@@ -370,13 +350,9 @@ export default function Graph({ data, width }) {
         const realNodes = updatedNodes.filter(
           (node) => !node.id.startsWith("bc-")
         );
-        const styledNodes = applyActiveNodeStyling(
-          realNodes,
-          selectedNode?.id ?? centerNodeId
-        );
 
-        graphNodesRef.current = styledNodes;
-        edgesRef.current = updateEdges(styledNodes, edgesRef.current);
+        graphNodesRef.current = realNodes;
+        edgesRef.current = updateEdges(realNodes, edgesRef.current);
 
         const viewport = getViewport();
         const containerWidth = containerRef.current?.clientWidth ?? 800;
@@ -404,7 +380,7 @@ export default function Graph({ data, width }) {
         );
 
         return [
-          ...styledNodes,
+          ...realNodes,
           ...updatedNodes.filter((node) => node.id.startsWith("bc-")),
         ];
       });
