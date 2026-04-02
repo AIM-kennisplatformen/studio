@@ -62,7 +62,7 @@ def main() -> int:
         run([sys.executable, "scripts/setup_authentik.py"])
 
         # 5. Wait for services
-        run(["npx", "wait-on", "tcp:8000", "tcp:9200", "tcp:10090"], cwd=tests_dir)
+        run(["npx", "wait-on", "tcp:8000", "tcp:10090"], cwd=tests_dir)
 
         # 6. Run tests
         exit_code = run(
