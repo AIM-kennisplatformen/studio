@@ -10,11 +10,9 @@ from backend.config import (
     root_question_prompt,
 )
 
-from backend.endpoints.graph import (
-    user_graph_contexts,
-    _default_user_graph_context
-)
+from backend.endpoints.graph import user_graph_contexts, _default_user_graph_context
 from backend.endpoints.graph import fetch_subnode_stream
+from backend.endpoints.log_event import end_session, start_session
 from backend.utility.chat_util import (
     register_socketio,
     bind_user,
@@ -66,13 +64,14 @@ async def connect(sid, environ, auth):
     user_id = user["sub"]
     bind_user(user_id, sid)
     user_graph_contexts[user_id] = _default_user_graph_context()
-    
+    start_session(user_id, sid)
     print(f"✓ Socket connected: {sid} user={user_id}")
 
 
 @sio.event
 async def disconnect(sid):
     user_id = unbind_sid(sid)
+    end_session(user_id, sid)
     print(f"⚠ Socket disconnected sid={sid} user={user_id}")
 
 
@@ -120,16 +119,15 @@ async def send_message(sid, data):
 
             await fetch_subnode_stream(user_id, question, selected_subnode)
             await push_chat_message_stream(
-                    user_id,
-                    "done",
-                    ctx.get("prefetched", {}).get(selected_subnode),
-                    selected_subnode,
-                )
+                user_id,
+                "done",
+                ctx.get("prefetched", {}).get(selected_subnode),
+                selected_subnode,
+            )
             return
 
         finally:
             ctx["dialogue_state_asked"] = False
-
 
     # --------------------------------------------------
     # NORMAL ROOT WORKFLOW (user asked a new question in chat)
@@ -148,15 +146,16 @@ async def send_message(sid, data):
     async for evt in stream_agent_events(synthetic_prompt, user_id=user_id):
         event_type = evt["type"]
         event_data = evt["data"]
- 
+
         if event_type != "on_chat_model_stream":
             await push_chat_message_stream(user_id, event_type, event_data, "root")
             continue
- 
+
         if event_data:
-            await push_chat_message_stream(user_id, "on_chat_model_stream", event_data, "root")
+            await push_chat_message_stream(
+                user_id, "on_chat_model_stream", event_data, "root"
+            )
             full_response += event_data
- 
 
     # --------------------------------------------------
     # FINALIZE ROOT RESPONSE
