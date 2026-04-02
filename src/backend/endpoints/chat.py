@@ -15,7 +15,7 @@ from backend.endpoints.graph import (
     _default_user_graph_context
 )
 from backend.endpoints.graph import fetch_subnode_stream
-from src.backend.utility.chat_util import (
+from backend.utility.chat_util import (
     register_socketio,
     bind_user,
     stream_agent_events,

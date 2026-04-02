@@ -7,7 +7,7 @@ from backend.utility.graph_api_models import ContextResponse
 from backend.endpoints.auth import get_current_user
 from backend.config import subnode_question_prompt
 
-from src.backend.utility.chat_util import push_chat_message, push_chat_message_stream, stream_agent_events
+from backend.utility.chat_util import push_chat_message, push_chat_message_stream, stream_agent_events
 graph_router = APIRouter()
 
 
