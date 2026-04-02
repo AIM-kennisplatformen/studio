@@ -17,9 +17,6 @@ src/
     main.py         # app entry point
   frontend/         # React + Vite app
     src/
-  mcp_servers/      # MCP server (paper_search tool)
-    tools/
-    lib/
 scripts/            # build_frontend.py, setup_authentik.py, run_qava_test.py
 tests/
   bdd/              # qavajs end-to-end tests
@@ -88,15 +85,7 @@ pixi run frontend_build
 
 This reads `BACKEND_BASE_URL` from `.env`, writes a Vite production env file, runs `npm install` + `npm run build` inside `src/frontend/`, and moves the output to `kg/`.
 
-### 2. Start the MCP server
-
-```bash
-pixi run mcp_server
-```
-
-Starts the `paper_search` MCP server on port `8000`.
-
-### 3. Start the backend
+### 2. Start the backend
 
 ```bash
 pixi run backend_no_docker
