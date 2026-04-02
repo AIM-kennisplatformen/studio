@@ -17,12 +17,17 @@ services:
     env_file:
       - .env
     environment:
-      - LLM_WORKER_URL=http://llm_worker
+      - OTEL_SERVICE_NAME=llm_worker
+      - LLM_WORKER_PORT=9200
+      - MCP_USE_OAUTH=false
+      - MCP_TOOL_CONFIG_PATH=/app/scepa_tools.json
+      - MCP_CALLBACK_PORT=9200
     depends_on:
-      - llm_worker
       - mcp_server
     volumes:
       - .:/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks: [studio_net]
 
   mcp_server:
@@ -41,26 +46,7 @@ services:
       - .:/app
       - hf_cache:/root/.cache/huggingface
     networks: [studio_net]
-  llm_worker:
-    image: studio-base
-    container_name: llm_worker
-    command: pixi run llm_worker
-    ports:
-      - "9200:9200"
-      - "8080:8080"
-    env_file:
-      - .env
-    environment:
-      - OTEL_SERVICE_NAME=llm_worker
-      - LLM_WORKER_PORT=9200
-      - MCP_USE_OAUTH=false
-      - MCP_TOOL_CONFIG_PATH=/app/scepa_tools.json
-      - MCP_CALLBACK_PORT=9200
-    volumes:
-      - .:/app
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    networks: [studio_net]
+
 volumes:
   hf_cache:
   
