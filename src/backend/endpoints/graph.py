@@ -1,15 +1,13 @@
 from typing import DefaultDict, Dict, Any
 from collections import defaultdict
 
-import httpx
 from fastapi import APIRouter, Depends, Request
 
 from backend.utility.graph_api_models import ContextResponse
 from backend.endpoints.auth import get_current_user
-from backend.config import LLM_WORKER_URL, LLM_WORKER_PORT
+from backend.config import subnode_question_prompt
 
-from src.backend.utility.chat_util import push_chat_message, push_chat_message_stream
-import json
+from src.backend.utility.chat_util import push_chat_message, push_chat_message_stream, stream_agent_events
 graph_router = APIRouter()
 
 
@@ -63,54 +61,25 @@ async def fetch_subnode_stream(user_id: str, question: str, subnode: str):
     ctx = user_graph_contexts[user_id]
 
     try:
-        if subnode == "root":
-            subnode = "Best practices || Target groups || Strategic overview"
-        synthetic_prompt = (
-            "SYSTEM META-INSTRUCTION:\n"
-            "If relevant, use the `paper_search` MCP tool to identify scientific "
-            "literature or studies relevant to the question.\n\n"
-            "Don't alter question and keywords below — insert them straight into the tool.\n"
-            f"full_question:\n\"{question}\"\n\n"
-            f"keywords_related_to_question=\"{subnode}\" "
-            "Provide an evidence-informed explanation when possible.\n"
-        )
-
-        worker_url = f"{LLM_WORKER_URL}:{LLM_WORKER_PORT}"
+        keyword = subnode if subnode != "root" else "Best practices || Target groups || Strategic overview"
+ 
+        synthetic_prompt = subnode_question_prompt(question, keyword)
+ 
         full_response = ""
-
-        async with httpx.AsyncClient(timeout=None) as client:
-            async with client.stream(
-                "POST",
-                f"{worker_url}/ask_stream",
-                json={
-                    "chat_id": "default",
-                    "message": synthetic_prompt,
-                    "user_id": user_id,
-                },
-            ) as resp:
-                async for line in resp.aiter_lines():
-                    if not line.startswith("data:"):
-                        continue
-
-                    raw = line.removeprefix("data:").strip()
-
-                    if raw == "[DONE]":
-                        break
-
-                    try:
-                        payload = json.loads(raw)
-                    except json.JSONDecodeError:
-                        continue
-
-                    event_type = payload.get("type")
-                    event_data = payload.get("data")
-
-                    # ALSO emit chat messages for chat UI
-                    await push_chat_message_stream(user_id, event_type, event_data, subnode)
-                    full_response += event_data
-
+ 
+        # ← Direct generator call — no HTTP, no SSE parsing
+        async for evt in stream_agent_events(synthetic_prompt, user_id=user_id):
+            event_type = evt["type"]
+            event_data = evt["data"]
+ 
+            await push_chat_message_stream(user_id, event_type, event_data, subnode)
+ 
+            if event_type == "on_chat_model_stream" and event_data:
+                full_response += event_data
+ 
         ctx["prefetched"][subnode] = full_response
         await push_chat_message_stream(user_id, "done", full_response)
+ 
     except Exception as e:
         print(f"[PREFETCH ERROR - {subnode}] {e}")
 

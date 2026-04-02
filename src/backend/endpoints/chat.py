@@ -1,13 +1,15 @@
-import json
 import time
 from collections import defaultdict
 from typing import List, TypedDict, DefaultDict
 
-import httpx
 import socketio
 from fastapi import APIRouter
 
-from backend.config import LLM_WORKER_URL, LLM_WORKER_PORT, BASE_URL
+from backend.config import BASE_URL
+from backend.config import (
+    root_question_prompt,
+)
+
 from backend.endpoints.graph import (
     user_graph_contexts,
     _default_user_graph_context
@@ -16,16 +18,12 @@ from backend.endpoints.graph import fetch_subnode_stream
 from src.backend.utility.chat_util import (
     register_socketio,
     bind_user,
+    stream_agent_events,
     unbind_sid,
     push_chat_message_stream,
     sid_connections,
 )
 
-# =====================================================
-# SOCKET.IO SERVER
-# =====================================================
-
-# Build list of allowed CORS origins for Socket.IO
 cors_origins = [BASE_URL]
 
 sio = socketio.AsyncServer(
@@ -40,10 +38,6 @@ socket_app = socketio.ASGIApp(sio)
 chat_router = APIRouter()
 
 
-# =====================================================
-# Session Models
-# =====================================================
-
 class Session(TypedDict):
     history: List[dict]
     last_seen: float
@@ -54,10 +48,6 @@ user_sessions: DefaultDict[str, Session] = defaultdict(
     lambda: {"history": [], "last_seen": time.time(), "last_topic": None}
 )
 
-
-# =====================================================
-# SOCKET.IO EVENT HANDLERS
-# =====================================================
 
 @sio.event
 async def connect(sid, environ, auth):
@@ -86,9 +76,6 @@ async def disconnect(sid):
     print(f"⚠ Socket disconnected sid={sid} user={user_id}")
 
 
-# =====================================================
-# MAIN MESSAGE HANDLER
-# =====================================================
 @sio.event
 async def send_message(sid, data):
     user_id = sid_connections.get(sid)
@@ -154,65 +141,22 @@ async def send_message(sid, data):
     ctx["selected_subnode"] = "root"
     ctx["dialogue_state_asked"] = False
 
-    synthetic_prompt = (
-        "SYSTEM META-INSTRUCTION:\n"
-        "Use the `get_literature_supported_knowledge` MCP tool to identify sources relevant to the question.\n\n"
-        f"full_question:\n\"{user_msg}\"\n\n"
-        "keywords_related_to_question=\"Best practices || Target groups || Strategic overview\"\n"
-        "Provide an evidence-informed explanation when possible.\n"
-    )
+    synthetic_prompt = root_question_prompt(user_msg)
 
-    worker_url = f"{LLM_WORKER_URL}:{LLM_WORKER_PORT}"
     full_response = ""
 
-    async with httpx.AsyncClient(timeout=None) as client:
-        async with client.stream(
-            "POST",
-            f"{worker_url}/ask_stream",
-            json={
-                "chat_id": "default",
-                "message": synthetic_prompt,
-                "user_id": user_id,
-            },
-        ) as resp:
-
-            if resp.status_code != 200:
-                err = "❌ Error: worker unavailable"
-                await push_chat_message_stream(user_id, "on_chat_model_stream", err, "root")
-                await push_chat_message_stream(user_id, "done", err, "root")
-                return
-
-            async for line in resp.aiter_lines():
-                if not line.startswith("data:"):
-                    continue
-
-                raw = line.removeprefix("data:").strip()
-                if raw == "[DONE]":
-                    break
-
-                try:
-                    payload = json.loads(raw)
-                except json.JSONDecodeError:
-                    continue
-
-                event_type = payload.get("type")
-                event_data = payload.get("data") or ""
-
-                # Forward events (tool/status/etc.) to frontend event channel
-                # NOTE: your push_chat_message_stream will emit these via "event"
-                if event_type != "on_chat_model_stream":
-                    await push_chat_message_stream(user_id, event_type, event_data, "root")
-                    continue
-
-                # Stream tokens to chat UI
-                if event_data:
-                    await push_chat_message_stream(
-                        user_id,
-                        "on_chat_model_stream",
-                        event_data,
-                        "root",
-                    )
-                    full_response += event_data
+    async for evt in stream_agent_events(synthetic_prompt, user_id=user_id):
+        event_type = evt["type"]
+        event_data = evt["data"]
+ 
+        if event_type != "on_chat_model_stream":
+            await push_chat_message_stream(user_id, event_type, event_data, "root")
+            continue
+ 
+        if event_data:
+            await push_chat_message_stream(user_id, "on_chat_model_stream", event_data, "root")
+            full_response += event_data
+ 
 
     # --------------------------------------------------
     # FINALIZE ROOT RESPONSE
