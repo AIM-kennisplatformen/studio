@@ -7,6 +7,7 @@ import {
   PromptInputToolbar,
 } from "@/components/shadcn-io/ai/prompt-input";
 import { FeedbackButton } from "@/components/FeedbackButton";
+import { Button } from "@/components/ui/button";
 
 import { Response } from "@/components/shadcn-io/ai/response";
 import { Message, MessageContent } from "@/components/shadcn-io/ai/message";
@@ -17,41 +18,72 @@ import {
 } from "@/components/shadcn-io/ai/conversation";
 
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import {
-  messagesAtom,
-  textAtom,
-  textStatusAtom,
-} from "./data/atoms";
+import { messagesAtom, textAtom, textStatusAtom } from "./data/atoms";
 
 import { useChatWebSocket } from "./data/chatWebsocket";
 import { useRef, useEffect } from "react";
-import { Reasoning, ReasoningTrigger } from "@/components/shadcn-io/ai/reasoning";
+import {
+  Reasoning,
+  ReasoningTrigger,
+} from "@/components/shadcn-io/ai/reasoning";
+import { logOut } from "./data/api";
 
 export default function Chat() {
   return (
-    <div className="flex flex-col h-screen bg-white">
-      {/* Messages container - scrollable */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <Messages />
+    <>
+      <div className="absolute top-4 right-4 z-10">
+        <Button
+          className="text-white px-3 py-1 rounded bg-green-500"
+          onClick={() => logOut()}
+          props={{ "aria-label": "Log Out" }}
+        >
+          Log Out
+        </Button>
       </div>
-
-      {/* Bottom row: Feedback button + InputArea - sticky at bottom */}
-      <div className="flex border-t border-gray-200 bg-white">
-        {/* Left-side Feedback Button */}
-        <div className="flex flex-col justify-end -ml-22 pb-18">
-          <FeedbackButton />
+      <div className="flex flex-col h-screen bg-white">
+        {/* Messages container - scrollable */}
+        <div className="flex-1 overflow-y-auto p-4">
+          <Messages />
         </div>
 
-        {/* Input area takes full remaining width */}
-        <div className="flex-1 -ml-9">
-          <InputArea />
+        {/* Bottom row: Feedback button + InputArea - sticky at bottom */}
+        <div className="flex border-t border-gray-200 bg-white">
+          {/* Left-side Feedback Button */}
+          <div className="flex flex-col justify-end -ml-22 pb-18">
+            <FeedbackButton />
+          </div>
+
+          {/* Input area takes full remaining width */}
+          <div className="flex-1 -ml-9">
+            <InputArea />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
+function LogOutButton() {
+  const handleLogOut = async () => {
+    logOut();
+  };
 
+  return (
+    <button
+      onClick={handleLogOut}
+      style={{
+        backgroundColor: "transparent",
+        color: "black",
+        border: "none",
+        padding: "0",
+        outline: "none",
+        cursor: "pointer",
+      }}
+    >
+      Log Out
+    </button>
+  );
+}
 
 function InputArea() {
   const [text, setText] = useAtom(textAtom);
@@ -68,8 +100,7 @@ function InputArea() {
     // Add user message instantly
     setMessages((prev) => [
       { key: prev.length + 1, value: text, name: "user" },
-        ...prev,
-
+      ...prev,
     ]);
 
     // Update UI state
@@ -115,44 +146,51 @@ function Messages() {
 
   return (
     <div className="flex flex-col h-full">
-    <Conversation>
-      <ConversationContent className="flex flex-col overflow-y-auto h-full gap-4">
-        <div className="flex-1"></div>
-        {[...messages].reverse().map(({ key, value, name }) =>
-          name === "chatbot" ? (
-            <div key={key} className="flex items-start gap-2 justify-start pr-20">
-              <Response className="max-w-prose text-sm border border-gray-200 rounded-lg p-2 bg-gray-50 w-fit break-words">
-                {value}
-              </Response>
-            </div>
-          ) : (
-            <Message
-              from="user"
-              key={key}
-              className="flex justify-end pl-20"
-            >
-              <MessageContent
-                className="max-w-prose break-words"
-                style={{ backgroundColor: "#038061", color: "#ffffff" }}
+      <Conversation>
+        <ConversationContent className="flex flex-col overflow-y-auto h-full gap-4">
+          <div className="flex-1"></div>
+          {[...messages].reverse().map(({ key, value, name }) =>
+            name === "chatbot" ? (
+              <div
+                key={key}
+                className="flex items-start gap-2 justify-start pr-20"
               >
-                {value}
-              </MessageContent>
-            </Message>
-          )
-          
-        )}
+                <Response className="max-w-prose text-sm border border-gray-200 rounded-lg p-2 bg-gray-50 w-fit break-words">
+                  {value}
+                </Response>
+              </div>
+            ) : (
+              <Message from="user" key={key} className="flex justify-end pl-20">
+                <MessageContent
+                  className="max-w-prose break-words"
+                  style={{ backgroundColor: "#038061", color: "#ffffff" }}
+                >
+                  {value}
+                </MessageContent>
+              </Message>
+            ),
+          )}
           {status === "thinking" && (
             <div>
               <Reasoning isStreaming={status === "thinking"}>
-                <ReasoningTrigger style={{ backgroundColor: "transparent", color: "black", border: "none", padding: "0", outline: "none", cursor: "text" }}>
+                <ReasoningTrigger
+                  style={{
+                    backgroundColor: "transparent",
+                    color: "black",
+                    border: "none",
+                    padding: "0",
+                    outline: "none",
+                    cursor: "text",
+                  }}
+                >
                   🧠 Thinking...
                 </ReasoningTrigger>
               </Reasoning>
             </div>
           )}
-        <div ref={bottomRef} />
-      </ConversationContent>
-    </Conversation>
+          <div ref={bottomRef} />
+        </ConversationContent>
+      </Conversation>
     </div>
   );
 }

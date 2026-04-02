@@ -5,8 +5,10 @@ import {
   addEdge,
   applyNodeChanges,
   useReactFlow,
+  Panel,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { Button } from "./components/ui/button";
 import { CustomNode } from "./components/CustomNode";
 import { SolidEdge } from "./components/CustomEdge";
 import { getEdgeHandles } from "./lib/graphUtils";
@@ -19,7 +21,7 @@ import {
   centerNodeAtom,
   layoutNodesAtom,
 } from "./data/atoms";
-import { sendNodeSelection } from "./data/api";
+import { sendNodeSelection, logOut } from "./data/api";
 
 export default function Graph({ data, width }) {
   const [nodes, setNodes] = useAtom(nodesAtom);
@@ -234,7 +236,17 @@ export default function Graph({ data, width }) {
         fitView
         attributionPosition="bottom-left"
         proOptions={{ hideAttribution: true }}
-      />
+      >
+        <Panel position="top-right">
+          <Button
+            className="text-white px-3 py-1 rounded"
+            onClick={() => logOut()}
+            props={{ "aria-label": "Log Out" }}
+          >
+            Log Out
+          </Button>
+        </Panel>
+      </ReactFlow>
     </div>
   );
 }
