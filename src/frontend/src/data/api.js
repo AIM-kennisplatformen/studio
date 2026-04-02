@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.BACKEND_BASE_URL;
+const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
 const errorResponse = {
   value: "Sorry, I couldn't reach the server. Please try again later.",
@@ -60,16 +60,19 @@ export async function sendNodeSelection(nodeId) {
 }
 
 export async function logSelectedNode(node) {
-  // const url = `${BASE_URL}/logs/selected-node`;
-  // try {
-  //   await fetch(url, {
-  //     method: "POST",
-  //     credentials: "include", // Required for cookie-based Auth
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify({ nodeId: node.id }),
-  //   });
-  // } catch (err) {
-  //   console.error("Failed to log selected node:", err);
-  // }
+  const url = `${BASE_URL}/log_event`;
+  try {
+    await fetch(url, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "node_selected",
+        metadata: node,
+      }),
+    });
+  } catch (err) {
+    console.error("Failed to log selected node:", err);
+  }
   console.log(node);
 }

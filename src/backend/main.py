@@ -13,7 +13,7 @@ from backend.endpoints.graph import graph_router
 from backend.endpoints.log_event import log_event_router
 
 # Build list of allowed CORS origins
-cors_origins = [BASE_URL]
+cors_origins = [BASE_URL, "http://localhost:5173"]
 
 
 
