@@ -20,8 +20,8 @@ export function buildBreadcrumbRenderGraph(
   const dedupedEntries = dedupeBreadcrumbEntries(breadcrumbEntries);
 
   const nodes = dedupedEntries.map((entry, index) => {
-    const screenX = 20 + index * (160 + 24);
-    const screenY = 20;
+    const screenX = 20;
+    const screenY = 20 + index * (160 + 24);
     const flowPosition = {
       x: (screenX - viewport.x) / viewport.zoom,
       y: (screenY - viewport.y) / viewport.zoom,
@@ -42,8 +42,8 @@ export function buildBreadcrumbRenderGraph(
         color: "#038061",
         border: "2px solid #038061",
         borderRadius: "8px",
-        padding: "8px",
-        fontSize: "12px",
+        padding: "2px",
+        fontSize: "8px",
         width: 160,
         whiteSpace: "pre-wrap",
         boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
@@ -57,8 +57,8 @@ export function buildBreadcrumbRenderGraph(
     source: entry.historyId,
     target: dedupedEntries[index + 1].historyId,
     type: "solid",
-    sourceHandle: "right",
-    targetHandle: "target-left",
+    sourceHandle: "bottom",
+    targetHandle: "target-top",
     style: { stroke: "#038061", strokeWidth: 1.5, strokeDasharray: "6 3" },
     zIndex: 1500,
   }));

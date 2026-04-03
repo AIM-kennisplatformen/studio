@@ -348,7 +348,7 @@ export default function Graph({ data, width }) {
         }
 
         const realNodes = updatedNodes.filter(
-          (node) => !node.id.startsWith("bc-")
+          (node) => node.type !== "breadcrumb"
         );
 
         graphNodesRef.current = realNodes;
@@ -381,7 +381,7 @@ export default function Graph({ data, width }) {
 
         return [
           ...realNodes,
-          ...updatedNodes.filter((node) => node.id.startsWith("bc-")),
+          ...updatedNodes.filter((node) => node.type === "breadcrumb"),
         ];
       });
     },
@@ -409,7 +409,7 @@ export default function Graph({ data, width }) {
 
   const onNodeClick = useCallback(
     (_, node) => {
-      if (node.id.startsWith("bc-")) {
+      if (node.type === "breadcrumb") {
         const realNode = graphNodesRef.current.find(
           (graphNode) => graphNode.id === node.data.originNodeId
         );
@@ -417,21 +417,23 @@ export default function Graph({ data, width }) {
         if (!realNode) {
           return;
         }
+        setSelectedNode(realNode);
 
         setBreadcrumbs((prev) => {
-          const clickedIndex = prev.findIndex(
-            (entry) => entry.historyId === node.id
-          );
+          if (node.id !== selectedNode.id) {
+            const clickedIndex = prev.findIndex(
+              (entry) => entry.historyId === node.id
+            );
 
-          if (clickedIndex < 0) {
-            return prev;
+            if (clickedIndex < 0) {
+              return prev;
+            }
+
+            return prev.slice(0, clickedIndex + 1);
           }
-
-          return prev.slice(0, clickedIndex + 1);
         });
         latestForwardNodeIdRef.current = node.data.originNodeId;
         setCenterNodeId(Number(node.data.originNodeId));
-        setSelectedNode(realNode);
         centerNodeInView(realNode);
         sendNodeSelection(node.data.originNodeId);
         return;
