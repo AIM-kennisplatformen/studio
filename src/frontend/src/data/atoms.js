@@ -45,6 +45,8 @@ export const layoutNodesAtom = atom([]);
 
 export const breadcrumbsAtom = atom([]);
 
+export const connectorStyleAtom = atom("solid");
+
 /* Structure of a breadcrumbNode
   {
     historyId: null,

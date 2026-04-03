@@ -1,3 +1,50 @@
+export const CONNECTOR_STYLE_CONFIG = {
+  solid: {
+    key: "solid",
+    label: "Solid",
+    edgeType: "bridgeConnector",
+    strokeDasharray: "none",
+    pathVariant: "smooth",
+  },
+  dashed: {
+    key: "dashed",
+    label: "Dashed",
+    edgeType: "bridgeConnector",
+    strokeDasharray: "10 6",
+    pathVariant: "smooth",
+  },
+  dotted: {
+    key: "dotted",
+    label: "Dotted",
+    edgeType: "bridgeConnector",
+    strokeDasharray: "2 6",
+    pathVariant: "smooth",
+  },
+  curved: {
+    key: "curved",
+    label: "Curved",
+    edgeType: "bridgeConnector",
+    strokeDasharray: "none",
+    pathVariant: "bezier",
+  },
+  straight: {
+    key: "straight",
+    label: "Straight",
+    edgeType: "bridgeConnector",
+    strokeDasharray: "none",
+    pathVariant: "straight",
+  },
+};
+
+export const DEFAULT_CONNECTOR_STYLE = "solid";
+
+export function getConnectorStyleConfig(connectorStyle) {
+  return (
+    CONNECTOR_STYLE_CONFIG[connectorStyle] ||
+    CONNECTOR_STYLE_CONFIG[DEFAULT_CONNECTOR_STYLE]
+  );
+}
+
 function dedupeBreadcrumbEntries(breadcrumbEntries) {
   return breadcrumbEntries.reduce((path, entry) => {
     const existingIndex = path.findIndex(
@@ -56,17 +103,21 @@ export function buildBreadcrumbRenderGraph(
     id: `bc-edge-${entry.historyId}-${dedupedEntries[index + 1].historyId}`,
     source: entry.historyId,
     target: dedupedEntries[index + 1].historyId,
-    type: "solid",
+    type: "dotted",
     sourceHandle: "bottom",
     targetHandle: "target-top",
-    style: { stroke: "#038061", strokeWidth: 1.5, strokeDasharray: "6 3" },
+    style: { stroke: "#038061", strokeWidth: 1.5, strokeDasharray: "2 3" },
     zIndex: 1500,
   }));
 
   return { nodes, edges };
 }
 
-export function buildBridgeEdge(breadcrumbEntries, anchorNodeId) {
+export function buildBridgeEdge(
+  breadcrumbEntries,
+  anchorNodeId,
+  connectorStyle = DEFAULT_CONNECTOR_STYLE
+) {
   const dedupedEntries = dedupeBreadcrumbEntries(breadcrumbEntries);
 
   if (!dedupedEntries.length || anchorNodeId == null) {
@@ -74,19 +125,24 @@ export function buildBridgeEdge(breadcrumbEntries, anchorNodeId) {
   }
 
   const lastEntry = dedupedEntries[dedupedEntries.length - 1];
+  const connectorConfig = getConnectorStyleConfig(connectorStyle);
 
   return {
     id: `bc-bridge-${lastEntry.historyId}-${String(anchorNodeId)}`,
     source: lastEntry.historyId,
     target: String(anchorNodeId),
-    type: "solid",
+    type: connectorConfig.edgeType,
     sourceHandle: "bottom",
     targetHandle: "target-top",
     style: {
       stroke: "#038061",
       strokeWidth: 2,
-      strokeDasharray: "4 4",
+      strokeDasharray: connectorConfig.strokeDasharray,
       opacity: 0.6,
+    },
+    data: {
+      connectorStyle: connectorConfig.key,
+      pathVariant: connectorConfig.pathVariant,
     },
     zIndex: 1500,
   };

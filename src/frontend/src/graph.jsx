@@ -9,11 +9,13 @@ import {
 import "@xyflow/react/dist/style.css";
 import { useAtom } from "jotai";
 import { BreadcrumbNode } from "./components/BreadcrumbNode";
-import { SolidEdge } from "./components/CustomEdge";
+import { BridgeConnectorEdge, SolidEdge } from "./components/CustomEdge";
 import { CustomNode } from "./components/CustomNode";
+import { ToggleGroup, ToggleGroupItem } from "./components/ui/toggle-group";
 import {
   breadcrumbsAtom,
   centerNodeAtom,
+  connectorStyleAtom,
   draggingNodeIdAtom,
   edgesAtom,
   layoutNodesAtom,
@@ -22,6 +24,7 @@ import {
 } from "./data/atoms";
 import { sendNodeSelection } from "./data/api";
 import {
+  CONNECTOR_STYLE_CONFIG,
   buildBridgeEdge,
   buildBreadcrumbRenderGraph,
 } from "./lib/breadcrumbLayout";
@@ -79,6 +82,7 @@ export default function Graph({ data, width }) {
   const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom);
   const [layoutNodes, setLayoutNodes] = useAtom(layoutNodesAtom);
   const [breadcrumbs, setBreadcrumbs] = useAtom(breadcrumbsAtom);
+  const [connectorStyle, setConnectorStyle] = useAtom(connectorStyleAtom);
 
   const { getViewport, setViewport, fitView } = useReactFlow();
   const containerRef = useRef(null);
@@ -120,7 +124,7 @@ export default function Graph({ data, width }) {
       (node) => node.id === String(anchorNodeId)
     );
     const bridgeEdge = hasAnchorNode
-      ? buildBridgeEdge(breadcrumbs, anchorNodeId)
+      ? buildBridgeEdge(breadcrumbs, anchorNodeId, connectorStyle)
       : null;
 
     const nextNodes = [...graphNodesRef.current, ...breadcrumbNodes];
@@ -136,7 +140,14 @@ export default function Graph({ data, width }) {
     setEdges((currentEdges) =>
       areEdgeArraysEqual(currentEdges, nextEdges) ? currentEdges : nextEdges
     );
-  }, [breadcrumbs, centerNodeId, getViewport, setEdges, setNodes]);
+  }, [
+    breadcrumbs,
+    centerNodeId,
+    connectorStyle,
+    getViewport,
+    setEdges,
+    setNodes,
+  ]);
 
   const appendBreadcrumb = useCallback(
     (node) => {
@@ -366,7 +377,7 @@ export default function Graph({ data, width }) {
           (node) => node.id === String(anchorNodeId)
         );
         const bridgeEdge = hasAnchorNode
-          ? buildBridgeEdge(breadcrumbs, anchorNodeId)
+          ? buildBridgeEdge(breadcrumbs, anchorNodeId, connectorStyle)
           : null;
 
         const nextEdges = [
@@ -388,6 +399,7 @@ export default function Graph({ data, width }) {
     [
       breadcrumbs,
       centerNodeId,
+      connectorStyle,
       getViewport,
       selectedNode?.id,
       setEdges,
@@ -487,12 +499,45 @@ export default function Graph({ data, width }) {
   }, [fitView, mergeAndSetRenderGraph]);
 
   return (
-    <div ref={containerRef} style={{ height: "100vh", width: `${width}vw` }}>
+    <div
+      ref={containerRef}
+      style={{ height: "100vh", width: `${width}vw`, position: "relative" }}
+    >
+      <div className="pointer-events-none absolute right-4 top-4 z-20 max-w-[min(420px,calc(100%-2rem))]">
+        <div className="pointer-events-auto ml-auto w-fit rounded-lg border border-[#038061]/20 bg-white/95 p-2 shadow-md backdrop-blur-sm">
+          <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[#038061]">
+          Connector
+          </div>
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            value={connectorStyle}
+            onValueChange={(value) => {
+              if (value) {
+                setConnectorStyle(value);
+              }
+            }}
+            className="flex flex-wrap gap-0"
+          >
+            {Object.values(CONNECTOR_STYLE_CONFIG).map((option) => (
+              <ToggleGroupItem
+                key={option.key}
+                value={option.key}
+                aria-label={`Use ${option.label.toLowerCase()} connector`}
+                className="px-3 text-xs text-[#038061] data-[state=on]:bg-[#038061] data-[state=on]:text-white"
+              >
+                {option.label}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </div>
+      </div>
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={{ custom: CustomNode, breadcrumb: BreadcrumbNode }}
-        edgeTypes={{ solid: SolidEdge }}
+        edgeTypes={{ solid: SolidEdge, bridgeConnector: BridgeConnectorEdge }}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
