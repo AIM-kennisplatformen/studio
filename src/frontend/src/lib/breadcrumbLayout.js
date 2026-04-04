@@ -62,13 +62,18 @@ function dedupeBreadcrumbEntries(breadcrumbEntries) {
 export function buildBreadcrumbRenderGraph(
   breadcrumbEntries,
   viewport,
-  containerWidth
+  containerWidth,
+  anchorNode = null
 ) {
   const dedupedEntries = dedupeBreadcrumbEntries(breadcrumbEntries);
 
   const nodes = dedupedEntries.map((entry, index) => {
     const screenX = 20;
-    const screenY = 20 + index * (160 + 24);
+    const defaultScreenY = 20 + index * (160 + 24);
+    const screenY =
+      index === dedupedEntries.length - 1 && Number.isFinite(anchorNode?.y)
+        ? viewport.y + anchorNode.y * viewport.zoom
+        : defaultScreenY;
     const flowPosition = {
       x: (screenX - viewport.x) / viewport.zoom,
       y: (screenY - viewport.y) / viewport.zoom,
@@ -132,8 +137,8 @@ export function buildBridgeEdge(
     source: lastEntry.historyId,
     target: String(anchorNodeId),
     type: connectorConfig.edgeType,
-    sourceHandle: "bottom",
-    targetHandle: "target-top",
+    sourceHandle: "right",
+    targetHandle: "target-left",
     style: {
       stroke: "#038061",
       strokeWidth: 2,

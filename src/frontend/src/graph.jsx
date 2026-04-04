@@ -117,13 +117,18 @@ export default function Graph({ data, width }) {
   const mergeAndSetRenderGraph = useCallback(() => {
     const viewport = getViewport();
     const containerWidth = containerRef.current?.clientWidth ?? 800;
-    const { nodes: breadcrumbNodes, edges: breadcrumbEdges } =
-      buildBreadcrumbRenderGraph(breadcrumbs, viewport, containerWidth);
     const anchorNodeId = latestForwardNodeIdRef.current ?? centerNodeId;
-    const hasAnchorNode = graphNodesRef.current.some(
+    const anchorNode = graphNodesRef.current.find(
       (node) => node.id === String(anchorNodeId)
     );
-    const bridgeEdge = hasAnchorNode
+    const { nodes: breadcrumbNodes, edges: breadcrumbEdges } =
+      buildBreadcrumbRenderGraph(
+        breadcrumbs,
+        viewport,
+        containerWidth,
+        anchorNode?.position
+      );
+    const bridgeEdge = anchorNode
       ? buildBridgeEdge(breadcrumbs, anchorNodeId, connectorStyle)
       : null;
 
@@ -367,16 +372,17 @@ export default function Graph({ data, width }) {
 
         const viewport = getViewport();
         const containerWidth = containerRef.current?.clientWidth ?? 800;
+        const anchorNodeId = latestForwardNodeIdRef.current ?? centerNodeId;
+        const anchorNode = realNodes.find(
+          (node) => node.id === String(anchorNodeId)
+        );
         const { edges: breadcrumbEdges } = buildBreadcrumbRenderGraph(
           breadcrumbs,
           viewport,
-          containerWidth
+          containerWidth,
+          anchorNode?.position
         );
-        const anchorNodeId = latestForwardNodeIdRef.current ?? centerNodeId;
-        const hasAnchorNode = realNodes.some(
-          (node) => node.id === String(anchorNodeId)
-        );
-        const bridgeEdge = hasAnchorNode
+        const bridgeEdge = anchorNode
           ? buildBridgeEdge(breadcrumbs, anchorNodeId, connectorStyle)
           : null;
 
@@ -506,7 +512,7 @@ export default function Graph({ data, width }) {
       <div className="pointer-events-none absolute right-4 top-4 z-20 max-w-[min(420px,calc(100%-2rem))]">
         <div className="pointer-events-auto ml-auto w-fit rounded-lg border border-[#038061]/20 bg-white/95 p-2 shadow-md backdrop-blur-sm">
           <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[#038061]">
-          Connector
+            Connector
           </div>
           <ToggleGroup
             type="single"
