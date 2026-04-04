@@ -66,14 +66,19 @@ export function buildBreadcrumbRenderGraph(
   anchorNode = null
 ) {
   const dedupedEntries = dedupeBreadcrumbEntries(breadcrumbEntries);
+  const nodeHeight = 160;
+  const rowGap = 24;
+  const verticalStep = nodeHeight + rowGap;
+  const hasAnchorNode = Number.isFinite(anchorNode?.y);
+  const newestIndex = dedupedEntries.length - 1;
+  const newestScreenY = hasAnchorNode
+    ? viewport.y + anchorNode.y * viewport.zoom
+    : 20 + newestIndex * verticalStep;
 
   const nodes = dedupedEntries.map((entry, index) => {
     const screenX = 20;
-    const defaultScreenY = 20 + index * (160 + 24);
-    const screenY =
-      index === dedupedEntries.length - 1 && Number.isFinite(anchorNode?.y)
-        ? viewport.y + anchorNode.y * viewport.zoom
-        : defaultScreenY;
+    const levelsAboveNewest = newestIndex - index;
+    const screenY = newestScreenY - levelsAboveNewest * verticalStep;
     const flowPosition = {
       x: (screenX - viewport.x) / viewport.zoom,
       y: (screenY - viewport.y) / viewport.zoom,
