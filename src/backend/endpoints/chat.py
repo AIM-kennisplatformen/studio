@@ -12,7 +12,7 @@ from backend.config import (
 
 from backend.endpoints.graph import user_graph_contexts, _default_user_graph_context
 from backend.endpoints.graph import fetch_subnode_stream
-from backend.endpoints.log_event import end_session, start_session
+from backend.utility.log_util import end_session, start_session
 from backend.utility.chat_util import (
     register_socketio,
     bind_user,
