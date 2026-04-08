@@ -22,38 +22,14 @@ services:
       - MCP_USE_OAUTH=false
       - MCP_TOOL_CONFIG_PATH=/app/scepa_tools.json
       - MCP_CALLBACK_PORT=9200
-    depends_on:
-      - mcp_server
     volumes:
       - .:/app
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    networks: [studio_net]
+    networks:
+      - mcp_server_scepa_studio_net
 
-  mcp_server:
-    image: studio-base
-    container_name: mcp_server
-    command: pixi run mcp_server
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
-    environment:
-      - OTEL_SERVICE_NAME=mcp_server
-      - QDRANT_URL=172.30.0.1
-      - QDRANT_PORT=6333
-    volumes:
-      - .:/app
-      - hf_cache:/root/.cache/huggingface
-    networks: [studio_net]
-
-volumes:
-  hf_cache:
-  
 networks:
-  studio_net:
+  mcp_server_scepa_studio_net:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.30.0.0/16
-          gateway: 172.30.0.1
+    external: true  # Reference the external network from MCP stack
