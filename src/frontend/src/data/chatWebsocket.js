@@ -59,7 +59,6 @@ export function useChatWebSocket(setStatus) {
     });
 
     socket.on("event", (payload) => {
-      console.log(payload);
       if (payload.type === "on_chat_model_start") {
         chatModelStartCountRef.current += 1;
         if (chatModelStartCountRef.current >= 2) {
