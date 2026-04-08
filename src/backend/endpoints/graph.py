@@ -247,22 +247,37 @@ async def get_full_graph(
     # [ ] 5 Re-use the existing Socket.IO connection to handle the side effects of node selection: when the user clicks a node, emit a socket event (e.g. select_node) with the node_id, and let the backend handler update user_graph_contexts and push the appropriate chat messages via push_chat_message / push_chat_message_stream
 
     user_id = user["sub"]
-    ctx = user_graph_contexts[user_id]
+    # ctx = user_graph_contexts[user_id] # not immediately needed but could be useful for returning user-specific context along with the graph data
+
     kg_data = request.app.state.kg_data
 
     if kg_data is None:
         return GraphResponse(
-            message="Knowledge graph data not loaded",
             nodes=[],
             edges=[],
-            metadata={},
             error="not_loaded",
         )
 
-    # return GraphResponse(
-    #    message="Full graph data",
-    #    nodes = [],
-    #    edges = [],
-    #    metadata = {},
-    #    error = "not_loaded",
-    #)
+    nodes = [
+        {
+            "id": entity.id,
+            "type": "text",
+            "title": entity.name,
+        }
+        for entity in kg_data.entities.values()
+    ]
+
+    edges = [
+        {
+            "id": relation.id,
+            "source_id": int(relation.sourceId),
+            "target_id": int(relation.targetId),
+        }
+        for relation in kg_data.relations.values()
+    ]
+
+    return GraphResponse(
+        nodes=nodes,
+        edges=edges,
+        error=None,
+    )

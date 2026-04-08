@@ -1,0 +1,34 @@
+# Setup Zotero for MCP_SERVER Paper search
+# API_KEY can be generated online from user profile webpage in zotero
+# LIBRARY_ID is the number that is within url when clicking library in online explorer: 
+#             <https://www.zotero.org/groups/<library_id>/<library_name>/library>
+# COLLECTION_ID is the collection slug (8 characters) within url when clicking collection of library in online explorer: 
+#              <https://www.zotero.org/groups/<library_id>/<library_name>/collections/<collection_id>/collection> 
+
+ZOTERO_API_KEY="bZKg57MZ2ehFY4PnoXA1yCDd"
+ZOTERO_LIBRARY_ID="4839441"
+ZOTERO_COLLECTION_ID="IAYCMHZF"
+
+# Setup Backend_server URL
+BACKEND_BASE_URL=http://localhost:10090
+LLM_WORKER_URL=http://localhost
+LLM_WORKER_PORT=9200
+
+# Authentik OAUTH Application
+OAUTH_CLIENT_ID=MfPFU1VjpvNNFcUxvHp1rstaRj4Xb4bleYUE8xcF
+OAUTH_CLIENT_SECRET=YlcSJpaqCEdCIqxmYx51MlqRfIsLkZP6EzYTrg6olUtfVMLDb8xaaqamvMmlFCgqQJrHZ9IMt2pCqeQtQtp7bXbDrbTjZQRI62fM57jpl4u2aqvoMJgVqX9UUazrO53n
+OAUTH_DISCOVERY_URL=https://authscepa.mads-han.src.surf-hosted.nl/application/o/kg-dev/.well-known/openid-configuration
+
+LANGFUSE_SECRET_KEY=sk-lf-f50fd088-70e5-4897-bcfc-bdadb3d9b0a0
+LANGFUSE_PUBLIC_KEY=pk-lf-7f7bf5f5-a72b-4b16-973b-2f23bebd6bc4
+LANGFUSE_HOST=https://scepadeploy.mads-han.src.surf-hosted.nl
+
+# OPENAI_HOST=http://localhost:11434/v1
+# OPENAI_API_KEY=ollama
+# LLM_MODEL=qwen2.5:7b
+
+
+MCP_TOOL_CONFIG_PATH=scepa_tools.json
+OPENAI_HOST=https://api.tokenfactory.nebius.com/v1/
+OPENAI_API_KEY=v1.CmMKHHN0YXRpY2tleS1lMDBldnh2ZjJ2ZXJ3dGhmYTkSIXNlcnZpY2VhY2NvdW50LWUwMG5kenJ3NXptMmhxcm15ZDIMCLHHwMkGEImziZICOgsIscrYlAcQwLbzIEACWgNlMDA.AAAAAAAAAAEmFIdi3f7YrLKuX96Wn8Wyr-D2MM9T1CV3IlDiZFdrlP73VcVBOySW4KcnvvGBJepDq5ZRxW-hJcXePUFGP8sB
+LLM_MODEL=Qwen/Qwen3-30B-A3B-Instruct-2507

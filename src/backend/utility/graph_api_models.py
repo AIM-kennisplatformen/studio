@@ -50,8 +50,7 @@ class ContextResponse(BaseModel):
 class GraphResponse(BaseModel): 
     #TODO : figure out what we want to return here? 
     """Response for full graph endpoint"""
-    message: Optional[str] = None
-    entities: List[Node] = []
-    relations: List[Edge] = []
-    metadata: dict = {}
+    nodes: List[Node] = []
+    edges: List[Edge] = []
+    # metadata: dict = {}
     error: Optional[str] = None
