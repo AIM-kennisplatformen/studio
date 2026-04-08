@@ -1,326 +1,172 @@
-# **Studio App**
+# Studio
 
-This repository contains a complete custom Studio application composed of:
+A chat-based knowledge graph application. A React frontend communicates over Socket.IO with a FastAPI backend. The backend uses an LLM agent (via `mcp-use`) backed by an MCP server that queries Qdrant and Zotero for literature-supported answers.
 
-* **Frontend** — `src/frontend`
-* **MCP Server** — `src/mcp_servers`
-* **Backend API** — `src/backend`
-* **LLM Worker** — `src/llm_worker`
-
-All components run locally within a **Pixi environment**.
-No LibreChat or Docker-based workflow is required for development.
+> **Note:** The MCP server (`src/mcp_servers/`) will be moved to a separate repository in the future.
 
 ---
 
-# 🚀 Features
-
-* Modular architecture with isolated components
-* Custom MCP server with optional Zotero + Qdrant vector search
-* Pluggable LLM worker (Ollama or OpenAI-compatible providers such as Nebius)
-* Fully custom frontend build pipeline
-* Optional OAuth (Authentik)
-* Optional telemetry (Langfuse)
-
----
-
-# 🖥️ System Requirements
-
-## Development Requirements
-
-* Linux, macOS, or Windows
-* Intel/AMD x86_64 or ARM 64-bit
-* **Pixi** installed → [https://pixi.sh/latest/installation/](https://pixi.sh/latest/installation/)
-* No GPU required unless running local inference
-
-## Optional — GPU Local Inference
-
-If you plan to run large models locally via Ollama:
-
-* NVIDIA GPU ≥ 12GB VRAM recommended
-* CUDA-compatible drivers
-* Ollama installed
-
----
-
-# 📁 Project Structure
+## Project Structure
 
 ```
 src/
-  frontend/        # Custom UI
-  mcp_servers/     # MCP server implementation
-  backend/         # Backend API orchestrator
-  llm_worker/      # LLM inference worker
+  backend/          # FastAPI app (Python)
+    endpoints/      # auth, chat, graph, log_event, assets
+    utility/        # chat_util, graph_data_loader, graph_api_models
+    config.py       # env config + prompt templates
+    main.py         # app entry point
+  frontend/         # React + Vite app
+    src/
+scripts/            # build_frontend.py, setup_authentik.py, run_qava_test.py
+tests/
+  bdd/              # qavajs end-to-end tests
+docker-compose.yml
+pyproject.toml
 ```
 
 ---
 
-# 🔧 Configuration Files
+## Prerequisites
 
-Two configuration files must be created before the system can run:
+- [Pixi](https://pixi.sh/) — manages the Python + Node environment
+- [Docker & Docker Compose](https://docs.docker.com/get-docker/) — for containerised deployment
+- A running [Qdrant](https://qdrant.tech/) instance
+- A running [Authentik](https://goauthentik.io/) instance (OAuth2 provider)
+- A running LLM endpoint (OpenAI-compatible, e.g. Ollama or a hosted model)
+- A [Zotero](https://www.zotero.org/) library + API key
 
-### 1. `.env`
+---
 
-```
+## Environment Setup
+
+Copy the sample env file and fill in the required values:
+
+```bash
 cp .env.sample .env
 ```
 
-### 2. `llm_worker_config.toml`
+Key variables:
 
-```
-cp llm_worker_config.sample.toml llm_worker_config.toml
-```
-
-Both must be fully configured before starting the system.
-
----
-
-# 📑 Environment Variables (`.env`)
-
-Below is the full explanation of every field included in `.env.sample`.
-
----
-
-## 📚 Zotero (Optional — MCP Paper Search)
-
-Used only if the MCP server needs to query academic papers.
-
-```
-ZOTERO_API_KEY=""
-ZOTERO_LIBRARY_ID=""
-ZOTERO_COLLECTION_ID=""
-```
-
-### Where to find them:
-
-* **API key** → Zotero settings → Feeds/API
-* **Library ID** → URL:
-  `https://www.zotero.org/groups/<library_id>/<name>/library`
-* **Collection ID** → URL:
-  `https://.../collections/<collection_id>/collection`
-
-Leave blank if not using Zotero.
+| Variable | Description |
+|---|---|
+| `BACKEND_BASE_URL` | Public URL of the backend, e.g. `http://localhost:10090` |
+| `OAUTH_DISCOVERY_URL` | Authentik OIDC discovery URL |
+| `OAUTH_CLIENT_ID` | Authentik OAuth2 client ID |
+| `OAUTH_CLIENT_SECRET` | Authentik OAuth2 client secret |
+| `SESSION_SECRET` | Secret key for session cookies |
+| `LLM_MODEL` | Model name, e.g. `gpt-4o` or an Ollama model |
+| `OPENAI_HOST` | Base URL of your OpenAI-compatible LLM endpoint |
+| `MCP_TOOL_CONFIG_PATH` | Path to the MCP tool config JSON file |
+| `QDRANT_URL` | Qdrant host |
+| `QDRANT_PORT` | Qdrant port (default `6333`) |
+| `ZOTERO_API_KEY` | Zotero API key |
+| `ZOTERO_LIBRARY_ID` | Zotero library ID |
+| `LANGFUSE_PUBLIC_KEY` | Langfuse public key (observability) |
+| `LANGFUSE_SECRET_KEY` | Langfuse secret key |
+| `LANGFUSE_HOST` | Langfuse host URL |
+| `PG_PASS` | PostgreSQL password (only when spinning your own authentik and not using the deployed authentik) |
+| `AUTHENTIK_SECRET_KEY` | Authentik secret key (only when spinning your own authentik and not using the deployed authentik) |
 
 ---
 
-## 🗂️ Qdrant Vector Database
+## Development (without Docker)
 
-Used for document embeddings / semantic search.
+Install all dependencies (Python + Node) via Pixi:
 
-```
-QDRANT_URL="http://127.0.0.1"
-QDRANT_PORT=6333
-```
-
-Defaults are correct for local Qdrant.
-
----
-
-## 🌐 Backend URL
-
-This URL is used internally by the frontend and MCP server to reach the backend.
-
-```
-BACKEND_BASE_URL=http://127.0.0.1:8090
+```bash
+pixi install
 ```
 
----
+### 1. Build the frontend
 
-## 🤖 LLM Worker URL
-
-The backend sends inference jobs to the worker.
-
-```
-LLM_WORKER_URL=http://127.0.0.1:8002
-```
-
-Match this to your worker port.
-
----
-
-## 🔐 Optional — Authentik OAuth Login
-
-If your frontend uses OAuth:
-
-```
-OAUTH_CLIENT_ID=
-OAUTH_CLIENT_SECRET=
-OAUTH_DISCOVERY_URL=https://<authentik_url>/application/o/<app_name>/.well-known/openid-configuration
-```
-
-Leave unused if not using OAuth.
-
----
-
-## 📊 Optional — Langfuse Telemetry
-
-If you want tracing / prompt analytics:
-
-```
-LANGFUSE_SECRET_KEY=""
-LANGFUSE_PUBLIC_KEY=""
-LANGFUSE_HOST=""
-```
-
----
-
-## ✔️ Minimal Working `.env` Example
-
-For a simple local dev environment:
-
-```dotenv
-QDRANT_URL="http://127.0.0.1"
-QDRANT_PORT=6333
-
-BACKEND_BASE_URL=http://127.0.0.1:8090
-LLM_WORKER_URL=http://127.0.0.1:8002
-```
-
----
-
-# ⚙️ LLM Worker Configuration (`llm_worker_config.toml`)
-
-This config controls the LLM provider and model used by the worker.
-
----
-
-## **Default: Local Ollama Setup**
-
-```toml
-[llm]
-client_type = "ollama"
-model_type = "qwen2.5:7b"
-max_tokens = 1000
-host = "http://localhost:11434/v1"
-api_key = "ollama"
-mcp_server = "http://localhost:8000/sse"
-```
-
-### Requirements:
-
-```
-ollama serve
-ollama pull qwen2.5:7b
-```
-
----
-
-## **Alternative: OpenAI-Compatible Provider (Nebius, OpenAI, Groq, etc.)**
-
-```toml
-[llm]
-client_type = "ollama"
-model_type = "Qwen/Qwen3-32b"
-host = "https://api.studio.nebius.ai/v1"
-api_key = "<YOUR-NEBIUS-API-KEY>"
-max_tokens = 1000
-mcp_server = "http://localhost:8000/sse"
-```
-
-Change these for your provider:
-
-* `client_type = "openai"`
-* `model_type` → provider model name
-* `host` → provider’s API endpoint
-* `api_key` → provider API key
-
----
-
-# 🏗️ Development Workflow
-
-**Run all commands inside a Pixi shell:**
-
-```
-pixi shell
-```
-
-Then follow this order:
-
----
-
-## **1. Build the Frontend**
-
-```
+```bash
 pixi run frontend_build
 ```
 
-Compiles frontend assets.
+This reads `BACKEND_BASE_URL` from `.env`, writes a Vite production env file, runs `npm install` + `npm run build` inside `src/frontend/`, and moves the output to `kg/`.
 
----
+### 2. Start the backend
 
-## **2. Start the MCP Server**
-
-```
-pixi run mcp_server
-```
-
-This must start before the worker and backend.
-
----
-
-## **3. Start the LLM Worker**
-
-```
-pixi run llm_worker
-```
-
-Handles inference and communicates with the MCP server.
-
----
-
-## **4. Start the Backend**
-
-```
+```bash
 pixi run backend_no_docker
 ```
 
-This is the API core that coordinates all components.
+Starts the FastAPI app with uvicorn on port `10090` with hot-reload enabled.
+
+The backend serves the frontend build from `kg/` and exposes the API at `http://localhost:10090`.
 
 ---
 
-# 🔄 Startup Summary
+## Deployment (Docker)
 
-| Order | Component               | Command                      |
-| ----- | ----------------------- | ---------------------------- |
-| 1     | **Frontend Build**      | `pixi run frontend_build`    |
-| 2     | **MCP Server**          | `pixi run mcp_server`        |
-| 3     | **LLM Worker**          | `pixi run llm_worker`        |
-| 4     | **Backend (No Docker)** | `pixi run backend_no_docker` |
+Build the image once:
 
----
+```bash
+docker build -t studio-base -f dockerfiles/Dockerfile .
+```
 
-# 🧪 First-Run Checklist
+Then start all services:
 
-Before running everything:
+```bash
+docker compose up
+```
 
-✔ `.env` created and filled
-✔ `llm_worker_config.toml` filled
-✔ Qdrant running (optional)
-✔ Ollama running if using local inference
-✔ MCP server reachable
-✔ Ports not in use
+This starts:
+- `backend` — builds the frontend and runs the FastAPI app on port `10090`
+- `mcp_server` — runs the MCP paper_search server on port `8000`
 
 ---
 
-# ❓ Troubleshooting
+## Authentik Setup
 
-### Worker cannot connect to MCP Server
+Authentik is used as the OAuth2/OIDC provider. To set up the OAuth2 application automatically:
 
-Check:
+```bash
+python scripts/setup_authentik.py
+```
 
-* `mcp_server` URL in `llm_worker_config.toml`
-* MCP is running before worker
-
-### Backend cannot reach worker
-
-Check:
-
-* `LLM_WORKER_URL` in `.env`
-
-### Frontend calls fail
-
-Check:
-
-* `BACKEND_BASE_URL` in `.env`
+This requires a running Authentik instance and reads credentials from `.env`.
 
 ---
 
+## Testing
+
+End-to-end tests are written with [qavajs](https://qavajs.github.io/) (Cucumber + Playwright).
+
+### Run all tests (spins up containers automatically)
+
+```bash
+pixi run qava_test
+```
+
+### Run tests against already-running services
+
+From `tests/bdd/`:
+
+```bash
+npm install
+npx qavajs run --config config.mjs
+```
+
+Services must be reachable at:
+
+| Service | Default URL |
+|---|---|
+| Backend | `http://localhost:10090` |
+| MCP Server | `http://localhost:8000` |
+| Authentik | `http://localhost:9000` |
+
+### Run a single feature
+
+```bash
+npx qavajs run --config config.mjs -- features/chatbot.feature
+```
+
+---
+
+## Code Quality
+
+```bash
+pixi run lint        # ruff check
+pixi run typecheck   # mypy
+```
