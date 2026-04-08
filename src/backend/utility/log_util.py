@@ -23,7 +23,7 @@ def _log_session_event(
             input={"event": event, "user_id": user_id, "sid": sid},
             output={"status": event, "message": message},
         )
-        observation.update(
+        observation.update_trace(
             user_id=user_id,
             session_id=sid,
             metadata={"message": message},
