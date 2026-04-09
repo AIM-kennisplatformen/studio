@@ -15,7 +15,6 @@ import { useAtom } from "jotai";
 import {
   nodesAtom,
   edgesAtom,
-  draggingNodeIdAtom,
   selectedNodeAtom,
   centerNodeAtom,
   layoutNodesAtom,
@@ -25,7 +24,6 @@ import { sendNodeSelection, logSelectedNode } from "./data/api";
 export default function Graph({ data, width }) {
   const [nodes, setNodes] = useAtom(nodesAtom);
   const [edges, setEdges] = useAtom(edgesAtom);
-  const [, setDraggingNodeId] = useAtom(draggingNodeIdAtom);
   const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom);
   const [, setCenterNodeId] = useAtom(centerNodeAtom);
   const [layoutNodes, setLayoutNodes] = useAtom(layoutNodesAtom);
@@ -252,11 +250,8 @@ export default function Graph({ data, width }) {
         edges={edges}
         nodeTypes={{ custom: CustomNode }}
         edgeTypes={{ solid: SolidEdge }}
-        onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onNodeDragStart={onNodeDragStart}
-        onNodeDragStop={onNodeDragStop}
         onNodeClick={onNodeClick}
         selectNodesOnDrag={false}
         fitView

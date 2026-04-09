@@ -31,21 +31,17 @@ dynamic = ["version"]
 dependencies = [
   "fastmcp>=2.10.1",
   "fastapi",
-  "httpx",
-  "typedb-driver==2.29.2",
-  "langfuse",
+  "langfuse==3.13",
   "openai",
   "loguru>=0.7.3",
   "python-dotenv>=1.0.1",
-  "qdrant-client>=1.15.1",
-  "pyzotero>=1.7.3",
-  "uvicorn[standard]>=0.38.0,<0.39",
+  "uvicorn[standard]",
   "python-socketio>=5.15.0,<6", 
-  "langchain-openai>=1.1.3,<2", 
+  "langchain-openai", 
+  "langchain", 
+  "typing-extensions",
   "mcp-use>=1.5.0,<2", 
-  "langchain>=1.1.3,<2", 
-  "typing-extensions", 
-  "sentence-transformers==5.1.2", # Do not update! This will break the Jina model
+ 
 ]
 
 # ====================================
@@ -114,7 +110,6 @@ test = "pytest -q"
 frontend_build = ""
 backend_no_docker = ""
 mcp_server = ""
-llm_worker = ""
 qava_test = "python scripts/run_qava_test.py"
 
 
@@ -130,7 +125,6 @@ python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 """
 
 mcp_server = 'PYTHONPATH=src python -m src.mcp_servers.main'
-llm_worker  = 'PYTHONPATH=src python -m src.llm_worker.main'
 
 # ====================================
 # macOS ARM tasks
@@ -143,8 +137,6 @@ python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
 """
 
 mcp_server = 'PYTHONPATH=src python -m src.mcp_servers.main'
-llm_worker  = 'PYTHONPATH=src python -m src.llm_worker.main'
-
 
 # ====================================
 # Windows (cmd.exe)
@@ -156,7 +148,6 @@ PYTHONPATH=src python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 1009
 '''
 
 mcp_server = 'PYTHONPATH=src python -m src.mcp_servers.main'
-llm_worker  = 'PYTHONPATH=src python -m src.llm_worker.main'
 
 # ====================================
 # Pixi activation environment

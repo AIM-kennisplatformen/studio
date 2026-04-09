@@ -30,7 +30,11 @@ async def log_event(payload: LogEventPayload, user=Depends(get_current_user)):
     trace_id = langfuse.create_trace_id()
 
     langfuse.create_event(
-        trace_context={"trace_id": trace_id, "user_id": user_id, "session_id": session_id},
+        trace_context={
+            "trace_id": trace_id,
+            "user_id": user_id,
+            "session_id": session_id,
+        },
         name=payload.name,
         metadata=payload.metadata,
     )
