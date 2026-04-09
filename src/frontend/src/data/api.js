@@ -68,7 +68,10 @@ export async function logSelectedNode(node) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: "node_selected",
-        metadata: node,
+        metadata: {
+          nodeId: node.id,
+          nodeLabel: node.data.label,
+        },
       }),
     });
   } catch (err) {

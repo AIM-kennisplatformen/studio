@@ -164,19 +164,6 @@ export default function Graph({ data, width }) {
     });
   }, []);
 
-  /** Node/edge handlers */
-  const onNodesChange = useCallback(
-    (changes) => {
-      setNodes((currentNodes) => {
-        const updatedNodes = applyNodeChanges(changes, currentNodes);
-        edgesRef.current = updateEdges(updatedNodes, edgesRef.current);
-        setEdges(edgesRef.current);
-        return updatedNodes;
-      });
-    },
-    [updateEdges, setEdges, setNodes],
-  );
-
   const onEdgesChange = useCallback(
     (changes) =>
       setEdges((currentEdges) => applyEdgeChanges(changes, currentEdges)),
@@ -197,15 +184,6 @@ export default function Graph({ data, width }) {
       logSelectedNode(node);
     },
     [setCenterNodeId, setSelectedNode],
-  );
-
-  const onNodeDragStart = useCallback(
-    (e, node) => setDraggingNodeId(node.id),
-    [setDraggingNodeId],
-  );
-  const onNodeDragStop = useCallback(
-    () => setDraggingNodeId(null),
-    [setDraggingNodeId],
   );
 
   /** Center a node in the viewport */
