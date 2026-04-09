@@ -55,16 +55,22 @@ user_graph_contexts: DefaultDict[str, Dict[str, Any]] = defaultdict(
 # =====================================================
 
 
-async def fetch_subnode_stream(user_id: str, question: str, subnode: str):
+async def fetch_subnode_stream(
+    user_id: str,
+    question: str,
+    subnode: str,
+    trace_id: str | None = None,
+    session_id: str | None = None,
+):
     """
-    Docstring for fetch_subnode_stream
+    Stream an LLM response for a subnode question.
 
-    :param user_id: Description
-    :type user_id: str
-    :param question: Description
-    :type question: str
-    :param subnode: Description
-    :type subnode: str
+    :param user_id: Authenticated user id.
+    :param question: The user's question text.
+    :param subnode: Which subnode perspective to use.
+    :param trace_id: Optional Langfuse trace id to keep all
+        observations under a single per-turn trace.
+    :param session_id: Optional Socket.IO sid used as Langfuse session_id.
     """
     ctx = user_graph_contexts[user_id]
 
@@ -80,7 +86,10 @@ async def fetch_subnode_stream(user_id: str, question: str, subnode: str):
         full_response = ""
 
         # ← Direct generator call — no HTTP, no SSE parsing
-        async for evt in stream_agent_events(synthetic_prompt, user_id=user_id):
+        async for evt in stream_agent_events(
+            synthetic_prompt, user_id=user_id, trace_id=trace_id,
+            session_id=session_id,
+        ):
             event_type = evt["type"]
             event_data = evt["data"]
 
