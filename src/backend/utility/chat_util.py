@@ -74,27 +74,79 @@ async def _create_agent() -> MCPAgent:
         callbacks=[CallbackHandler()],
     )
 
-async def run_agent(message: str, user_id: str | None = None) -> str:
+async def run_agent(
+    message: str,
+    user_id: str | None = None,
+    trace_id: str | None = None,
+    session_id: str | None = None,
+) -> str:
     """
     Run the agent to completion and return the full response string.
+
+    When *trace_id* is supplied the entire agent execution is recorded
+    under that existing Langfuse trace (the CallbackHandler created
+    inside ``_create_agent`` automatically joins the current observation
+    context).
     """
     langfuse = get_client()
+
+    if trace_id is not None:
+        with langfuse.start_as_current_observation(
+            as_type="span",
+            name="run_agent",
+            trace_context={"trace_id": trace_id},
+        ) as span:
+            span.update_trace(user_id=user_id, session_id=session_id)
+            agent = await _create_agent()
+            result = await agent.run(message)
+        langfuse.flush()
+        return result
+
+    # Fallback: no trace_id provided — original behaviour
     agent = await _create_agent()
     try:
         return await agent.run(message)
     finally:
         langfuse.flush()
- 
 
 
 async def stream_agent_events(
-    message: str, user_id: str | None = None
+    message: str,
+    user_id: str | None = None,
+    trace_id: str | None = None,
+    session_id: str | None = None,
 ) -> AsyncGenerator[dict, None]:
     """
     Async generator that yields parsed event dicts:
       {"type": str, "data": str, "timestamp": float}
+
+    When *trace_id* is supplied the streaming execution is recorded
+    under that existing Langfuse trace.
     """
     langfuse = get_client()
+
+    if trace_id is not None:
+        with langfuse.start_as_current_observation(
+            as_type="span",
+            name="stream_agent_events",
+            trace_context={"trace_id": trace_id},
+        ) as span:
+            span.update_trace(user_id=user_id, session_id=session_id)
+            agent = await _create_agent()
+            async for event in agent.stream_events(message):
+                event_type = event.get("event", "")
+                data = ""
+                if event_type == "on_chat_model_stream":
+                    data = event["data"]["chunk"].content or ""
+                yield {
+                    "type": event_type,
+                    "data": data,
+                    "timestamp": time.time(),
+                }
+        langfuse.flush()
+        return
+
+    # Fallback: no trace_id provided — original behaviour
     agent = await _create_agent()
     try:
         async for event in agent.stream_events(message):
