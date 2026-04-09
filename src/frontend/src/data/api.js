@@ -77,5 +77,4 @@ export async function logSelectedNode(node) {
   } catch (err) {
     console.error("Failed to log selected node:", err);
   }
-  console.log(node);
 }
