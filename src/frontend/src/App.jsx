@@ -68,7 +68,7 @@ export default function App() {
         onMouseDown={handleMouseDown}
       />
 
-      <div className="flex-1 h-full bg-gray-50 flex flex-col">
+      <div className="flex-1 h-full bg-gray-50 flex flex-col overflow-hidden">
         <Chat />
       </div>
     </div>
