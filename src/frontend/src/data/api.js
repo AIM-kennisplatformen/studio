@@ -1,3 +1,5 @@
+import { responsesFromId } from "./graphMockData";
+
 const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
 const errorResponse = {
@@ -62,7 +64,7 @@ export async function sendNodeSelection(nodeId) {
 export async function logSelectedNode(node) {
   const url = `${BASE_URL}/log_event`;
   try {
-    await fetch(url, {
+    const response = await fetch(url, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -74,6 +76,9 @@ export async function logSelectedNode(node) {
         },
       }),
     });
+    if (!response.ok) {
+      console.error("Failed to log selected node:", response.status);
+    }
   } catch (err) {
     console.error("Failed to log selected node:", err);
   }
