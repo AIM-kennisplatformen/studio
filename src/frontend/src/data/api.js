@@ -39,23 +39,24 @@ export async function sendChatMessage(chatId = "1", message) {
   }
 }
 
-export async function sendNodeSelection(nodeId) {
-  const url = `${BASE_URL}/nodes/${nodeId}/context`;
 
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      credentials: "include",   // Required for cookie-based Auth
-    });
+// export async function sendNodeSelection(nodeId) {
+//   const url = `${BASE_URL}/nodes/${nodeId}/context`;
 
-    if (!response.ok) {
-      console.error("Failed to send node selection:", response.status);
-      return null;
-    }
+//   try {
+//     const response = await fetch(url, {
+//       method: "POST",
+//       credentials: "include",   // Required for cookie-based Auth
+//     });
 
-    return await response.json();
-  } catch (err) {
-    console.error("Failed to send node selection:", err);
-    return null;
-  }
-}
+//     if (!response.ok) {
+//       console.error("Failed to send node selection:", response.status);
+//       return null;
+//     }
+
+//     return await response.json();
+//   } catch (err) {
+//     console.error("Failed to send node selection:", err);
+//     return null;
+//   }
+// }

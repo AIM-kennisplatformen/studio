@@ -11,15 +11,15 @@ import { CustomNode } from "./components/CustomNode";
 import { SolidEdge } from "./components/CustomEdge";
 import { getEdgeHandles } from "./lib/graphUtils";
 import { applyDagreLayout } from "./lib/ctrytoscapeLayout";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue} from "jotai";
 import {
   nodesAtom,
   edgesAtom,
   selectedNodeAtom,
   centerNodeAtom,
   layoutNodesAtom,
+  selectNodeEmitAtom
 } from "./data/atoms";
-import { sendNodeSelection } from "./data/api";
 
 export default function Graph({ data, width }) {
   const [nodes, setNodes] = useAtom(nodesAtom);
@@ -27,6 +27,7 @@ export default function Graph({ data, width }) {
   const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom);
   const [, setCenterNodeId] = useAtom(centerNodeAtom);
   const [layoutNodes, setLayoutNodes] = useAtom(layoutNodesAtom);
+  const emitSelectNode = useAtomValue(selectNodeEmitAtom);
 
   const { getViewport, setViewport, fitView } = useReactFlow();
   const containerRef = useRef(null);
@@ -180,9 +181,10 @@ export default function Graph({ data, width }) {
       setCenterNodeId(Number(node.id));
       setSelectedNode(node);
       centerNodeInView(node);
-      sendNodeSelection(node.id);
+      //sendNodeSelection(node.id);
+      emitSelectNode(Number(node.id));
     },
-    [setCenterNodeId, setSelectedNode],
+    [setCenterNodeId, setSelectedNode, emitSelectNode],
   );
 
   /** Center a node in the viewport */

@@ -14,6 +14,7 @@ from backend.endpoints.graph import user_graph_contexts, _default_user_graph_con
 from backend.endpoints.graph import fetch_subnode_stream
 from backend.utility.log_util import end_session, start_session
 from backend.utility.chat_util import (
+    push_chat_message,
     register_socketio,
     bind_user,
     stream_agent_events,
@@ -164,3 +165,61 @@ async def send_message(sid, data):
     ctx.setdefault("prefetched", {})["root"] = full_response
 
     await push_chat_message_stream(user_id, "done", full_response, "root")
+
+
+@sio.event
+async def select_node(sid, data):
+    user_id = sid_connections.get(sid)
+    if not user_id:
+        return 
+    
+    node_id = int(data.get("node_id", 0))
+    ctx = user_graph_contexts[user_id]
+    question = ctx.get("latest_question")
+
+    if node_id == 1:
+        ctx["selected_subnode"] = "root"
+        ctx["dialogue_state_asked"] = False
+
+        if not question:
+            await push_chat_message(
+                user_id,
+                "Do you want to ask an question, answered by the full body of literature? "
+                "Please proceed, by asking me your question?",
+            )
+        else:
+            await push_chat_message(
+                user_id,
+                "Answer a question by using the full body of literature "
+                f"Would you like to ask a different question than: '{question}'? "
+                "**Respond with another question** or type **yes** to repeat the previous question.",    
+            )
+        await push_chat_message_stream(user_id, "done", "", "root")
+        ctx["dialogue_state_asked"] = True
+        ctx["previous_question"] = question
+        return
+    
+    #SUBNODE 
+    from backend.endpoints.graph import SUBNODE_MAP
+    if node_id in SUBNODE_MAP:
+        subnode = SUBNODE_MAP[node_id]
+        ctx["selected_subnode"] = subnode
+        ctx["dialogue_state_asked"] = False
+
+        if not question:
+            await push_chat_message(
+                user_id,
+                f"You've selected subset {subnode}. Please ask me your question.",
+            )
+        else:
+            await push_chat_message(
+                user_id,
+                f"You've selected subset {subnode}. Please ask me your question using this subset. "
+                f"If you want to repeat your previous question: `{question}` "
+                "type **yes**, otherwise **respond with another question**.",
+            )
+
+        await push_chat_message_stream(user_id, "done", "", subnode)
+        ctx["dialogue_state_asked"] = True
+        ctx["previous_question"] = question
+        return
