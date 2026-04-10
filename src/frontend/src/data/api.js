@@ -38,25 +38,3 @@ export async function sendChatMessage(chatId = "1", message) {
     return errorResponse;
   }
 }
-
-
-// export async function sendNodeSelection(nodeId) {
-//   const url = `${BASE_URL}/nodes/${nodeId}/context`;
-
-//   try {
-//     const response = await fetch(url, {
-//       method: "POST",
-//       credentials: "include",   // Required for cookie-based Auth
-//     });
-
-//     if (!response.ok) {
-//       console.error("Failed to send node selection:", response.status);
-//       return null;
-//     }
-
-//     return await response.json();
-//   } catch (err) {
-//     console.error("Failed to send node selection:", err);
-//     return null;
-//   }
-// }
