@@ -7,7 +7,6 @@ export function NodeBody({
   textColor,
   background,
   fontWeight,
-  showDragHandle,
 }) {
   const borderRadius = data.borderRadius || "3px";
 
@@ -37,37 +36,16 @@ export function NodeBody({
           "color 300ms ease-out, font-weight 300ms ease-out, transform 300ms ease-out",
       }}
     >
-      <div className="flex h-full">
-        {showDragHandle ? (
-          <div
-            className="group/handle flex items-center justify-center cursor-move hover:brightness-[0.85] transition-[filter] duration-200 w-6 shrink-0"
-            style={{
-              background,
-              borderTopLeftRadius: borderRadius,
-              borderBottomLeftRadius: borderRadius,
-            }}
-          >
-            <div className="flex flex-col gap-0.5">
-              <div className="w-[3px] h-[3px] bg-black/30 rounded-full transition-[width] duration-500 ease-in-out group-hover/handle:w-[15px]" />
-              <div className="w-[3px] h-[3px] bg-black/30 rounded-full transition-[width] duration-500 ease-in-out group-hover/handle:w-[15px]" />
-              <div className="w-[3px] h-[3px] bg-black/30 rounded-full transition-[width] duration-500 ease-in-out group-hover/handle:w-[15px]" />
-            </div>
-          </div>
-        ) : null}
-
-        <div
-          className="nodrag text-left flex-1 cursor-default"
-          style={{
-            padding: data.padding || "10px",
-            background,
-            borderTopLeftRadius: showDragHandle ? undefined : borderRadius,
-            borderBottomLeftRadius: showDragHandle ? undefined : borderRadius,
-            borderTopRightRadius: borderRadius,
-            borderBottomRightRadius: borderRadius,
-          }}
-        >
-          {data.label}
-        </div>
+      {/* Flexbox container with content */}
+      <div
+        className="nodrag text-left flex-1 cursor-default"
+        style={{
+          padding: data.padding || "10px",
+          background,
+          borderRadius: data.borderRadius || "3px",
+        }}
+      >
+        {data.label}
       </div>
     </div>
   );

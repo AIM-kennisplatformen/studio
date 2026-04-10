@@ -16,7 +16,6 @@ import {
   breadcrumbsAtom,
   centerNodeAtom,
   connectorStyleAtom,
-  draggingNodeIdAtom,
   edgesAtom,
   layoutNodesAtom,
   nodesAtom,
@@ -77,7 +76,6 @@ function areEdgeArraysEqual(currentEdges, nextEdges) {
 export default function Graph({ data, width }) {
   const [nodes, setNodes] = useAtom(nodesAtom);
   const [edges, setEdges] = useAtom(edgesAtom);
-  const [, setDraggingNodeId] = useAtom(draggingNodeIdAtom);
   const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom);
   const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom);
   const [layoutNodes, setLayoutNodes] = useAtom(layoutNodesAtom);
@@ -122,12 +120,7 @@ export default function Graph({ data, width }) {
       (node) => node.id === String(anchorNodeId)
     );
     const { nodes: breadcrumbNodes, edges: breadcrumbEdges } =
-      buildBreadcrumbRenderGraph(
-        breadcrumbs,
-        viewport,
-        containerWidth,
-        anchorNode?.position
-      );
+      buildBreadcrumbRenderGraph(breadcrumbs, viewport, anchorNode?.position);
     const bridgeEdge = anchorNode
       ? buildBridgeEdge(breadcrumbs, anchorNodeId, connectorStyle)
       : null;
@@ -473,16 +466,6 @@ export default function Graph({ data, width }) {
     ]
   );
 
-  const onNodeDragStart = useCallback(
-    (_, node) => setDraggingNodeId(node.id),
-    [setDraggingNodeId]
-  );
-
-  const onNodeDragStop = useCallback(
-    () => setDraggingNodeId(null),
-    [setDraggingNodeId]
-  );
-
   useEffect(() => {
     const container = containerRef.current;
 
@@ -547,11 +530,8 @@ export default function Graph({ data, width }) {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onNodeDragStart={onNodeDragStart}
-        onNodeDragStop={onNodeDragStop}
         onNodeClick={onNodeClick}
         onMoveEnd={mergeAndSetRenderGraph}
-        selectNodesOnDrag={false}
         fitView
         fitViewOptions={{
           padding: 0.5,

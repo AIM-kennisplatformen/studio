@@ -13,9 +13,9 @@ export const CONNECTOR_STYLE_CONFIG = {
     strokeDasharray: "10 6",
     pathVariant: "smooth",
   },
-  dotted: {
-    key: "dotted",
-    label: "Dotted",
+  step: {
+    key: "step",
+    label: "Step",
     edgeType: "bridgeConnector",
     strokeDasharray: "2 6",
     pathVariant: "smooth",
@@ -62,7 +62,6 @@ function dedupeBreadcrumbEntries(breadcrumbEntries) {
 export function buildBreadcrumbRenderGraph(
   breadcrumbEntries,
   viewport,
-  containerWidth,
   anchorNode = null
 ) {
   const dedupedEntries = dedupeBreadcrumbEntries(breadcrumbEntries);
@@ -113,7 +112,7 @@ export function buildBreadcrumbRenderGraph(
     id: `bc-edge-${entry.historyId}-${dedupedEntries[index + 1].historyId}`,
     source: entry.historyId,
     target: dedupedEntries[index + 1].historyId,
-    type: "dotted",
+    type: "step",
     sourceHandle: "bottom",
     targetHandle: "target-top",
     style: { stroke: "#038061", strokeWidth: 1.5, strokeDasharray: "2 3" },
