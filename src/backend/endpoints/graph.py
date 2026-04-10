@@ -1,5 +1,3 @@
-from html import entities
-from queue import Full
 from typing import DefaultDict, Dict, Any
 from collections import defaultdict
 
@@ -16,7 +14,6 @@ from backend.utility.chat_util import (
 )
 
 graph_router = APIRouter()
-
 
 # =====================================================
 # Subnode Mapping
@@ -104,7 +101,7 @@ async def fetch_subnode_stream(user_id: str, question: str, subnode: str):
 # =====================================================
 
 
-@graph_router.post("/nodes/{node_id}/context")
+@graph_router.post("/nodes/{node_id}/context") 
 async def get_node_context(
     node_id: int,
     request: Request,
@@ -195,11 +192,11 @@ async def get_node_context(
     edges = [
         rel
         for rel in kg_data.relations.values()
-        if int(rel.sourceId) == node_id or int(rel.targetId) == node_id
+        if int(rel.source_id) == node_id or int(rel.target_id) == node_id
     ]
 
-    neighbor_ids = {int(rel.sourceId) for rel in edges} | {
-        int(rel.targetId) for rel in edges
+    neighbor_ids = {int(rel.source_id) for rel in edges} | {
+        int(rel.target_id) for rel in edges
     }
 
     neighbor_nodes = [

@@ -3,7 +3,6 @@ import {
   ReactFlow,
   applyEdgeChanges,
   addEdge,
-  applyNodeChanges,
   useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -181,8 +180,7 @@ export default function Graph({ data, width }) {
       setCenterNodeId(Number(node.id));
       setSelectedNode(node);
       centerNodeInView(node);
-      //sendNodeSelection(node.id);
-      emitSelectNode(Number(node.id));
+      emitSelectNode?.(Number(node.id));
     },
     [setCenterNodeId, setSelectedNode, emitSelectNode],
   );
