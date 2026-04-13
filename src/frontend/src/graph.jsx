@@ -431,7 +431,7 @@ export default function Graph({ data, width }) {
         setSelectedNode(realNode);
 
         setBreadcrumbs((prev) => {
-          if (node.id !== selectedNode.id) {
+          if (!selectedNode || node.id !== selectedNode.id) {
             const clickedIndex = prev.findIndex(
               (entry) => entry.historyId === node.id
             );
