@@ -25,9 +25,17 @@ import {
 } from "./data/atoms";
 
 import { useChatWebSocket } from "./data/chatWebsocket";
-import { Reasoning, ReasoningTrigger } from "@/components/shadcn-io/ai/reasoning";
-import {Action, Actions} from "@/components/shadcn-io/ai/actions";
+import {
+  Reasoning,
+  ReasoningTrigger,
+} from "@/components/shadcn-io/ai/reasoning";
+import { Action, Actions } from "@/components/shadcn-io/ai/actions";
 import { ThumbsUpIcon, ThumbsDownIcon } from "lucide-react";
+import { logResponseFeedback } from "./data/api";
+
+function handleFeedback(message, feedback) {
+  logResponseFeedback(message, feedback);
+}
 
 export default function Chat() {
   return (
@@ -53,8 +61,6 @@ export default function Chat() {
   );
 }
 
-
-
 function InputArea() {
   const [text, setText] = useAtom(textAtom);
   const [status, setStatus] = useAtom(textStatusAtom);
@@ -70,8 +76,7 @@ function InputArea() {
     // Add user message instantly
     setMessages((prev) => [
       { key: prev.length + 1, value: text, name: "user" },
-        ...prev,
-
+      ...prev,
     ]);
 
     // Update UI state
@@ -117,34 +122,36 @@ function Messages() {
         <div className="flex-1" />
         {[...messages].reverse().map(({ key, value, name }) =>
           name === "chatbot" ? (
-            <div key={key} className="flex items-start gap-2 justify-start pr-20">
+            <div
+              key={key}
+              className="flex items-start gap-2 justify-start pr-20"
+            >
               <div className="flex flex-col items-start">
-              <Response className="max-w-prose text-sm border border-gray-200 rounded-lg p-2 bg-gray-50 break-words">
-                {value}
-              </Response>
-              {key === lastDoneKey && status === "ready" && (
-              <Actions>
-                <Action             
-                  style={{ backgroundColor: "#038061", color: "white" }}
-                  onClick={() => console.log("Thumbs up!")} 
-                  tooltip="Good response">
-                  <ThumbsUpIcon className="size-4" />
-                </Action>
-                <Action             
-                  style={{ backgroundColor: "#038061", color: "white" }}
-                  onClick={() => console.log("Thumbs down!")} tooltip="Bad response">
-                    <ThumbsDownIcon className="size-4" />
-                </Action>
-              </Actions>
-              )}
-            </div>
+                <Response className="max-w-prose text-sm border border-gray-200 rounded-lg p-2 bg-gray-50 break-words">
+                  {value}
+                </Response>
+                {key === lastDoneKey && status === "ready" && (
+                  <Actions>
+                    <Action
+                      style={{ backgroundColor: "#038061", color: "white" }}
+                      onClick={() => handleFeedback(value, "positive")}
+                      tooltip="Good response"
+                    >
+                      <ThumbsUpIcon className="size-4" />
+                    </Action>
+                    <Action
+                      style={{ backgroundColor: "#038061", color: "white" }}
+                      onClick={() => handleFeedback(value, "negative")}
+                      tooltip="Bad response"
+                    >
+                      <ThumbsDownIcon className="size-4" />
+                    </Action>
+                  </Actions>
+                )}
+              </div>
             </div>
           ) : (
-            <Message
-              from="user"
-              key={key}
-              className="flex justify-end pl-20"
-            >
+            <Message from="user" key={key} className="flex justify-end pl-20">
               <MessageContent
                 className="max-w-prose break-words"
                 style={{ backgroundColor: "#038061", color: "#ffffff" }}
@@ -152,18 +159,26 @@ function Messages() {
                 {value}
               </MessageContent>
             </Message>
-          )
-          
+          ),
         )}
-          {status === "thinking" && (
-            <div>
-              <Reasoning isStreaming={status === "thinking"}>
-                <ReasoningTrigger style={{ backgroundColor: "transparent", color: "black", border: "none", padding: "0", outline: "none", cursor: "text" }}>
-                  🧠 Thinking...
-                </ReasoningTrigger>
-              </Reasoning>
-            </div>
-          )}
+        {status === "thinking" && (
+          <div>
+            <Reasoning isStreaming={status === "thinking"}>
+              <ReasoningTrigger
+                style={{
+                  backgroundColor: "transparent",
+                  color: "black",
+                  border: "none",
+                  padding: "0",
+                  outline: "none",
+                  cursor: "text",
+                }}
+              >
+                🧠 Thinking...
+              </ReasoningTrigger>
+            </Reasoning>
+          </div>
+        )}
       </ConversationContent>
     </Conversation>
   );
