@@ -61,24 +61,18 @@ export async function sendNodeSelection(nodeId) {
 
 export async function logOut() {
   const url = `${BASE_URL}/auth/logout`;
-  console.log("Logging out...");
-  // try {
-  //   const response = await fetch(url, {
-  //     method: "POST",
-  //     credentials: "include", // Required for cookie-based Auth
-  //   });
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      credentials: "include", // Required for cookie-based Auth
+    });
 
-  //   if (!response.ok) {
-  //     console.error("Failed to log out:", response.status);
-  //     return null;
-  //   }
-
-  //   const status = await response.status();
-  //   if (status === 200) {
-  //     window.location.href = "/login"; // Redirect to login page after logout
-  //   }
-  // } catch (err) {
-  //   console.error("Failed to log out:", err);
-  //   return null;
-  // }
+    if (!response.ok) {
+      console.error("Failed to log out:", response.status);
+      return null;
+    }
+  } catch (err) {
+    console.error("Failed to log out:", err);
+    return null;
+  }
 }
