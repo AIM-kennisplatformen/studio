@@ -107,7 +107,7 @@ export default function Graph({ data, width }) {
           id: String(edge.id),
           source: String(edge.source_id),
           target: String(edge.target_id),
-          label: edge.label_forward,
+          label: edge.labelToTarget,
           type: "solid",
           sourceHandle,
           targetHandle,

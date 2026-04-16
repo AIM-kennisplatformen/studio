@@ -48,9 +48,10 @@ class ContextResponse(BaseModel):
     error: Optional[str] = None
 
 class GraphResponse(BaseModel): 
-    #TODO : figure out what we want to return here? 
+    #Added selected subnode to return the currently selected subnode in the graph, which can be used by the frontend to maintain context
     """Response for full graph endpoint"""
     nodes: List[Node] = []
     edges: List[Edge] = []
+    selected_subnode: Optional[Node] = None
     # metadata: dict = {}
     error: Optional[str] = None

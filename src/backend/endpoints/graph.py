@@ -109,7 +109,7 @@ async def get_full_graph(
         user=Depends(get_current_user)):
    
     user_id = user["sub"]
-    # ctx = user_graph_contexts[user_id] # not immediately needed but could be useful for returning user-specific context along with the graph data
+    ctx = user_graph_contexts[user_id]
 
     kg_data = request.app.state.kg_data
 
@@ -119,9 +119,19 @@ async def get_full_graph(
             edges=[],
             error="not_loaded",
         )
-
+    
+    subnode_name = ctx["selected_subnode"]
+    if subnode_name == "root":
+        selected_subnode = None
+    else:
+        selected_subnode = next(
+        (n for n in kg_data.entities.values() if n.title == subnode_name),
+        None,
+    )
+    
     return GraphResponse(
         nodes=list(kg_data.entities.values()),
         edges=list(kg_data.relations.values()),
+        selected_subnode= selected_subnode,
         error=None,
     ) 

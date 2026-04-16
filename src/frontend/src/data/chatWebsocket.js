@@ -11,7 +11,7 @@ export function useChatWebSocket(setStatus) {
   const setMessages = useSetAtom(messagesAtom);
   const setLastDoneMessageKey = useSetAtom(lastDoneMessageKeyAtom);
   const triggerRefetch = useSetAtom(graphRefetchTriggerAtom);
-  const setSelectedNode = useSetAtom(selectNodeEmitAtom);
+  const setSelectedNodeEmit = useSetAtom(selectNodeEmitAtom);
   const socketRef = useRef(null);
 
   const streamingKeyRef = useRef(null);
@@ -25,7 +25,7 @@ export function useChatWebSocket(setStatus) {
     });
 
     socketRef.current = socket;
-    setSelectedNode(() => (nodeId) => socket.emit("select_node", { node_id: nodeId }));
+    setSelectedNodeEmit(() => (nodeId) => socket.emit("select_node", { node_id: nodeId }));
 
     socket.on("connect", () => {
       console.log("Socket.IO connected:", socket.id);
@@ -81,7 +81,7 @@ export function useChatWebSocket(setStatus) {
 
     return () => {
       socket.disconnect();
-      setSelectedNode(null); 
+      setSelectedNodeEmit(null); 
     };
   }, []);
 
