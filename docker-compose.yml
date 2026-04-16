@@ -17,40 +17,6 @@ services:
     env_file:
       - .env
     environment:
-      - LLM_WORKER_URL=http://llm_worker
-    depends_on:
-      - llm_worker
-      - mcp_server
-    volumes:
-      - .:/app
-    networks: [studio_net]
-
-  mcp_server:
-    image: studio-base
-    container_name: mcp_server
-    command: pixi run mcp_server
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
-    environment:
-      - OTEL_SERVICE_NAME=mcp_server
-      - QDRANT_URL=172.30.0.1
-      - QDRANT_PORT=6333
-    volumes:
-      - .:/app
-      - hf_cache:/root/.cache/huggingface
-    networks: [studio_net]
-  llm_worker:
-    image: studio-base
-    container_name: llm_worker
-    command: pixi run llm_worker
-    ports:
-      - "9200:9200"
-      - "8080:8080"
-    env_file:
-      - .env
-    environment:
       - OTEL_SERVICE_NAME=llm_worker
       - LLM_WORKER_PORT=9200
       - MCP_USE_OAUTH=false
@@ -60,14 +26,10 @@ services:
       - .:/app
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    networks: [studio_net]
-volumes:
-  hf_cache:
-  
+    networks:
+      - mcp_server_scepa_studio_net
+
 networks:
-  studio_net:
+  mcp_server_scepa_studio_net:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.30.0.0/16
-          gateway: 172.30.0.1
+    external: true  # Reference the external network from MCP stack
