@@ -63,8 +63,8 @@ export async function logOut() {
   const url = `${BASE_URL}/auth/logout`;
   try {
     const response = await fetch(url, {
-      method: "POST",
-      credentials: "include", // Required for cookie-based Auth
+      method: "GET",
+      credentials: "include",
     });
 
     if (!response.ok) {

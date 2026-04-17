@@ -236,17 +236,7 @@ export default function Graph({ data, width }) {
         fitView
         attributionPosition="bottom-left"
         proOptions={{ hideAttribution: true }}
-      >
-        <Panel position="top-right">
-          <Button
-            className="text-white px-3 py-1 rounded"
-            onClick={() => logOut()}
-            props={{ "aria-label": "Log Out" }}
-          >
-            Log Out
-          </Button>
-        </Panel>
-      </ReactFlow>
+      ></ReactFlow>
     </div>
   );
 }
