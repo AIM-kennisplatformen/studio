@@ -25,11 +25,9 @@ import { sendNodeSelection } from "./data/api";
 import {
   CONNECTOR_STYLE_CONFIG,
   buildBridgeEdge,
+  buildBreadcrumbRenderGraph,
 } from "./lib/breadcrumbLayout";
-import {
-  applyDagreLayout,
-  calculateTwoStepLayout,
-} from "./lib/ctrytoscapeLayout";
+import { applyDagreLayout } from "./lib/ctrytoscapeLayout";
 import { getEdgeHandles } from "./lib/graphUtils";
 
 function arePositionsEqual(a = { x: 0, y: 0 }, b = { x: 0, y: 0 }) {
@@ -114,26 +112,18 @@ export default function Graph({ data, width }) {
     [getViewport, setViewport]
   );
 
-  /**
-   * Merge primary graph nodes with breadcrumb nodes using the Two-Step Layout
-   * Strategy. Breadcrumbs are positioned in graph-space above the primary
-   * graph's bounding box, guaranteeing no overlap.
-   */
   const mergeAndSetRenderGraph = useCallback(() => {
+    const viewport = getViewport();
+    const containerWidth = containerRef.current?.clientWidth ?? 800;
     const anchorNodeId = latestForwardNodeIdRef.current ?? centerNodeId;
-
-    // Use the two-step layout to position breadcrumbs in graph-space
-    const { breadcrumbNodes, breadcrumbEdges } = calculateTwoStepLayout(
-      graphNodesRef.current,
-      edgesRef.current,
-      breadcrumbs
+    const anchorNode = graphNodesRef.current.find(
+      (node) => node.id === String(anchorNodeId)
     );
-
-    // Build the bridge edge connecting the last breadcrumb to the anchor node
-    const bridgeEdge =
-      anchorNodeId != null
-        ? buildBridgeEdge(breadcrumbs, anchorNodeId, connectorStyle)
-        : null;
+    const { nodes: breadcrumbNodes, edges: breadcrumbEdges } =
+      buildBreadcrumbRenderGraph(breadcrumbs, viewport, anchorNode?.position);
+    const bridgeEdge = anchorNode
+      ? buildBridgeEdge(breadcrumbs, anchorNodeId, connectorStyle)
+      : null;
 
     const nextNodes = [...graphNodesRef.current, ...breadcrumbNodes];
     const nextEdges = [
@@ -148,7 +138,14 @@ export default function Graph({ data, width }) {
     setEdges((currentEdges) =>
       areEdgeArraysEqual(currentEdges, nextEdges) ? currentEdges : nextEdges
     );
-  }, [breadcrumbs, centerNodeId, connectorStyle, setEdges, setNodes]);
+  }, [
+    breadcrumbs,
+    centerNodeId,
+    connectorStyle,
+    getViewport,
+    setEdges,
+    setNodes,
+  ]);
 
   const appendBreadcrumb = useCallback(
     (node) => {
@@ -278,7 +275,6 @@ export default function Graph({ data, width }) {
       })
       .filter(Boolean);
 
-    // Use the two-step layout to get primary positions and breadcrumb placement
     const fixedNodes = newNodes.filter((node) =>
       previousPositions.has(node.id)
     );
@@ -325,15 +321,6 @@ export default function Graph({ data, width }) {
 
     mergeAndSetRenderGraph();
 
-    // Fit the view after layout to ensure dynamic scaling (Two-Step Strategy step 8)
-    window.requestAnimationFrame(() => {
-      fitView({
-        padding: 0.2,
-        includeHiddenNodes: false,
-        duration: 800,
-      });
-    });
-
     if (!selectedNode) {
       const nodeToCenter = mergedNodes.find((node) => node.id === "1");
 
@@ -345,7 +332,6 @@ export default function Graph({ data, width }) {
   }, [
     centerNodeInView,
     data,
-    fitView,
     layoutNodes,
     mergeAndSetRenderGraph,
     selectedNode,
@@ -377,17 +363,21 @@ export default function Graph({ data, width }) {
         graphNodesRef.current = realNodes;
         edgesRef.current = updateEdges(realNodes, edgesRef.current);
 
-        // Re-run the two-step layout to reposition breadcrumbs in graph-space
+        const viewport = getViewport();
+        const containerWidth = containerRef.current?.clientWidth ?? 800;
         const anchorNodeId = latestForwardNodeIdRef.current ?? centerNodeId;
-        const { breadcrumbNodes, breadcrumbEdges } = calculateTwoStepLayout(
-          realNodes,
-          edgesRef.current,
-          breadcrumbs
+        const anchorNode = realNodes.find(
+          (node) => node.id === String(anchorNodeId)
         );
-        const bridgeEdge =
-          anchorNodeId != null
-            ? buildBridgeEdge(breadcrumbs, anchorNodeId, connectorStyle)
-            : null;
+        const { edges: breadcrumbEdges } = buildBreadcrumbRenderGraph(
+          breadcrumbs,
+          viewport,
+          containerWidth,
+          anchorNode?.position
+        );
+        const bridgeEdge = anchorNode
+          ? buildBridgeEdge(breadcrumbs, anchorNodeId, connectorStyle)
+          : null;
 
         const nextEdges = [
           ...edgesRef.current,
@@ -399,10 +389,22 @@ export default function Graph({ data, width }) {
           areEdgeArraysEqual(currentEdges, nextEdges) ? currentEdges : nextEdges
         );
 
-        return [...realNodes, ...breadcrumbNodes];
+        return [
+          ...realNodes,
+          ...updatedNodes.filter((node) => node.type === "breadcrumb"),
+        ];
       });
     },
-    [breadcrumbs, centerNodeId, connectorStyle, setEdges, setNodes, updateEdges]
+    [
+      breadcrumbs,
+      centerNodeId,
+      connectorStyle,
+      getViewport,
+      selectedNode?.id,
+      setEdges,
+      setNodes,
+      updateEdges,
+    ]
   );
 
   const onEdgesChange = useCallback(
@@ -475,6 +477,7 @@ export default function Graph({ data, width }) {
       fitView({
         padding: 0.1,
         duration: 150,
+        nodes: graphNodesRef.current.map((n) => ({ id: n.id })),
       });
       mergeAndSetRenderGraph();
     });
@@ -533,6 +536,7 @@ export default function Graph({ data, width }) {
         fitViewOptions={{
           padding: 0.5,
           duration: 150,
+          nodes: graphNodesRef.current.map((n) => ({ id: n.id })),
         }}
         attributionPosition="bottom-left"
         proOptions={{ hideAttribution: true }}
