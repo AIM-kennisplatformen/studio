@@ -59,7 +59,7 @@ export async function sendNodeSelection(nodeId) {
   }
 }
 
-export async function logResponseFeedback(message, feedback) {
+export async function logResponseFeedback(key, feedback) {
   const url = `${BASE_URL}/log_event`;
 
   try {
@@ -70,7 +70,7 @@ export async function logResponseFeedback(message, feedback) {
       body: JSON.stringify({
         name: "response_feedback",
         metadata: {
-          message: message,
+          messagekey: key,
           feedback: feedback,
         },
       }),

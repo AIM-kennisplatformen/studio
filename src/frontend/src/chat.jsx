@@ -134,14 +134,14 @@ function Messages() {
                   <Actions>
                     <Action
                       style={{ backgroundColor: "#038061", color: "white" }}
-                      onClick={() => handleFeedback(value, "positive")}
+                      onClick={() => handleFeedback(key, "positive")}
                       tooltip="Good response"
                     >
                       <ThumbsUpIcon className="size-4" />
                     </Action>
                     <Action
                       style={{ backgroundColor: "#038061", color: "white" }}
-                      onClick={() => handleFeedback(value, "negative")}
+                      onClick={() => handleFeedback(key, "negative")}
                       tooltip="Bad response"
                     >
                       <ThumbsDownIcon className="size-4" />
