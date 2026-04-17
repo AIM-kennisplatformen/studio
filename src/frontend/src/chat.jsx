@@ -170,9 +170,7 @@ function Messages() {
                 className="max-w-prose break-words"
                 style={{ backgroundColor: "#038061", color: "#ffffff" }}
               >
-                <Response className="max-w-prose text-sm border border-gray-200 rounded-lg p-2 bg-gray-50 w-fit break-words">
-                  {value}
-                </Response>
+                {value}
               </MessageContent>
             </Message>
           ),
