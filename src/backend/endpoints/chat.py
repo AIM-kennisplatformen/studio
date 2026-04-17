@@ -9,9 +9,13 @@ from backend.config import BASE_URL
 from backend.config import (
     root_question_prompt,
 )
+from backend.endpoints.graph import (
+    user_graph_contexts,
+    _default_user_graph_context,
+    fetch_subnode_stream,
+    SUBNODE_MAP,
+)
 
-from backend.endpoints.graph import user_graph_contexts, _default_user_graph_context
-from backend.endpoints.graph import fetch_subnode_stream
 from backend.utility.log_util import end_session, start_session
 from backend.utility.chat_util import (
     push_chat_message,
@@ -194,13 +198,12 @@ async def select_node(sid, data):
                 f"Would you like to ask a different question than: '{question}'? "
                 "**Respond with another question** or type **yes** to repeat the previous question.",    
             )
-        await push_chat_message_stream(user_id, "done", "", "root")
+        #await push_chat_message_stream(user_id, "done", "", "root")
         ctx["dialogue_state_asked"] = True
         ctx["previous_question"] = question
         return
     
     #SUBNODE 
-    from backend.endpoints.graph import SUBNODE_MAP
     if node_id in SUBNODE_MAP:
         subnode = SUBNODE_MAP[node_id]
         ctx["selected_subnode"] = subnode
@@ -219,7 +222,7 @@ async def select_node(sid, data):
                 "type **yes**, otherwise **respond with another question**.",
             )
 
-        await push_chat_message_stream(user_id, "done", "", subnode)
+        #await push_chat_message_stream(user_id, "done", "", subnode)
         ctx["dialogue_state_asked"] = True
         ctx["previous_question"] = question
         return

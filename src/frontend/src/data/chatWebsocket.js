@@ -70,13 +70,15 @@ export function useChatWebSocket(setStatus) {
       }
     });
 
-    socket.on("done", () => {
+    socket.on("done", (payload) => {
       if (streamingKeyRef.current !== null) {
         setLastDoneMessageKey(streamingKeyRef.current);
       }
       streamingKeyRef.current = null;
       setStatus("ready");
-      triggerRefetch((n) => n+1 );
+      if(payload?.source === "chat"){
+        triggerRefetch((n) => n + 1);
+      }
     });
 
     return () => {

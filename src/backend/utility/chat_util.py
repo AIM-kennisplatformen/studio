@@ -164,6 +164,7 @@ async def push_chat_message(
                 "full_response": message,
                 "mode": "replace",
                 "subnode": subnode,
+                "source": "node_selection",
             },
             to=sid,
         )
@@ -202,7 +203,7 @@ async def push_chat_message_stream(
         if(event_type == "done"):
             await sio.emit(
             "done",
-            {"full_response": message},
+            {"full_response": message, "source": "chat"},
             to=sid,
             )
         # ALSO emit chat messages for chat UI
