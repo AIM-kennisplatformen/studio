@@ -59,28 +59,21 @@ function dedupeBreadcrumbEntries(breadcrumbEntries) {
   }, []);
 }
 
-export function buildBreadcrumbRenderGraph(
-  breadcrumbEntries,
-  viewport,
-  anchorNode = null
-) {
+export function buildBreadcrumbRenderGraph(breadcrumbEntries, viewport) {
   const dedupedEntries = dedupeBreadcrumbEntries(breadcrumbEntries);
   const nodeHeight = 160;
   const rowGap = 24;
   const verticalStep = nodeHeight + rowGap;
-  const hasAnchorNode = Number.isFinite(anchorNode?.y);
   const newestIndex = dedupedEntries.length - 1;
-  const newestScreenY = hasAnchorNode
-    ? viewport.y + anchorNode.y * viewport.zoom
-    : 20 + newestIndex * verticalStep;
+  const newestScreenY = 20 + newestIndex * verticalStep;
 
   const nodes = dedupedEntries.map((entry, index) => {
     const screenX = 20;
     const levelsAboveNewest = newestIndex - index;
     const screenY = newestScreenY - levelsAboveNewest * verticalStep;
     const flowPosition = {
-      x: (screenX - viewport.x) / viewport.zoom,
-      y: (screenY - viewport.y) / viewport.zoom,
+      x: screenX - viewport.x / viewport.zoom,
+      y: screenY - viewport.y / viewport.zoom,
     };
 
     return {
