@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   PromptInput,
   PromptInputSubmit,
@@ -33,16 +35,35 @@ import { Action, Actions } from "@/components/shadcn-io/ai/actions";
 import { ThumbsUpIcon, ThumbsDownIcon } from "lucide-react";
 import { logResponseFeedback } from "./data/api";
 
-function handleFeedback(message, feedback) {
-  logResponseFeedback(message, feedback);
+async function handleFeedback(
+  message,
+  feedback,
+  setShowFeedback,
+  setFeedbackText,
+) {
+  setShowFeedback(false);
+  const response = await logResponseFeedback(message, feedback);
+  if (response === null) {
+    setFeedbackText(
+      "An error has occured with your sent feedback, please try again.",
+    );
+  }
+  setFeedbackText(response);
 }
 
 export default function Chat() {
+  const [feedbackText, setFeedbackText] = useState("");
+  const [showFeedback, setShowFeedback] = useState(true);
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Messages container - scrollable */}
       <div className="flex-1 min-h-0 h-full overflow-hidden">
-        <Messages />
+        <Messages
+          feedbackText={feedbackText}
+          showFeedback={showFeedback}
+          setFeedbackText={setFeedbackText}
+          setShowFeedback={setShowFeedback}
+        />
       </div>
 
       {/* Bottom row: Feedback button + InputArea - sticky at bottom */}
@@ -54,14 +75,14 @@ export default function Chat() {
 
         {/* Input area takes full remaining width */}
         <div className="flex-1 -ml-9">
-          <InputArea />
+          <InputArea setShowFeedback={setShowFeedback} />
         </div>
       </div>
     </div>
   );
 }
 
-function InputArea() {
+function InputArea({ setShowFeedback }) {
   const [text, setText] = useAtom(textAtom);
   const [status, setStatus] = useAtom(textStatusAtom);
   const setMessages = useSetAtom(messagesAtom);
@@ -87,6 +108,8 @@ function InputArea() {
 
     // Clear input
     setText("");
+
+    setShowFeedback(true);
   };
 
   return (
@@ -111,7 +134,12 @@ function InputArea() {
   );
 }
 
-function Messages() {
+function Messages({
+  feedbackText,
+  showFeedback,
+  setFeedbackText,
+  setShowFeedback,
+}) {
   const messages = useAtomValue(messagesAtom);
   const status = useAtomValue(textStatusAtom);
   const lastDoneKey = useAtomValue(lastDoneMessageKeyAtom);
@@ -132,20 +160,48 @@ function Messages() {
                 </Response>
                 {key === lastDoneKey && status === "ready" && (
                   <Actions>
-                    <Action
-                      style={{ backgroundColor: "#038061", color: "white" }}
-                      onClick={() => handleFeedback(key, "positive")}
-                      tooltip="Good response"
-                    >
-                      <ThumbsUpIcon className="size-4" />
-                    </Action>
-                    <Action
-                      style={{ backgroundColor: "#038061", color: "white" }}
-                      onClick={() => handleFeedback(key, "negative")}
-                      tooltip="Bad response"
-                    >
-                      <ThumbsDownIcon className="size-4" />
-                    </Action>
+                    {showFeedback ? (
+                      <>
+                        <Action
+                          style={{ backgroundColor: "#038061", color: "white" }}
+                          onClick={() =>
+                            handleFeedback(
+                              key,
+                              "positive",
+                              setShowFeedback,
+                              setFeedbackText,
+                            )
+                          }
+                          tooltip="Good response"
+                        >
+                          <ThumbsUpIcon className="size-4" />
+                        </Action>
+                        <Action
+                          style={{ backgroundColor: "#038061", color: "white" }}
+                          onClick={() =>
+                            handleFeedback(
+                              key,
+                              "negative",
+                              setShowFeedback,
+                              setFeedbackText,
+                            )
+                          }
+                          tooltip="Bad response"
+                        >
+                          <ThumbsDownIcon className="size-4" />
+                        </Action>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-gray-600">{feedbackText}</p>
+                        <p
+                          onClick={() => setShowFeedback(true)}
+                          className="text-sm text-blue-500 hover:underline"
+                        >
+                          Edit Feedback
+                        </p>
+                      </>
+                    )}
                   </Actions>
                 )}
               </div>

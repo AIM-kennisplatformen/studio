@@ -1,3 +1,5 @@
+import { getFeedbackMessage } from "./feedback.js";
+
 const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
 const errorResponse = {
@@ -80,6 +82,7 @@ export async function logResponseFeedback(key, feedback) {
       console.error("Failed to log response feedback:", response.status);
       return null;
     }
+    return getFeedbackMessage();
   } catch (err) {
     console.error("Failed to log response feedback:", err);
     return null;
