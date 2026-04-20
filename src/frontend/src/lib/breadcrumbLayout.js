@@ -94,7 +94,7 @@ export function buildBreadcrumbRenderGraph(breadcrumbEntries, viewport) {
         color: "#038061",
         border: "2px solid #038061",
         borderRadius: "8px",
-        padding: "2px",
+        padding: "3px",
         fontSize: "8px",
         width: 160,
         whiteSpace: "pre-wrap",

@@ -26,8 +26,8 @@ export function BreadcrumbNode({ data }) {
 
   const fontWeight = data.fontWeight || "normal";
   const zIndex = "auto";
-  const textColor = "white"; //data.color || "#000";
-  const background = "blue"; //nodeBackground;
+  const textColor = data.color || "#000";
+  const background = nodeBackground;
 
   return (
     <div
