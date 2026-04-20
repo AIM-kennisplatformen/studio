@@ -18,7 +18,7 @@ export function BreadcrumbNode({ data }) {
     }
   }, [data.label]); // Re-measure if label changes
 
-  const scale = 1;
+  const scale = data.scale || 1;
   const baseWidth = data.width || 160;
 
   const wrapperWidth = baseWidth * scale;

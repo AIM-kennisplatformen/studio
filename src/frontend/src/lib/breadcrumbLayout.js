@@ -61,7 +61,7 @@ function dedupeBreadcrumbEntries(breadcrumbEntries) {
 
 export function buildBreadcrumbRenderGraph(breadcrumbEntries, viewport) {
   const dedupedEntries = dedupeBreadcrumbEntries(breadcrumbEntries);
-  const nodeHeight = 160;
+  const nodeHeight = 75;
   const rowGap = 24;
   const verticalStep = nodeHeight + rowGap;
   const newestIndex = dedupedEntries.length - 1;
@@ -75,6 +75,9 @@ export function buildBreadcrumbRenderGraph(breadcrumbEntries, viewport) {
       x: screenX - viewport.x / viewport.zoom,
       y: screenY - viewport.y / viewport.zoom,
     };
+    const scaleEdge = 1.11;
+    const newScale = 1.75;
+    const defaultScale = 1;
 
     return {
       id: entry.historyId, // e.g. "bc-0"
@@ -96,6 +99,7 @@ export function buildBreadcrumbRenderGraph(breadcrumbEntries, viewport) {
         width: 160,
         whiteSpace: "pre-wrap",
         boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+        scale: viewport.zoom <= scaleEdge ? newScale : defaultScale,
       },
       style: { zIndex: 2000 }, // above regular nodes (which default to 0; selected ones use 1000)
     };
