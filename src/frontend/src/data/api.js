@@ -60,19 +60,5 @@ export async function sendNodeSelection(nodeId) {
 }
 
 export async function logOut() {
-  const url = `${BASE_URL}/auth/logout`;
-  try {
-    const response = await fetch(url, {
-      method: "GET",
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      console.error("Failed to log out:", response.status);
-      return null;
-    }
-  } catch (err) {
-    console.error("Failed to log out:", err);
-    return null;
-  }
+  window.location.href = `${BASE_URL}/auth/logout`;
 }

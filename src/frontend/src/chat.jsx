@@ -7,7 +7,6 @@ import {
   PromptInputToolbar,
 } from "@/components/shadcn-io/ai/prompt-input";
 import { FeedbackButton } from "@/components/FeedbackButton";
-import { Button } from "@/components/ui/button";
 
 import { Response } from "@/components/shadcn-io/ai/response";
 import { Message, MessageContent } from "@/components/shadcn-io/ai/message";
@@ -40,13 +39,14 @@ export default function Chat() {
       <div className="flex flex-col h-full bg-white">
         {/* Messages container - scrollable */}
         <div className="absolute top-4 right-4 z-10">
-          <Button
-            className="text-white px-3 py-1 rounded bg-green-500"
+          <button
+            style={{ backgroundColor: "#038061" }}
+            className="text-white px-3 py-1 rounded"
             onClick={() => logOut()}
             props={{ "aria-label": "Log Out" }}
           >
             Log Out
-          </Button>
+          </button>
         </div>
         <div className="flex-1 min-h-0 h-full overflow-hidden">
           <Messages />
