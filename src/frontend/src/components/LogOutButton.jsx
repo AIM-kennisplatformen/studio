@@ -1,8 +1,14 @@
-import logOut from "../data/api.js";
+import { logOut } from "../data/api.js";
 
 export default function LogOutButton() {
-  const handleLogOut = async () => {
-    logOut();
-  };
-  return <button onClick={handleLogOut}>Log Out</button>;
+  return (
+    <button
+      style={{ backgroundColor: "#038061" }}
+      className="text-white px-3 py-1 rounded"
+      onClick={() => logOut()}
+      aria-label="Log Out"
+    >
+      Log Out
+    </button>
+  );
 }

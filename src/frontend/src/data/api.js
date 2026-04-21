@@ -59,6 +59,6 @@ export async function sendNodeSelection(nodeId) {
   }
 }
 
-export async function logOut() {
+export function logOut() {
   window.location.href = `${BASE_URL}/auth/logout`;
 }

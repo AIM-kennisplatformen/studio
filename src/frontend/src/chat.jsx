@@ -31,7 +31,7 @@ import {
 } from "@/components/shadcn-io/ai/reasoning";
 import { Action, Actions } from "@/components/shadcn-io/ai/actions";
 import { ThumbsUpIcon, ThumbsDownIcon } from "lucide-react";
-import { logOut } from "./data/api";
+import LogOutButton from "@/components/LogOutButton.jsx";
 
 export default function Chat() {
   return (
@@ -39,14 +39,7 @@ export default function Chat() {
       <div className="flex flex-col h-full bg-white">
         {/* Messages container - scrollable */}
         <div className="absolute top-4 right-4 z-10">
-          <button
-            style={{ backgroundColor: "#038061" }}
-            className="text-white px-3 py-1 rounded"
-            onClick={() => logOut()}
-            props={{ "aria-label": "Log Out" }}
-          >
-            Log Out
-          </button>
+          <LogOutButton />
         </div>
         <div className="flex-1 min-h-0 h-full overflow-hidden">
           <Messages />
