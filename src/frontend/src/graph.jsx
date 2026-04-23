@@ -34,7 +34,9 @@ export default function Graph({ data, width }) {
 
   /** Convert raw data to React Flow nodes & edges */
   const prepareGraphData = useCallback(() => {
-    if (!data?.nodes || !data?.edges) return
+    if (!data?.nodes || !data?.edges) {
+      return
+    }
 
     const previousPositions = new Map(
       layoutNodes.map((n) => [n.id, n.position]),
@@ -70,7 +72,9 @@ export default function Graph({ data, width }) {
       .map((edge) => {
         const sourceNode = nodeMap.get(String(edge.source_id))
         const targetNode = nodeMap.get(String(edge.target_id))
-        if (!sourceNode || !targetNode) return null
+        if (!sourceNode || !targetNode) {
+          return null
+        }
 
         const { sourceHandle, targetHandle } = getEdgeHandles(
           sourceNode.position.x,
@@ -136,32 +140,21 @@ export default function Graph({ data, width }) {
         setSelectedNode(nodeToCenter)
       }
     }
-  }, [data])
+  }, [
+    centerNodeInView,
+    data.edges,
+    data.nodes,
+    layoutNodes,
+    selectedNode,
+    setEdges,
+    setLayoutNodes,
+    setNodes,
+    setSelectedNode,
+  ])
 
   useEffect(() => {
     prepareGraphData()
   }, [prepareGraphData])
-
-  /** Update edge handles when nodes move */
-  const updateEdges = useCallback((nodes, edges) => {
-    const nodeMap = new Map(nodes.map((n) => [n.id, n]))
-    return edges.map((edge) => {
-      const sourceNode = nodeMap.get(edge.source)
-      const targetNode = nodeMap.get(edge.target)
-      if (!sourceNode || !targetNode) return edge
-
-      const { sourceHandle, targetHandle } = getEdgeHandles(
-        sourceNode.position.x,
-        sourceNode.position.y,
-        targetNode.position.x,
-        targetNode.position.y,
-        160,
-        80,
-      )
-
-      return { ...edge, sourceHandle, targetHandle }
-    })
-  }, [])
 
   const onEdgesChange = useCallback(
     (changes) =>
@@ -177,7 +170,9 @@ export default function Graph({ data, width }) {
   /** Center a node in the viewport */
   const centerNodeInView = useCallback(
     (node) => {
-      if (!containerRef.current) return
+      if (!containerRef.current) {
+        return
+      }
       const { width: nodeWidth = 160, height: nodeHeight = 80 } =
         node.data || {}
       const nodeCenterX = node.position.x + nodeWidth / 2
@@ -211,7 +206,9 @@ export default function Graph({ data, width }) {
   /** Fit view on container resize */
   useEffect(() => {
     const container = containerRef.current
-    if (!container) return
+    if (!container) {
+      return
+    }
 
     const ro = new ResizeObserver(() =>
       fitView({ padding: 0.1, duration: 150 }),

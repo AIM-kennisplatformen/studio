@@ -18,9 +18,19 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 'latest',
       globals: globals.browser,
+      parserOptions: {
+        ecmaFeatures: { jsx: true },
+      },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^_' }],
+      'no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern: '^_|^[A-Z]',
+          argsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
+      ],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-debugger': 'error',
       'no-duplicate-imports': 'error',

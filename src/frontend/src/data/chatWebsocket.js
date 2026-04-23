@@ -24,18 +24,17 @@ export function useChatWebSocket(setStatus) {
 
     socketRef.current = socket
 
-    socket.on('connect', () => {
-      console.log('Socket.IO connected:', socket.id)
-    })
+    socket.on('connect', () => {})
 
     socket.on('disconnect', () => {
-      console.log('Socket.IO disconnected')
       streamingKeyRef.current = null
       setStatus('ready')
     })
 
     socket.on('message', (data) => {
-      if (data.role !== 'chatbot') return
+      if (data.role !== 'chatbot') {
+        return
+      }
 
       const token = data.content || ''
 
@@ -76,7 +75,7 @@ export function useChatWebSocket(setStatus) {
     })
 
     return () => socket.disconnect()
-  }, [])
+  }, [setLastDoneMessageKey, setMessages, setStatus])
 
   const send = (msg) => {
     streamingKeyRef.current = null
