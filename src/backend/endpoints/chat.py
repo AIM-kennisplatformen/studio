@@ -4,6 +4,7 @@ from typing import List, TypedDict, DefaultDict
 
 import socketio
 from fastapi import APIRouter
+from langfuse import get_client
 
 from backend.config import BASE_URL
 from backend.config import (
@@ -90,93 +91,132 @@ async def send_message(sid, data):
     if not user_msg:
         return
 
-    session = user_sessions.setdefault(user_id, {"history": []})
-    ctx = user_graph_contexts[user_id]
-
-    selected_subnode = ctx.get("selected_subnode", "root")
-    dialogue_state_asked = bool(ctx.get("dialogue_state_asked", False))
-    prefetched = (ctx.get("prefetched") or {}).get(selected_subnode)
-
-    if dialogue_state_asked:
-        try:
-            if user_msg.lower() == "yes":
-                # Use prefetched if available
-                if prefetched:
-                    await push_chat_message_stream(
-                        user_id,
-                        "on_chat_model_stream",
-                        prefetched,
-                        selected_subnode,
-                    )
-                    await push_chat_message_stream(
-                        user_id,
-                        "done",
-                        prefetched,
-                        selected_subnode,
-                    )
-                    return
-
-                question = ctx.get("latest_question") or ctx.get("previous_question")
-            else:
-                ctx["latest_question"] = user_msg
-                ctx["prefetched"] = {}
-                question = ctx["latest_question"]
-
-            await fetch_subnode_stream(user_id, question, selected_subnode)
-            await push_chat_message_stream(
-                user_id,
-                "done",
-                ctx.get("prefetched", {}).get(selected_subnode),
-                selected_subnode,
-            )
-            return
-
-        finally:
-            ctx["dialogue_state_asked"] = False
-
     # --------------------------------------------------
-    # NORMAL ROOT WORKFLOW (user asked a new question in chat)
+    # Create a single Langfuse trace for this chat turn
     # --------------------------------------------------
-    session["history"].append({"role": "user", "message": user_msg})
+    langfuse = get_client()
+    trace_id = langfuse.create_trace_id()
+    print(f"[TRACE] send_message trace_id={trace_id} user={user_id}")
 
-    ctx["previous_question"] = ctx.get("latest_question")
-    ctx["latest_question"] = user_msg
-    ctx["selected_subnode"] = "root"
-    ctx["dialogue_state_asked"] = False
+    with langfuse.start_as_current_observation(
+        as_type="span",
+        name="chat_turn",
+        trace_context={"trace_id": trace_id},
+    ) as root_span:
+        root_span.update_trace(
+            name="chat_turn",
+            user_id=user_id,
+            session_id=sid,
+            input={"message": user_msg},
+        )
+        root_span.update(input={"message": user_msg})
 
-    synthetic_prompt = root_question_prompt(user_msg)
+        session = user_sessions.setdefault(user_id, {"history": []})
+        ctx = user_graph_contexts[user_id]
 
-    full_response = ""
+        selected_subnode = ctx.get("selected_subnode", "root")
+        dialogue_state_asked = bool(ctx.get("dialogue_state_asked", False))
+        prefetched = (ctx.get("prefetched") or {}).get(selected_subnode)
 
-    async for evt in stream_agent_events(synthetic_prompt, user_id=user_id):
-        event_type = evt["type"]
-        event_data = evt["data"]
+        full_response = ""
 
-        if event_type != "on_chat_model_stream":
-            await push_chat_message_stream(user_id, event_type, event_data, "root")
-            continue
+        if dialogue_state_asked:
+            try:
+                if user_msg.lower() == "yes":
+                    # Use prefetched if available
+                    if prefetched:
+                        full_response = prefetched
+                        await push_chat_message_stream(
+                            user_id,
+                            "on_chat_model_stream",
+                            prefetched,
+                            selected_subnode,
+                        )
+                        await push_chat_message_stream(
+                            user_id,
+                            "done",
+                            prefetched,
+                            selected_subnode,
+                        )
+                        root_span.update(output={"response": full_response})
+                        root_span.update_trace(output={"response": full_response})
+                        langfuse.flush()
+                        return
 
-        if event_data:
-            await push_chat_message_stream(
-                user_id, "on_chat_model_stream", event_data, "root"
-            )
-            full_response += event_data
+                    question = ctx.get("latest_question") or ctx.get("previous_question")
+                else:
+                    ctx["latest_question"] = user_msg
+                    ctx["prefetched"] = {}
+                    question = ctx["latest_question"]
 
-    # --------------------------------------------------
-    # FINALIZE ROOT RESPONSE
-    # --------------------------------------------------
-    session["history"].append({"role": "assistant", "message": full_response})
-    ctx.setdefault("prefetched", {})["root"] = full_response
+                await fetch_subnode_stream(
+                    user_id, question, selected_subnode,
+                    trace_id=trace_id, session_id=sid,
+                )
+                full_response = ctx.get("prefetched", {}).get(selected_subnode, "")
+                await push_chat_message_stream(
+                    user_id,
+                    "done",
+                    full_response,
+                    selected_subnode,
+                )
+                root_span.update(output={"response": full_response})
+                root_span.update_trace(output={"response": full_response})
+                langfuse.flush()
+                return
 
-    await push_chat_message_stream(user_id, "done", full_response, "root")
+            finally:
+                ctx["dialogue_state_asked"] = False
+
+        # --------------------------------------------------
+        # NORMAL ROOT WORKFLOW (user asked a new question in chat)
+        # --------------------------------------------------
+        session["history"].append({"role": "user", "message": user_msg})
+
+        ctx["previous_question"] = ctx.get("latest_question")
+        ctx["latest_question"] = user_msg
+        ctx["selected_subnode"] = "root"
+        ctx["dialogue_state_asked"] = False
+
+        synthetic_prompt = root_question_prompt(user_msg)
+
+        async for evt in stream_agent_events(
+            synthetic_prompt, user_id=user_id, trace_id=trace_id,
+            session_id=sid,
+        ):
+            event_type = evt["type"]
+            event_data = evt["data"]
+
+            if event_type != "on_chat_model_stream":
+                await push_chat_message_stream(user_id, event_type, event_data, "root")
+                continue
+
+            if event_data:
+                await push_chat_message_stream(
+                    user_id, "on_chat_model_stream", event_data, "root"
+                )
+                full_response += event_data
+
+        # --------------------------------------------------
+        # FINALIZE ROOT RESPONSE
+        # --------------------------------------------------
+        session["history"].append({"role": "assistant", "message": full_response})
+        ctx.setdefault("prefetched", {})["root"] = full_response
+
+        root_span.update(output={"response": full_response})
+        root_span.update_trace(output={"response": full_response})
+
+        await push_chat_message_stream(user_id, "done", full_response, "root")
+
+    langfuse.flush()
 
 
 @sio.event
 async def select_node(sid, data):
     user_id = sid_connections.get(sid)
     if not user_id:
-        return 
-    
+        return
+
     node_id = int(data.get("node_id", 0))
     ctx = user_graph_contexts[user_id]
     question = ctx.get("latest_question")
@@ -196,14 +236,12 @@ async def select_node(sid, data):
                 user_id,
                 "Answer a question by using the full body of literature "
                 f"Would you like to ask a different question than: '{question}'? "
-                "**Respond with another question** or type **yes** to repeat the previous question.",    
+                "**Respond with another question** or type **yes** to repeat the previous question.",
             )
-        #await push_chat_message_stream(user_id, "done", "", "root")
         ctx["dialogue_state_asked"] = True
         ctx["previous_question"] = question
         return
-    
-    #SUBNODE 
+
     if node_id in SUBNODE_MAP:
         subnode = SUBNODE_MAP[node_id]
         ctx["selected_subnode"] = subnode
@@ -222,7 +260,6 @@ async def select_node(sid, data):
                 "type **yes**, otherwise **respond with another question**.",
             )
 
-        #await push_chat_message_stream(user_id, "done", "", subnode)
         ctx["dialogue_state_asked"] = True
         ctx["previous_question"] = question
         return

@@ -1,6 +1,5 @@
 const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
-
 const errorResponse = {
   value: "Sorry, I couldn't reach the server. Please try again later.",
   name: "chatbot",
@@ -12,13 +11,13 @@ export async function sendChatMessage(chatId = "1", message) {
   try {
     const response = await fetch(url, {
       method: "POST",
-      credentials: "include",   // Required for cookie-based Auth
+      credentials: "include", // Required for cookie-based Auth
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message }),
     });
 
-	if (!response.ok) {
-	  console.error("Failed to fetch chatbot response:", response.status);
+    if (!response.ok) {
+      console.error("Failed to fetch chatbot response:", response.status);
       return errorResponse;
     }
 
@@ -37,4 +36,8 @@ export async function sendChatMessage(chatId = "1", message) {
     console.error("Failed to fetch chatbot response:", err);
     return errorResponse;
   }
+}
+
+export function logOut() {
+  window.location.href = `${BASE_URL}/auth/logout`;
 }
