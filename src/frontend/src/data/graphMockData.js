@@ -3,23 +3,23 @@ export const responsesFromId = {
     nodes: [
       {
         id: 1,
-        type: "text",
-        title: "Energy Poverty: Intervention strategies",
+        type: 'text',
+        title: 'Energy Poverty: Intervention strategies',
       },
       {
         id: 2,
-        type: "text",
-        title: "Best practices",
+        type: 'text',
+        title: 'Best practices',
       },
       {
         id: 3,
-        type: "text",
-        title: "Target groups",
+        type: 'text',
+        title: 'Target groups',
       },
       {
         id: 4,
-        type: "text",
-        title: "Strategic overview",
+        type: 'text',
+        title: 'Strategic overview',
       },
     ],
     edges: [
@@ -44,28 +44,28 @@ export const responsesFromId = {
     nodes: [
       {
         id: 1,
-        type: "text",
-        title: "Energy Poverty: Intervention strategies",
+        type: 'text',
+        title: 'Energy Poverty: Intervention strategies',
       },
-       {
+      {
         id: 2,
-        type: "text",
-        title: "Best practices",
+        type: 'text',
+        title: 'Best practices',
       },
       {
         id: 5,
-        type: "text",
-        title: "Scientific literature",
+        type: 'text',
+        title: 'Scientific literature',
       },
       {
         id: 6,
-        type: "text",
-        title: "Grey literature",
+        type: 'text',
+        title: 'Grey literature',
       },
       {
         id: 7,
-        type: "text",
-        title: "Project reports",
+        type: 'text',
+        title: 'Project reports',
       },
     ],
     edges: [
@@ -95,28 +95,28 @@ export const responsesFromId = {
     nodes: [
       {
         id: 1,
-        type: "text",
-        title: "Energy Poverty: Intervention strategies",
+        type: 'text',
+        title: 'Energy Poverty: Intervention strategies',
       },
       {
         id: 3,
-        type: "text",
-        title: "Target groups",
+        type: 'text',
+        title: 'Target groups',
       },
       {
         id: 8,
-        type: "text",
-        title: "Scientific literature",
+        type: 'text',
+        title: 'Scientific literature',
       },
       {
         id: 9,
-        type: "text",
-        title: "Grey literature",
+        type: 'text',
+        title: 'Grey literature',
       },
       {
         id: 10,
-        type: "text",
-        title: "Project reports",
+        type: 'text',
+        title: 'Project reports',
       },
     ],
     edges: [
@@ -146,28 +146,28 @@ export const responsesFromId = {
     nodes: [
       {
         id: 1,
-        type: "text",
-        title: "Energy Poverty: Intervention strategies",
+        type: 'text',
+        title: 'Energy Poverty: Intervention strategies',
       },
       {
         id: 4,
-        type: "text",
-        title: "Strategic overview",
+        type: 'text',
+        title: 'Strategic overview',
       },
       {
         id: 11,
-        type: "text",
-        title: "Scientific literature",
+        type: 'text',
+        title: 'Scientific literature',
       },
       {
         id: 12,
-        type: "text",
-        title: "Grey literature",
+        type: 'text',
+        title: 'Grey literature',
       },
       {
         id: 13,
-        type: "text",
-        title: "Project reports",
+        type: 'text',
+        title: 'Project reports',
       },
     ],
     edges: [
@@ -197,13 +197,13 @@ export const responsesFromId = {
     nodes: [
       {
         id: 4,
-        type: "text",
-        title: "Strategic overview",
+        type: 'text',
+        title: 'Strategic overview',
       },
       {
         id: 5,
-        type: "text",
-        title: "Scientific literature",
+        type: 'text',
+        title: 'Scientific literature',
       },
     ],
     edges: [
@@ -218,13 +218,13 @@ export const responsesFromId = {
     nodes: [
       {
         id: 2,
-        type: "text",
-        title: "Best practices",
+        type: 'text',
+        title: 'Best practices',
       },
       {
         id: 6,
-        type: "text",
-        title: "Grey literature",
+        type: 'text',
+        title: 'Grey literature',
       },
     ],
     edges: [
@@ -239,13 +239,13 @@ export const responsesFromId = {
     nodes: [
       {
         id: 2,
-        type: "text",
-        title: "Best practices",
+        type: 'text',
+        title: 'Best practices',
       },
-         {
+      {
         id: 7,
-        type: "text",
-        title: "Project reports",
+        type: 'text',
+        title: 'Project reports',
       },
     ],
     edges: [
@@ -260,13 +260,13 @@ export const responsesFromId = {
     nodes: [
       {
         id: 3,
-        type: "text",
-        title: "Target groups",
+        type: 'text',
+        title: 'Target groups',
       },
       {
         id: 8,
-        type: "text",
-        title: "Scientific literature",
+        type: 'text',
+        title: 'Scientific literature',
       },
     ],
     edges: [
@@ -281,13 +281,13 @@ export const responsesFromId = {
     nodes: [
       {
         id: 3,
-        type: "text",
-        title: "Target groups",
+        type: 'text',
+        title: 'Target groups',
       },
       {
         id: 9,
-        type: "text",
-        title: "Grey literature",
+        type: 'text',
+        title: 'Grey literature',
       },
     ],
     edges: [
@@ -302,13 +302,13 @@ export const responsesFromId = {
     nodes: [
       {
         id: 3,
-        type: "text",
-        title: "Target groups",
+        type: 'text',
+        title: 'Target groups',
       },
       {
         id: 10,
-        type: "text",
-        title: "Project reports",
+        type: 'text',
+        title: 'Project reports',
       },
     ],
     edges: [
@@ -323,13 +323,13 @@ export const responsesFromId = {
     nodes: [
       {
         id: 4,
-        type: "text",
-        title: "Strategic overview",
+        type: 'text',
+        title: 'Strategic overview',
       },
       {
         id: 11,
-        type: "text",
-        title: "Scientific literature",
+        type: 'text',
+        title: 'Scientific literature',
       },
     ],
     edges: [
@@ -344,13 +344,13 @@ export const responsesFromId = {
     nodes: [
       {
         id: 4,
-        type: "text",
-        title: "Strategic overview",
+        type: 'text',
+        title: 'Strategic overview',
       },
       {
         id: 12,
-        type: "text",
-        title: "Grey literature",
+        type: 'text',
+        title: 'Grey literature',
       },
     ],
     edges: [
@@ -365,13 +365,13 @@ export const responsesFromId = {
     nodes: [
       {
         id: 4,
-        type: "text",
-        title: "Strategic overview",
+        type: 'text',
+        title: 'Strategic overview',
       },
       {
         id: 13,
-        type: "text",
-        title: "Project reports",
+        type: 'text',
+        title: 'Project reports',
       },
     ],
     edges: [
@@ -382,4 +382,4 @@ export const responsesFromId = {
       },
     ],
   },
-};
+}

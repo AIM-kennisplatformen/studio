@@ -1,63 +1,66 @@
-import { useState, useRef, useEffect } from "react";
-import "./index.css";
-import Chat from "./chat.jsx";
-import Graph from "./graph.jsx";
-import { ReactFlowProvider } from "@xyflow/react";
-import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
-import { useAtom } from "jotai";
-import { centerNodeAtom } from "./data/atoms";
+import { useState, useRef, useEffect } from 'react'
+import './index.css'
+import Chat from './chat.jsx'
+import Graph from './graph.jsx'
+import { ReactFlowProvider } from '@xyflow/react'
+import { fetchGraphAnswer as fetchAnswer } from './data/graphResponse.js'
+import { useAtom } from 'jotai'
+import { centerNodeAtom } from './data/atoms'
 
 export default function App() {
-  const [leftWidth, setLeftWidth] = useState(66.6);
-  const containerRef = useRef(null);
-  const [data, setData] = useState(null);
-  const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom);
+  const [leftWidth, setLeftWidth] = useState(66.6)
+  const containerRef = useRef(null)
+  const [data, setData] = useState(null)
+  const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom)
 
   // Load graph once on mount or when center node changes for the first time
   useEffect(() => {
-    let mounted = true;
-    if (!centerNodeId) setCenterNodeId(1);
+    let mounted = true
+    if (!centerNodeId) setCenterNodeId(1)
 
-    (async () => {
+    ;(async () => {
       try {
-        const resp = await fetchAnswer(centerNodeId);
-        if (!mounted) return;
-        setData(resp);
+        const resp = await fetchAnswer(centerNodeId)
+        if (!mounted) return
+        setData(resp)
       } catch (err) {
-        console.warn("Failed to load graph data", err);
+        console.warn('Failed to load graph data', err)
       }
-    })();
+    })()
 
-    return () => (mounted = false);
-  }, [centerNodeId, setCenterNodeId]);
+    return () => (mounted = false)
+  }, [centerNodeId, setCenterNodeId])
 
   const handleMouseDown = (e) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startWidth = leftWidth;
+    e.preventDefault()
+    const startX = e.clientX
+    const startWidth = leftWidth
 
     const onMouseMove = (e) => {
-      if (!containerRef.current) return;
-      const containerWidth = containerRef.current.offsetWidth;
+      if (!containerRef.current) return
+      const containerWidth = containerRef.current.offsetWidth
       const newWidth =
-        ((startWidth / 100) * containerWidth + (e.clientX - startX)) /
-        containerWidth *
-        100;
-      if (newWidth > 10 && newWidth < 90) setLeftWidth(newWidth);
-    };
+        (((startWidth / 100) * containerWidth + (e.clientX - startX)) /
+          containerWidth) *
+        100
+      if (newWidth > 10 && newWidth < 90) setLeftWidth(newWidth)
+    }
 
     const onMouseUp = () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-    };
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+    }
 
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-  };
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+  }
 
   return (
     <div ref={containerRef} className="flex h-screen w-screen">
-      <div className="h-full bg-gray-100 overflow-hidden" style={{ width: `${leftWidth}%` }}>
+      <div
+        className="h-full bg-gray-100 overflow-hidden"
+        style={{ width: `${leftWidth}%` }}
+      >
         <ReactFlowProvider>
           <Graph data={data} width={leftWidth} />
         </ReactFlowProvider>
@@ -72,5 +75,5 @@ export default function App() {
         <Chat />
       </div>
     </div>
-  );
+  )
 }

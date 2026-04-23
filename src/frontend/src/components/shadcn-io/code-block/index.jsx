@@ -1,4 +1,4 @@
-'use client';;
+'use client'
 import {
   SiAstro,
   SiBiome,
@@ -68,25 +68,25 @@ import {
   SiVite,
   SiVuedotjs,
   SiWebassembly,
-} from '@icons-pack/react-simple-icons';
-import { useControllableState } from '@radix-ui/react-use-controllable-state';
-import { CheckIcon, CopyIcon } from 'lucide-react';
+} from '@icons-pack/react-simple-icons'
+import { useControllableState } from '@radix-ui/react-use-controllable-state'
+import { CheckIcon, CopyIcon } from 'lucide-react'
 import {
   cloneElement,
   createContext,
   useContext,
   useEffect,
   useState,
-} from 'react';
-import { Button } from '@/components/ui/button';
+} from 'react'
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { cn } from '@/lib/utils';
+} from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 
 const filenameIconMap = {
   '.env': SiDotenv,
@@ -162,7 +162,7 @@ const filenameIconMap = {
   'vite.config.*': SiVite,
   '*.vue': SiVuedotjs,
   '*.wasm': SiWebassembly,
-};
+}
 
 const lineNumberClassNames = cn(
   '[&_code]:[counter-reset:line]',
@@ -176,8 +176,8 @@ const lineNumberClassNames = cn(
   '[&_.line]:before:text-right',
   '[&_.line]:before:text-muted-foreground/50',
   '[&_.line]:before:font-mono',
-  '[&_.line]:before:select-none'
-);
+  '[&_.line]:before:select-none',
+)
 
 const darkModeClassNames = cn(
   'dark:[&_.shiki]:!text-[var(--shiki-dark)]',
@@ -188,8 +188,8 @@ const darkModeClassNames = cn(
   'dark:[&_.shiki_span]:!text-[var(--shiki-dark)]',
   'dark:[&_.shiki_span]:![font-style:var(--shiki-dark-font-style)]',
   'dark:[&_.shiki_span]:![font-weight:var(--shiki-dark-font-weight)]',
-  'dark:[&_.shiki_span]:![text-decoration:var(--shiki-dark-text-decoration)]'
-);
+  'dark:[&_.shiki_span]:![text-decoration:var(--shiki-dark-text-decoration)]',
+)
 
 const lineHighlightClassNames = cn(
   '[&_.line.highlighted]:bg-blue-50',
@@ -199,8 +199,8 @@ const lineHighlightClassNames = cn(
   '[&_.line.highlighted]:after:top-0',
   '[&_.line.highlighted]:after:bottom-0',
   '[&_.line.highlighted]:after:w-0.5',
-  'dark:[&_.line.highlighted]:!bg-blue-500/10'
-);
+  'dark:[&_.line.highlighted]:!bg-blue-500/10',
+)
 
 const lineDiffClassNames = cn(
   '[&_.line.diff]:after:absolute',
@@ -213,18 +213,18 @@ const lineDiffClassNames = cn(
   '[&_.line.diff.remove]:bg-rose-50',
   '[&_.line.diff.remove]:after:bg-rose-500',
   'dark:[&_.line.diff.add]:!bg-emerald-500/10',
-  'dark:[&_.line.diff.remove]:!bg-rose-500/10'
-);
+  'dark:[&_.line.diff.remove]:!bg-rose-500/10',
+)
 
 const lineFocusedClassNames = cn(
   '[&_code:has(.focused)_.line]:blur-[2px]',
-  '[&_code:has(.focused)_.line.focused]:blur-none'
-);
+  '[&_code:has(.focused)_.line.focused]:blur-none',
+)
 
 const wordHighlightClassNames = cn(
   '[&_.highlighted-word]:bg-blue-50',
-  'dark:[&_.highlighted-word]:!bg-blue-500/10'
-);
+  'dark:[&_.highlighted-word]:!bg-blue-500/10',
+)
 
 const codeBlockClassName = cn(
   'mt-0 bg-background text-sm',
@@ -236,15 +236,14 @@ const codeBlockClassName = cn(
   '[&_code]:bg-transparent',
   '[&_.line]:px-4',
   '[&_.line]:w-full',
-  '[&_.line]:relative'
-);
-
+  '[&_.line]:relative',
+)
 
 const CodeBlockContext = createContext({
   value: undefined,
   onValueChange: undefined,
   data: [],
-});
+})
 
 export const CodeBlock = ({
   value: controlledValue,
@@ -258,41 +257,40 @@ export const CodeBlock = ({
     defaultProp: defaultValue ?? '',
     prop: controlledValue,
     onChange: controlledOnValueChange,
-  });
+  })
 
   return (
     <CodeBlockContext.Provider value={{ value, onValueChange, data }}>
       <div
         className={cn('size-full overflow-hidden rounded-md border', className)}
-        {...props} />
+        {...props}
+      />
     </CodeBlockContext.Provider>
-  );
-};
+  )
+}
 
-export const CodeBlockHeader = ({
-  className,
-  ...props
-}) => (
+export const CodeBlockHeader = ({ className, ...props }) => (
   <div
-    className={cn('flex flex-row items-center border-b bg-secondary p-1', className)}
-    {...props} />
-);
+    className={cn(
+      'flex flex-row items-center border-b bg-secondary p-1',
+      className,
+    )}
+    {...props}
+  />
+)
 
-export const CodeBlockFiles = ({
-  className,
-  children,
-  ...props
-}) => {
-  const { data } = useContext(CodeBlockContext);
+export const CodeBlockFiles = ({ className, children, ...props }) => {
+  const { data } = useContext(CodeBlockContext)
 
   return (
     <div
       className={cn('flex grow flex-row items-center gap-2', className)}
-      {...props}>
+      {...props}
+    >
       {data.map(children)}
     </div>
-  );
-};
+  )
+}
 
 export const CodeBlockFilename = ({
   className,
@@ -301,63 +299,57 @@ export const CodeBlockFilename = ({
   children,
   ...props
 }) => {
-  const { value: activeValue } = useContext(CodeBlockContext);
+  const { value: activeValue } = useContext(CodeBlockContext)
   const defaultIcon = Object.entries(filenameIconMap).find(([pattern]) => {
     const regex = new RegExp(
-      `^${pattern.replace(/\\/g, '\\\\').replace(/\./g, '\\.').replace(/\*/g, '.*')}$`
-    );
-    return regex.test(children);
-  })?.[1];
-  const Icon = icon ?? defaultIcon;
+      `^${pattern.replace(/\\/g, '\\\\').replace(/\./g, '\\.').replace(/\*/g, '.*')}$`,
+    )
+    return regex.test(children)
+  })?.[1]
+  const Icon = icon ?? defaultIcon
 
   if (value !== activeValue) {
-    return null;
+    return null
   }
 
   return (
     <div
       className="flex items-center gap-2 bg-secondary px-4 py-1.5 text-muted-foreground text-xs"
-      {...props}>
+      {...props}
+    >
       {Icon && <Icon className="h-4 w-4 shrink-0" />}
       <span className="flex-1 truncate">{children}</span>
     </div>
-  );
-};
+  )
+}
 
 export const CodeBlockSelect = (props) => {
-  const { value, onValueChange } = useContext(CodeBlockContext);
+  const { value, onValueChange } = useContext(CodeBlockContext)
 
-  return <Select onValueChange={onValueChange} value={value} {...props} />;
-};
+  return <Select onValueChange={onValueChange} value={value} {...props} />
+}
 
-export const CodeBlockSelectTrigger = ({
-  className,
-  ...props
-}) => (
+export const CodeBlockSelectTrigger = ({ className, ...props }) => (
   <SelectTrigger
-    className={cn('w-fit border-none text-muted-foreground text-xs shadow-none', className)}
-    {...props} />
-);
+    className={cn(
+      'w-fit border-none text-muted-foreground text-xs shadow-none',
+      className,
+    )}
+    {...props}
+  />
+)
 
-export const CodeBlockSelectValue = (props) => (
-  <SelectValue {...props} />
-);
+export const CodeBlockSelectValue = (props) => <SelectValue {...props} />
 
-export const CodeBlockSelectContent = ({
-  children,
-  ...props
-}) => {
-  const { data } = useContext(CodeBlockContext);
+export const CodeBlockSelectContent = ({ children, ...props }) => {
+  const { data } = useContext(CodeBlockContext)
 
-  return <SelectContent {...props}>{data.map(children)}</SelectContent>;
-};
+  return <SelectContent {...props}>{data.map(children)}</SelectContent>
+}
 
-export const CodeBlockSelectItem = ({
-  className,
-  ...props
-}) => (
+export const CodeBlockSelectItem = ({ className, ...props }) => (
   <SelectItem className={cn('text-sm', className)} {...props} />
-);
+)
 
 export const CodeBlockCopyButton = ({
   asChild,
@@ -368,9 +360,9 @@ export const CodeBlockCopyButton = ({
   className,
   ...props
 }) => {
-  const [isCopied, setIsCopied] = useState(false);
-  const { data, value } = useContext(CodeBlockContext);
-  const code = data.find((item) => item.language === value)?.code;
+  const [isCopied, setIsCopied] = useState(false)
+  const { data, value } = useContext(CodeBlockContext)
+  const code = data.find((item) => item.language === value)?.code
 
   const copyToClipboard = () => {
     if (
@@ -378,25 +370,25 @@ export const CodeBlockCopyButton = ({
       !navigator.clipboard.writeText ||
       !code
     ) {
-      return;
+      return
     }
 
     navigator.clipboard.writeText(code).then(() => {
-      setIsCopied(true);
-      onCopy?.();
+      setIsCopied(true)
+      onCopy?.()
 
-      setTimeout(() => setIsCopied(false), timeout);
-    }, onError);
-  };
+      setTimeout(() => setIsCopied(false), timeout)
+    }, onError)
+  }
 
   if (asChild) {
     return cloneElement(children, {
       // @ts-expect-error - we know this is a button
       onClick: copyToClipboard,
-    });
+    })
   }
 
-  const Icon = isCopied ? CheckIcon : CopyIcon;
+  const Icon = isCopied ? CheckIcon : CopyIcon
 
   return (
     <Button
@@ -404,16 +396,14 @@ export const CodeBlockCopyButton = ({
       onClick={copyToClipboard}
       size="icon"
       variant="ghost"
-      {...props}>
+      {...props}
+    >
       {children ?? <Icon className="text-muted-foreground" size={14} />}
     </Button>
-  );
-};
+  )
+}
 
-const CodeBlockFallback = ({
-  children,
-  ...props
-}) => (
+const CodeBlockFallback = ({ children, ...props }) => (
   <div {...props}>
     <pre className="w-full">
       <code>
@@ -428,16 +418,13 @@ const CodeBlockFallback = ({
       </code>
     </pre>
   </div>
-);
+)
 
-export const CodeBlockBody = ({
-  children,
-  ...props
-}) => {
-  const { data } = useContext(CodeBlockContext);
+export const CodeBlockBody = ({ children, ...props }) => {
+  const { data } = useContext(CodeBlockContext)
 
-  return <div {...props}>{data.map(children)}</div>;
-};
+  return <div {...props}>{data.map(children)}</div>
+}
 
 export const CodeBlockItem = ({
   children,
@@ -446,10 +433,10 @@ export const CodeBlockItem = ({
   value,
   ...props
 }) => {
-  const { value: activeValue } = useContext(CodeBlockContext);
+  const { value: activeValue } = useContext(CodeBlockContext)
 
   if (value !== activeValue) {
-    return null;
+    return null
   }
 
   return (
@@ -462,13 +449,14 @@ export const CodeBlockItem = ({
         wordHighlightClassNames,
         darkModeClassNames,
         lineNumbers && lineNumberClassNames,
-        className
+        className,
       )}
-      {...props}>
+      {...props}
+    >
       {children}
     </div>
-  );
-};
+  )
+}
 
 export const CodeBlockContent = ({
   children,
@@ -482,41 +470,46 @@ export const CodeBlockContent = ({
   syntaxHighlighting = true,
   ...props
 }) => {
-  const [highlightedCode, setHighlightedCode] = useState('');
-  const [isLoading, setIsLoading] = useState(syntaxHighlighting);
+  const [highlightedCode, setHighlightedCode] = useState('')
+  const [isLoading, setIsLoading] = useState(syntaxHighlighting)
 
   useEffect(() => {
     if (!syntaxHighlighting) {
-      setIsLoading(false);
-      return;
+      setIsLoading(false)
+      return
     }
 
     const loadHighlightedCode = async () => {
       try {
-        const { codeToHtml } = await import('shiki');
-        
+        const { codeToHtml } = await import('shiki')
+
         const html = await codeToHtml(children, {
           lang: language,
           themes: {
             light: themes.light,
             dark: themes.dark,
           },
-        });
+        })
 
-        setHighlightedCode(html);
-        setIsLoading(false);
+        setHighlightedCode(html)
+        setIsLoading(false)
       } catch (error) {
-        console.error(`Failed to highlight code for language "${language}":`, error);
-        setIsLoading(false);
+        console.error(
+          `Failed to highlight code for language "${language}":`,
+          error,
+        )
+        setIsLoading(false)
       }
-    };
+    }
 
-    loadHighlightedCode();
-  }, [children, language, themes, syntaxHighlighting]);
+    loadHighlightedCode()
+  }, [children, language, themes, syntaxHighlighting])
 
   if (!syntaxHighlighting || isLoading) {
-    return <CodeBlockFallback {...props}>{children}</CodeBlockFallback>;
+    return <CodeBlockFallback {...props}>{children}</CodeBlockFallback>
   }
 
-  return (<div dangerouslySetInnerHTML={{ __html: highlightedCode }} {...props} />);
-};
+  return (
+    <div dangerouslySetInnerHTML={{ __html: highlightedCode }} {...props} />
+  )
+}

@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-'use client';;
-import { Button } from '@repo/shadcn-ui/components/ui/button';
-import { cn } from '@repo/shadcn-ui/lib/utils';
-import { CheckIcon, CopyIcon } from 'lucide-react';
-import { createContext, useContext, useState } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import oneDark from "react-syntax-highlighter/dist/esm/styles/prism/one-dark";
-import oneLight from "react-syntax-highlighter/dist/esm/styles/prism/one-light";
-
+'use client'
+import { Button } from '@repo/shadcn-ui/components/ui/button'
+import { cn } from '@repo/shadcn-ui/lib/utils'
+import { CheckIcon, CopyIcon } from 'lucide-react'
+import { createContext, useContext, useState } from 'react'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import oneDark from 'react-syntax-highlighter/dist/esm/styles/prism/one-dark'
+import oneLight from 'react-syntax-highlighter/dist/esm/styles/prism/one-light'
 
 const CodeBlockContext = createContext({
   code: '',
-});
+})
 
 export const CodeBlock = ({
   code,
@@ -40,9 +39,10 @@ export const CodeBlock = ({
     <div
       className={cn(
         'relative w-full overflow-hidden rounded-md border bg-background text-foreground',
-        className
+        className,
       )}
-      {...props}>
+      {...props}
+    >
       <div className="relative">
         <SyntaxHighlighter
           className="overflow-hidden dark:hidden"
@@ -63,7 +63,8 @@ export const CodeBlock = ({
             minWidth: '2.5rem',
           }}
           showLineNumbers={showLineNumbers}
-          style={oneLight}>
+          style={oneLight}
+        >
           {code}
         </SyntaxHighlighter>
         <SyntaxHighlighter
@@ -85,7 +86,8 @@ export const CodeBlock = ({
             minWidth: '2.5rem',
           }}
           showLineNumbers={showLineNumbers}
-          style={oneDark}>
+          style={oneDark}
+        >
           {code}
         </SyntaxHighlighter>
         {children && (
@@ -96,7 +98,7 @@ export const CodeBlock = ({
       </div>
     </div>
   </CodeBlockContext.Provider>
-);
+)
 
 export const CodeBlockCopyButton = ({
   onCopy,
@@ -106,26 +108,26 @@ export const CodeBlockCopyButton = ({
   className,
   ...props
 }) => {
-  const [isCopied, setIsCopied] = useState(false);
-  const { code } = useContext(CodeBlockContext);
+  const [isCopied, setIsCopied] = useState(false)
+  const { code } = useContext(CodeBlockContext)
 
   const copyToClipboard = async () => {
     if (typeof window === 'undefined' || !navigator.clipboard.writeText) {
-      onError?.(new Error('Clipboard API not available'));
-      return;
+      onError?.(new Error('Clipboard API not available'))
+      return
     }
 
     try {
-      await navigator.clipboard.writeText(code);
-      setIsCopied(true);
-      onCopy?.();
-      setTimeout(() => setIsCopied(false), timeout);
+      await navigator.clipboard.writeText(code)
+      setIsCopied(true)
+      onCopy?.()
+      setTimeout(() => setIsCopied(false), timeout)
     } catch (error) {
-      onError?.(error);
+      onError?.(error)
     }
-  };
+  }
 
-  const Icon = isCopied ? CheckIcon : CopyIcon;
+  const Icon = isCopied ? CheckIcon : CopyIcon
 
   return (
     <Button
@@ -133,8 +135,9 @@ export const CodeBlockCopyButton = ({
       onClick={copyToClipboard}
       size="icon"
       variant="ghost"
-      {...props}>
+      {...props}
+    >
       {children ?? <Icon size={14} />}
     </Button>
-  );
-};
+  )
+}

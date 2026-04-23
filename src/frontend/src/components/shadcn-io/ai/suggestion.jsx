@@ -14,26 +14,22 @@
  * limitations under the License.
  */
 
-'use client';;
-import { Button } from '@repo/shadcn-ui/components/ui/button';
+'use client'
+import { Button } from '@repo/shadcn-ui/components/ui/button'
 import {
   ScrollArea,
   ScrollBar,
-} from '@repo/shadcn-ui/components/ui/scroll-area';
-import { cn } from '@repo/shadcn-ui/lib/utils';
+} from '@repo/shadcn-ui/components/ui/scroll-area'
+import { cn } from '@repo/shadcn-ui/lib/utils'
 
-export const Suggestions = ({
-  className,
-  children,
-  ...props
-}) => (
+export const Suggestions = ({ className, children, ...props }) => (
   <ScrollArea className="w-full overflow-x-auto whitespace-nowrap" {...props}>
     <div className={cn('flex w-max flex-nowrap items-center gap-2', className)}>
       {children}
     </div>
     <ScrollBar className="hidden" orientation="horizontal" />
   </ScrollArea>
-);
+)
 
 export const Suggestion = ({
   suggestion,
@@ -45,8 +41,8 @@ export const Suggestion = ({
   ...props
 }) => {
   const handleClick = () => {
-    onClick?.(suggestion);
-  };
+    onClick?.(suggestion)
+  }
 
   return (
     <Button
@@ -55,8 +51,9 @@ export const Suggestion = ({
       size={size}
       type="button"
       variant={variant}
-      {...props}>
+      {...props}
+    >
       {children || suggestion}
     </Button>
-  );
-};
+  )
+}

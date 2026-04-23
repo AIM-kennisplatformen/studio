@@ -1,89 +1,89 @@
-"use client";
+'use client'
 
-import { useEffect, useRef } from "react";
-import { useSetAtom } from "jotai";
-import { messagesAtom, lastDoneMessageKeyAtom } from "./atoms";
-import { io } from "socket.io-client";
+import { useEffect, useRef } from 'react'
+import { useSetAtom } from 'jotai'
+import { messagesAtom, lastDoneMessageKeyAtom } from './atoms'
+import { io } from 'socket.io-client'
 
-const SOCKET_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+const SOCKET_URL = import.meta.env.VITE_BACKEND_BASE_URL
 
 export function useChatWebSocket(setStatus) {
-  const setMessages = useSetAtom(messagesAtom);
-  const setLastDoneMessageKey = useSetAtom(lastDoneMessageKeyAtom);
-  const socketRef = useRef(null);
+  const setMessages = useSetAtom(messagesAtom)
+  const setLastDoneMessageKey = useSetAtom(lastDoneMessageKeyAtom)
+  const socketRef = useRef(null)
 
-  const streamingKeyRef = useRef(null);
-  const chatModelStartCountRef = useRef(0);
+  const streamingKeyRef = useRef(null)
+  const chatModelStartCountRef = useRef(0)
 
   useEffect(() => {
     const socket = io(SOCKET_URL, {
-      path: "/socket.io",
+      path: '/socket.io',
       withCredentials: true,
-      transports: ["polling", "websocket"],
-    });
+      transports: ['polling', 'websocket'],
+    })
 
-    socketRef.current = socket;
+    socketRef.current = socket
 
-    socket.on("connect", () => {
-      console.log("Socket.IO connected:", socket.id);
-    });
+    socket.on('connect', () => {
+      console.log('Socket.IO connected:', socket.id)
+    })
 
-    socket.on("disconnect", () => {
-      console.log("Socket.IO disconnected");
-      streamingKeyRef.current = null;
-      setStatus("ready");
-    });
+    socket.on('disconnect', () => {
+      console.log('Socket.IO disconnected')
+      streamingKeyRef.current = null
+      setStatus('ready')
+    })
 
-    socket.on("message", (data) => {
-      if (data.role !== "chatbot") return;
+    socket.on('message', (data) => {
+      if (data.role !== 'chatbot') return
 
-      const token = data.content || "";
+      const token = data.content || ''
 
       setMessages((prev) => {
         if (streamingKeyRef.current !== null) {
           return prev.map((m) =>
             m.key === streamingKeyRef.current
               ? { ...m, value: m.value + token }
-              : m
-          );
+              : m,
+          )
         }
 
-        const newKey = (prev[0]?.key || 0) + 1;
-        streamingKeyRef.current = newKey;
+        const newKey = (prev[0]?.key || 0) + 1
+        streamingKeyRef.current = newKey
 
         return [
-          { key: newKey, name: "chatbot", value: token, reasoning: null },
+          { key: newKey, name: 'chatbot', value: token, reasoning: null },
           ...prev,
-        ];
-      });
-    });
+        ]
+      })
+    })
 
-    socket.on("event", (payload) => {
-      if (payload.type === "on_chat_model_start") {
-        chatModelStartCountRef.current += 1;
+    socket.on('event', (payload) => {
+      if (payload.type === 'on_chat_model_start') {
+        chatModelStartCountRef.current += 1
         if (chatModelStartCountRef.current >= 2) {
-          setStatus("streaming");
+          setStatus('streaming')
         }
       }
-    });
+    })
 
-    socket.on("done", () => {
+    socket.on('done', () => {
       if (streamingKeyRef.current !== null) {
-        setLastDoneMessageKey(streamingKeyRef.current);
+        setLastDoneMessageKey(streamingKeyRef.current)
       }
-      streamingKeyRef.current = null;
-      setStatus("ready");
-    });
+      streamingKeyRef.current = null
+      setStatus('ready')
+    })
 
-    return () => socket.disconnect();
-  }, []);
+    return () => socket.disconnect()
+  }, [])
 
   const send = (msg) => {
-    streamingKeyRef.current = null;
-    chatModelStartCountRef.current = 0;
-    setStatus("thinking");
-    socketRef.current?.emit("send_message", { message: msg });
-  };
+    streamingKeyRef.current = null
+    chatModelStartCountRef.current = 0
+    setStatus('thinking')
+    socketRef.current?.emit('send_message', { message: msg })
+  }
 
-  return { send };
+  return { send }
 }
