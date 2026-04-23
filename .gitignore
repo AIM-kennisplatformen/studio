@@ -225,3 +225,4 @@ src/studio
 
 # Nix shell
 shell.nix
+.vscode/settings.json

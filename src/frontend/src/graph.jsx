@@ -10,15 +10,29 @@ import { CustomNode } from "./components/CustomNode";
 import { SolidEdge } from "./components/CustomEdge";
 import { getEdgeHandles } from "./lib/graphUtils";
 import { applyDagreLayout } from "./lib/ctrytoscapeLayout";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue} from "jotai";
 import {
   nodesAtom,
   edgesAtom,
   selectedNodeAtom,
   centerNodeAtom,
   layoutNodesAtom,
+  selectNodeEmitAtom,
 } from "./data/atoms";
-import { sendNodeSelection, logSelectedNode } from "./data/api";
+
+function getSubgraph(data, nodeId) {
+  const id = String(nodeId);
+  const connectedEdges = data.edges.filter(
+    (e) => String(e.source_id) === id || String(e.target_id) === id
+  );
+  const neighborIds = new Set(
+    connectedEdges.flatMap((e) => [String(e.source_id), String(e.target_id)])
+  );
+  return {
+    nodes: data.nodes.filter((n) => neighborIds.has(String(n.id))),
+    edges: connectedEdges,
+  };
+}
 
 export default function Graph({ data, width }) {
   const [nodes, setNodes] = useAtom(nodesAtom);
@@ -26,23 +40,33 @@ export default function Graph({ data, width }) {
   const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom);
   const [, setCenterNodeId] = useAtom(centerNodeAtom);
   const [layoutNodes, setLayoutNodes] = useAtom(layoutNodesAtom);
+  const emitSelectNode = useAtomValue(selectNodeEmitAtom);
 
   const { getViewport, setViewport, fitView } = useReactFlow();
   const containerRef = useRef(null);
   const nodesRef = useRef([]);
   const edgesRef = useRef([]);
+  const fullDataRef = useRef(null);
+  const layoutNodesRef = useRef(layoutNodes);
+  const selectedNodeRef = useRef(null);
+  const allPositionsRef = useRef(new Map());
 
-  /** Convert raw data to React Flow nodes & edges */
-  const prepareGraphData = useCallback(() => {
-    if (!data?.nodes || !data?.edges) return;
+  useEffect(() => {
+    layoutNodesRef.current = layoutNodes;
+  }, [layoutNodes]);
 
-    const previousPositions = new Map(
-      layoutNodes.map((n) => [n.id, n.position]),
-    );
+  useEffect(() => {
+    selectedNodeRef.current = selectedNode;
+  }, [selectedNode]);
+
+  const prepareGraphData = useCallback((graphData) => {
+    if (!graphData?.nodes || !graphData?.edges) return;
+
+    const previousPositions = allPositionsRef.current;
     const nodeMap = new Map();
 
     // Create nodes
-    const newNodes = data.nodes.map((node) => {
+    const newNodes = graphData.nodes.map((node) => {
       const isCenter = node.id === 1;
       const reactFlowNode = {
         id: String(node.id),
@@ -66,7 +90,7 @@ export default function Graph({ data, width }) {
     });
 
     // Create edges
-    const newEdges = data.edges
+    const newEdges = graphData.edges
       .map((edge) => {
         const sourceNode = nodeMap.get(String(edge.source_id));
         const targetNode = nodeMap.get(String(edge.target_id));
@@ -83,7 +107,7 @@ export default function Graph({ data, width }) {
           id: String(edge.id),
           source: String(edge.source_id),
           target: String(edge.target_id),
-          label: edge.label_forward,
+          label: edge.labelToTarget,
           type: "solid",
           sourceHandle,
           targetHandle,
@@ -92,6 +116,7 @@ export default function Graph({ data, width }) {
         };
       })
       .filter(Boolean);
+
     const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
 
     // Apply dagre layout to new nodes, keeping fixed nodes in place
@@ -114,33 +139,40 @@ export default function Graph({ data, width }) {
         position: n.position,
       })),
     });
-    // Merge positions: keep old positions, use fcose positions for new
+
+    // Merge positions: keep old positions, use layout positions for new nodes
     const mergedNodes = newNodes.map((n) => ({
       ...n,
       position:
         previousPositions.get(n.id) || layoutPositions[n.id] || n.position,
     }));
 
+    // Persist positions for all seen nodes across subgraph changes
+    mergedNodes.forEach((n) => allPositionsRef.current.set(n.id, n.position));
+
     setLayoutNodes(mergedNodes);
     nodesRef.current = mergedNodes;
     edgesRef.current = newEdges;
-
     setNodes(mergedNodes);
     setEdges(newEdges);
 
-    // Center initial node if none selected
-    if (!selectedNode) {
+    // Center node 1 on first load only
+    if (!selectedNodeRef.current) {
       const nodeToCenter = mergedNodes.find((n) => n.id === "1");
       if (nodeToCenter && containerRef.current) {
         centerNodeInView(nodeToCenter);
         setSelectedNode(nodeToCenter);
       }
     }
-  }, [data]);
+  }, []);
 
+  // On first load show node 1's neighbourhood; on refetch just update fullDataRef
   useEffect(() => {
-    prepareGraphData();
-  }, [prepareGraphData]);
+    if (!data) return;
+    const isFirstLoad = fullDataRef.current === null;
+    fullDataRef.current = data;
+    if (isFirstLoad) prepareGraphData(getSubgraph(data, 1));
+  }, [data]);
 
   /** Update edge handles when nodes move */
   const updateEdges = useCallback((nodes, edges) => {
@@ -174,6 +206,19 @@ export default function Graph({ data, width }) {
     [setEdges],
   );
 
+  const onNodeClick = useCallback(
+    (_, node) => {
+      setCenterNodeId(Number(node.id));
+      setSelectedNode(node);
+      centerNodeInView(node);
+      emitSelectNode?.(Number(node.id));
+      if (fullDataRef.current) {
+        prepareGraphData(getSubgraph(fullDataRef.current, node.id));
+      }
+    },
+    [setCenterNodeId, setSelectedNode, emitSelectNode, prepareGraphData],
+  );
+
   /** Center a node in the viewport */
   const centerNodeInView = useCallback(
     (node) => {
@@ -197,16 +242,6 @@ export default function Graph({ data, width }) {
     [getViewport, setViewport],
   );
 
-  const onNodeClick = useCallback(
-    (_, node) => {
-      setCenterNodeId(Number(node.id));
-      setSelectedNode(node);
-      centerNodeInView(node);
-      sendNodeSelection(node.id);
-      logSelectedNode(node);
-    },
-    [setCenterNodeId, setSelectedNode, centerNodeInView],
-  );
 
   /** Fit view on container resize */
   useEffect(() => {

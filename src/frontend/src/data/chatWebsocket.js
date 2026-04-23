@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useSetAtom } from "jotai";
-import { messagesAtom, lastDoneMessageKeyAtom } from "./atoms";
+import { messagesAtom, lastDoneMessageKeyAtom, graphRefetchTriggerAtom, selectNodeEmitAtom} from "./atoms";
 import { io } from "socket.io-client";
 
 const SOCKET_URL = import.meta.env.VITE_BACKEND_BASE_URL;
@@ -10,6 +10,8 @@ const SOCKET_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 export function useChatWebSocket(setStatus) {
   const setMessages = useSetAtom(messagesAtom);
   const setLastDoneMessageKey = useSetAtom(lastDoneMessageKeyAtom);
+  const triggerRefetch = useSetAtom(graphRefetchTriggerAtom);
+  const setSelectedNodeEmit = useSetAtom(selectNodeEmitAtom);
   const socketRef = useRef(null);
 
   const streamingKeyRef = useRef(null);
@@ -23,6 +25,7 @@ export function useChatWebSocket(setStatus) {
     });
 
     socketRef.current = socket;
+    setSelectedNodeEmit(() => (nodeId) => socket.emit("select_node", { node_id: nodeId }));
 
     socket.on("connect", () => {
       console.log("Socket.IO connected:", socket.id);
@@ -73,9 +76,13 @@ export function useChatWebSocket(setStatus) {
       }
       streamingKeyRef.current = null;
       setStatus("ready");
+      triggerRefetch((n) => n + 1);
     });
 
-    return () => socket.disconnect();
+    return () => {
+      socket.disconnect();
+      setSelectedNodeEmit(null); 
+    };
   }, []);
 
   const send = (msg) => {

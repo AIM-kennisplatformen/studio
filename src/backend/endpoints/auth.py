@@ -74,6 +74,9 @@ async def me(user=Depends(get_current_user)):
     """
     return {"authenticated": True, "user": user}
 
+@auth_router.get("/")
+async def redirect_to_app(request: Request):
+       return RedirectResponse("/app")
 
 # -------------------------------------------------------
 # WebSocket Authentication
