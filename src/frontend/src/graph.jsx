@@ -242,6 +242,17 @@ export default function Graph({ data, width }) {
     [getViewport, setViewport],
   );
 
+  const onNodeClick = useCallback(
+    (_, node) => {
+      setCenterNodeId(Number(node.id));
+      setSelectedNode(node);
+      centerNodeInView(node);
+      sendNodeSelection(node.id);
+      logSelectedNode(node);
+    },
+    [setCenterNodeId, setSelectedNode, centerNodeInView],
+  );
+
   /** Fit view on container resize */
   useEffect(() => {
     const container = containerRef.current;
