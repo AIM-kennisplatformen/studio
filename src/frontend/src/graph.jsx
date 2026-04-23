@@ -18,7 +18,7 @@ import {
   centerNodeAtom,
   layoutNodesAtom,
 } from "./data/atoms";
-import { sendNodeSelection } from "./data/api";
+import { sendNodeSelection, logSelectedNode } from "./data/api";
 
 export default function Graph({ data, width }) {
   const [nodes, setNodes] = useAtom(nodesAtom);
@@ -174,16 +174,6 @@ export default function Graph({ data, width }) {
     [setEdges],
   );
 
-  const onNodeClick = useCallback(
-    (_, node) => {
-      setCenterNodeId(Number(node.id));
-      setSelectedNode(node);
-      centerNodeInView(node);
-      sendNodeSelection(node.id);
-    },
-    [setCenterNodeId, setSelectedNode],
-  );
-
   /** Center a node in the viewport */
   const centerNodeInView = useCallback(
     (node) => {
@@ -205,6 +195,17 @@ export default function Graph({ data, width }) {
       );
     },
     [getViewport, setViewport],
+  );
+
+  const onNodeClick = useCallback(
+    (_, node) => {
+      setCenterNodeId(Number(node.id));
+      setSelectedNode(node);
+      centerNodeInView(node);
+      sendNodeSelection(node.id);
+      logSelectedNode(node);
+    },
+    [setCenterNodeId, setSelectedNode, centerNodeInView],
   );
 
   /** Fit view on container resize */
