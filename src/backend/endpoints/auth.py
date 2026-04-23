@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, Depends, HTTPException, WebSocket
 from fastapi.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
 
-from backend.config import BASE_URL, DISCOVERY_URL, CLIENT_ID, CLIENT_SECRET
+from backend.config import BASE_URL, DISCOVERY_URL, CLIENT_ID, CLIENT_SECRET, LOGOUT_URL
 
 # -------------------------------------------------------
 # OAuth Client Setup
@@ -64,7 +64,7 @@ async def logout(request: Request):
     Clear the user's session and log them out.
     """
     request.session.clear()
-    return RedirectResponse("/")
+    return RedirectResponse(LOGOUT_URL)
 
 
 @auth_router.get("/me")

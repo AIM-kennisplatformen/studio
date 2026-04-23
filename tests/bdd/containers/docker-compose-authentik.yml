@@ -17,7 +17,7 @@ services:
       POSTGRES_USER: authentik
       POSTGRES_DB: authentik
     networks:
-      - studio_net
+      - mcp_server_scepa_studio_net
 
   # ─── Authentik Redis ────────────────────────────────────
   authentik-redis:
@@ -34,7 +34,7 @@ services:
     volumes:
       - authentik_redis:/data
     networks:
-      - studio_net
+      - mcp_server_scepa_studio_net
 
   # ─── Authentik Server (web UI + API) ────────────────────
   authentik-server:
@@ -66,7 +66,7 @@ services:
       authentik-redis:
         condition: service_healthy
     networks:
-      - studio_net
+      - mcp_server_scepa_studio_net
 
   # ─── Authentik Worker (background tasks) ────────────────
   authentik-worker:
@@ -92,10 +92,11 @@ services:
       authentik-redis:
         condition: service_healthy
     networks:
-      - studio_net
+      - mcp_server_scepa_studio_net
 
 networks:
-  studio_net:
+  mcp_server_scepa_studio_net:
+    external: true
 
 volumes:
   authentik_database:

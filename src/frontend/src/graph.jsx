@@ -3,7 +3,6 @@ import {
   ReactFlow,
   applyEdgeChanges,
   addEdge,
-  applyNodeChanges,
   useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -175,17 +174,6 @@ export default function Graph({ data, width }) {
     [setEdges],
   );
 
-  const onNodeClick = useCallback(
-    (_, node) => {
-      setCenterNodeId(Number(node.id));
-      setSelectedNode(node);
-      centerNodeInView(node);
-      sendNodeSelection(node.id);
-      logSelectedNode(node);
-    },
-    [setCenterNodeId, setSelectedNode],
-  );
-
   /** Center a node in the viewport */
   const centerNodeInView = useCallback(
     (node) => {
@@ -207,6 +195,17 @@ export default function Graph({ data, width }) {
       );
     },
     [getViewport, setViewport],
+  );
+
+  const onNodeClick = useCallback(
+    (_, node) => {
+      setCenterNodeId(Number(node.id));
+      setSelectedNode(node);
+      centerNodeInView(node);
+      sendNodeSelection(node.id);
+      logSelectedNode(node);
+    },
+    [setCenterNodeId, setSelectedNode, centerNodeInView],
   );
 
   /** Fit view on container resize */

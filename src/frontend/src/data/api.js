@@ -1,5 +1,3 @@
-import { responsesFromId } from "./graphMockData";
-
 const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
 const errorResponse = {
@@ -82,4 +80,8 @@ export async function logSelectedNode(node) {
   } catch (err) {
     console.error("Failed to log selected node:", err);
   }
+}
+
+export function logOut() {
+  window.location.href = `${BASE_URL}/auth/logout`;
 }
