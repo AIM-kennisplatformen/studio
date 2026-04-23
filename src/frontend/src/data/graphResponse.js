@@ -1,22 +1,21 @@
-import { responsesFromId } from "./graphMockData.js";
-
+import { responsesFromId } from './graphMockData.js'
 
 /**
  * Return mock data for a nodeId
  */
 function getMockData(nodeId) {
-  const resp = responsesFromId[nodeId] ?? responsesFromId[String(nodeId)];
+  const resp = responsesFromId[nodeId] ?? responsesFromId[String(nodeId)]
   return {
     nodes: resp?.nodes ?? [],
     edges: resp?.edges ?? [],
-  };
+  }
 }
 
 /**
  * Fetch graph nodes & edges for a given nodeId.
  * Uses backend if reachable, otherwise returns mock data.
  */
-export async function fetchGraphAnswer(nodeId = "1") {
+export async function fetchGraphAnswer(nodeId = '1') {
   /*
   const url = `http://kg.localhost:8090/nodes/${nodeId}/context`;
 
@@ -52,6 +51,5 @@ export async function fetchGraphAnswer(nodeId = "1") {
     console.log("Returning mock data:", getMockData(nodeId));
     return getMockData(nodeId);
     */
-    return getMockData(nodeId);
-  }
-
+  return getMockData(nodeId)
+}

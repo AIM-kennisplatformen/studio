@@ -1,16 +1,15 @@
 /* Copied from PoC-Robert-React-Flow */
-import cytoscape from 'cytoscape';
-import avsdf from 'cytoscape-avsdf';
-import cola from 'cytoscape-cola';
-import fcose from 'cytoscape-fcose';
-import dagre from 'cytoscape-dagre'; 
+import cytoscape from 'cytoscape'
+import avsdf from 'cytoscape-avsdf'
+import cola from 'cytoscape-cola'
+import fcose from 'cytoscape-fcose'
+import dagre from 'cytoscape-dagre'
 
 // Register the layout extensions
-cytoscape.use(avsdf);
-cytoscape.use(cola);
-cytoscape.use(fcose);
-cytoscape.use(dagre);
-
+cytoscape.use(avsdf)
+cytoscape.use(cola)
+cytoscape.use(fcose)
+cytoscape.use(dagre)
 
 /**
  * Convert React Flow nodes and edges to Cytoscape format
@@ -19,43 +18,43 @@ cytoscape.use(dagre);
  * @returns {Array} Cytoscape elements array
  */
 function reactFlowToCytoscape(nodes, edges, includeNodeSize = false) {
-  const cytoscapeElements = [];
-  
+  const cytoscapeElements = []
+
   // Convert nodes
-  nodes.forEach(node => {
-    const nodeData = { id: node.id };
-    
+  nodes.forEach((node) => {
+    const nodeData = { id: node.id }
+
     // Add node dimensions if requested (for layouts that support it like fcose)
     if (includeNodeSize) {
       // Use the width from node data, or default to 160
-      const width = node.data?.width || 160;
+      const width = node.data?.width || 160
       // Estimate height based on label content (approximate)
-      const height = 80; // Approximate height for our nodes
-      
-      nodeData.width = width;
-      nodeData.height = height;
+      const height = 80 // Approximate height for our nodes
+
+      nodeData.width = width
+      nodeData.height = height
     }
-    
+
     cytoscapeElements.push({
       group: 'nodes',
       data: nodeData,
-      position: { x: node.position.x, y: node.position.y }
-    });
-  });
-  
+      position: { x: node.position.x, y: node.position.y },
+    })
+  })
+
   // Convert edges
-  edges.forEach(edge => {
+  edges.forEach((edge) => {
     cytoscapeElements.push({
       group: 'edges',
       data: {
         id: edge.id,
         source: edge.source,
-        target: edge.target
-      }
-    });
-  });
-  
-  return cytoscapeElements;
+        target: edge.target,
+      },
+    })
+  })
+
+  return cytoscapeElements
 }
 
 /**
@@ -69,9 +68,9 @@ export function applyAvsdfLayout(nodes, edges, options = {}) {
   // Create headless cytoscape instance
   const cy = cytoscape({
     headless: true,
-    elements: reactFlowToCytoscape(nodes, edges)
-  });
-  
+    elements: reactFlowToCytoscape(nodes, edges),
+  })
+
   // Run avsdf layout with options
   const layout = cy.layout({
     name: 'avsdf',
@@ -79,23 +78,23 @@ export function applyAvsdfLayout(nodes, edges, options = {}) {
     nodeSeparation: options.nodeSeparation || 60,
     // Disable animations since we handle them in React
     animate: false,
-    ...options
-  });
-  
+    ...options,
+  })
+
   // Run the layout synchronously
-  layout.run();
-  
+  layout.run()
+
   // Extract new positions
-  const newPositions = {};
-  cy.nodes().forEach(node => {
-    const pos = node.position();
+  const newPositions = {}
+  cy.nodes().forEach((node) => {
+    const pos = node.position()
     newPositions[node.id()] = {
       x: pos.x,
-      y: pos.y
-    };
-  });
-  
-  return newPositions;
+      y: pos.y,
+    }
+  })
+
+  return newPositions
 }
 
 /**
@@ -105,10 +104,10 @@ export function applyAvsdfLayout(nodes, edges, options = {}) {
  * @returns {Array} Updated nodes array
  */
 export function updateNodePositions(nodes, newPositions) {
-  return nodes.map(node => ({
+  return nodes.map((node) => ({
     ...node,
-    position: newPositions[node.id] || node.position
-  }));
+    position: newPositions[node.id] || node.position,
+  }))
 }
 
 /**
@@ -126,10 +125,10 @@ export function applyColaLayout(
   edges,
   options = {},
   centerNodeId = null,
-  centerPosition = { x: 400, y: 300 }
+  centerPosition = { x: 400, y: 300 },
 ) {
   // Ensure options is always an object
-  options = options || {};
+  options = options || {}
 
   // Destructure with defaults
   const {
@@ -138,27 +137,27 @@ export function applyColaLayout(
     nodeSpacing = 100,
     convergenceThreshold = 0.01,
     ...restOptions
-  } = options;
+  } = options
 
   // Create headless cytoscape instance
   const cy = cytoscape({
     headless: true,
-    elements: reactFlowToCytoscape(nodes, edges)
-  });
+    elements: reactFlowToCytoscape(nodes, edges),
+  })
 
   // Prepare constraints if a center node is specified
-  const constraints = [];
+  const constraints = []
   if (centerNodeId) {
     constraints.push({
       axis: 'x',
       left: centerPosition.x,
-      nodes: [centerNodeId]
-    });
+      nodes: [centerNodeId],
+    })
     constraints.push({
       axis: 'y',
       left: centerPosition.y,
-      nodes: [centerNodeId]
-    });
+      nodes: [centerNodeId],
+    })
   }
 
   // Run cola layout with options
@@ -172,28 +171,27 @@ export function applyColaLayout(
     ungrabifyWhileSimulating: false,
     fit: true,
     constraints,
-      boundingBox: {
-    x1: 0,
-    y1: 0,
-    x2: centerPosition.x, 
-    y2: centerPosition.y
-  },
-    
-    ...restOptions
-  });
+    boundingBox: {
+      x1: 0,
+      y1: 0,
+      x2: centerPosition.x,
+      y2: centerPosition.y,
+    },
 
-  layout.run();
+    ...restOptions,
+  })
+
+  layout.run()
 
   // Extract new positions
-  const newPositions = {};
-  cy.nodes().forEach(node => {
-    const pos = node.position();
-    newPositions[node.id()] = { x: pos.x, y: pos.y };
-  });
+  const newPositions = {}
+  cy.nodes().forEach((node) => {
+    const pos = node.position()
+    newPositions[node.id()] = { x: pos.x, y: pos.y }
+  })
 
-  return newPositions;
+  return newPositions
 }
-
 
 /**
  * Apply fcose layout using cytoscape.js in headless mode
@@ -207,9 +205,9 @@ export function applyFcoseLayout(nodes, edges, options = {}) {
   // Create headless cytoscape instance with node dimensions
   const cy = cytoscape({
     headless: true,
-    elements: reactFlowToCytoscape(nodes, edges, true) // Include node sizes
-  });
-  
+    elements: reactFlowToCytoscape(nodes, edges, true), // Include node sizes
+  })
+
   // Run fcose layout with options
   const layout = cy.layout({
     name: 'fcose',
@@ -228,23 +226,23 @@ export function applyFcoseLayout(nodes, edges, options = {}) {
     nodeDimensionsIncludeLabels: false,
     uniformNodeDimensions: false,
     packComponents: true, // Pack connected components
-    ...options
-  });
-  
+    ...options,
+  })
+
   // Run the layout synchronously
-  layout.run();
-  
+  layout.run()
+
   // Extract new positions
-  const newPositions = {};
-  cy.nodes().forEach(node => {
-    const pos = node.position();
+  const newPositions = {}
+  cy.nodes().forEach((node) => {
+    const pos = node.position()
     newPositions[node.id()] = {
       x: pos.x,
-      y: pos.y
-    };
-  });
-  
-  return newPositions;
+      y: pos.y,
+    }
+  })
+
+  return newPositions
 }
 
 /**
@@ -258,32 +256,32 @@ export function applyFcoseLayout(nodes, edges, options = {}) {
 export function applyDagreLayout(nodes, edges, options = {}) {
   const cy = cytoscape({
     headless: true,
-    elements: reactFlowToCytoscape(nodes, edges)
-  });
-  
+    elements: reactFlowToCytoscape(nodes, edges),
+  })
+
   const layout = cy.layout({
     name: 'dagre',
     animate: false,
     // Direction: TB (top-bottom), LR (left-right), BT, RL
     rankDir: options.rankDir || 'TB',
     // Node separation (horizontal for TB, vertical for LR)
-    nodeSep: options.nodeSep || 200,  // Increased to prevent overlap with 160px wide nodes
+    nodeSep: options.nodeSep || 200, // Increased to prevent overlap with 160px wide nodes
     edgeSep: options.edgeSep || 10,
     // Rank separation (vertical for TB, horizontal for LR)
     rankSep: options.rankSep || 150,
     ranker: options.ranker || 'network-simplex',
     fit: true,
     padding: options.padding || 30,
-    ...options
-  });
-  
-  layout.run();
-  
-  const newPositions = {};
-  cy.nodes().forEach(node => {
-    const pos = node.position();
-    newPositions[node.id()] = { x: pos.x, y: pos.y };
-  });
-  
-  return newPositions;
+    ...options,
+  })
+
+  layout.run()
+
+  const newPositions = {}
+  cy.nodes().forEach((node) => {
+    const pos = node.position()
+    newPositions[node.id()] = { x: pos.x, y: pos.y }
+  })
+
+  return newPositions
 }

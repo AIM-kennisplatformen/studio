@@ -1,6 +1,6 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "@xyflow/react/dist/style.css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import '@xyflow/react/dist/style.css';
 
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
