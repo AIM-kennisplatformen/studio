@@ -98,7 +98,7 @@ async def fetch_subnode_stream(
                 full_response += event_data
 
         ctx["prefetched"][subnode] = full_response
-        await push_chat_message_stream(user_id, "done", full_response, subnode)
+        await push_chat_message_stream(user_id, "done", full_response)
 
     except Exception as e:
         print(f"[PREFETCH ERROR - {subnode}] {e}")
