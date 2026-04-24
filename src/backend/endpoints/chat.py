@@ -6,10 +6,7 @@ import socketio
 from fastapi import APIRouter
 from langfuse import get_client
 
-from backend.config import BASE_URL
-from backend.config import (
-    root_question_prompt,
-)
+from backend.config import config, root_question_prompt
 
 from backend.endpoints.graph import user_graph_contexts, _default_user_graph_context
 from backend.endpoints.graph import fetch_subnode_stream
@@ -23,7 +20,7 @@ from backend.utility.chat_util import (
     sid_connections,
 )
 
-cors_origins = [BASE_URL]
+cors_origins = [config["base_url"]]
 
 sio = socketio.AsyncServer(
     async_mode="asgi",

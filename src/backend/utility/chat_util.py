@@ -1,16 +1,14 @@
 import time
 from typing import Optional, Dict, AsyncGenerator
  
-import os
 import socketio
-from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langfuse import get_client
 from langfuse.langchain import CallbackHandler
 from mcp_use import MCPAgent, MCPClient
 from mcp_use.client.config import load_config_file
 
-load_dotenv()
+from backend.config import config
 
 # =====================================================
 # Socket.IO broker state
@@ -61,11 +59,11 @@ def unbind_sid(sid: str) -> Optional[str]:
 
 
 async def _create_agent() -> MCPAgent:
-    config = load_config_file(os.getenv("MCP_TOOL_CONFIG_PATH", ""))
-    client = MCPClient(config)
+    mcp_config = load_config_file(config["mcp_tool_config_path"])
+    client = MCPClient(mcp_config)
     llm = ChatOpenAI(
-        model=os.getenv("LLM_MODEL", ""),
-        base_url=os.getenv("OPENAI_HOST", ""),
+        model=config["llm_model"],
+        base_url=config["openai_host"],
     )
     return MCPAgent(
         llm=llm,

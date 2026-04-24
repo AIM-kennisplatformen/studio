@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-from backend.config import SESSION_SECRET, BASE_URL
+from backend.config import config
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -13,7 +13,7 @@ from backend.endpoints.graph import graph_router
 from backend.endpoints.log_event import log_event_router
 
 # Build list of allowed CORS origins
-cors_origins = [BASE_URL]
+cors_origins = [config["base_url"]]
 
 
 
@@ -39,7 +39,7 @@ app = FastAPI(
 
 app.add_middleware(
     SessionMiddleware,
-    secret_key=SESSION_SECRET,
+    secret_key=config["session_secret"],
     same_site="lax",        # REQUIRED for cross-site requests
     https_only=False,        # Only True if you deploy with HTTPS
 )

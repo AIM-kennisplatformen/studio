@@ -1,6 +1,7 @@
 import os
 import secrets
 from dotenv import load_dotenv
+from loguru import logger
 
 load_dotenv()
 
@@ -58,14 +59,27 @@ def subnode_repeat_question_prompt(subnode: str, question: str) -> str:
     )
 
 
-BASE_URL = os.getenv("BACKEND_BASE_URL", "http://localhost:10090")
-DISCOVERY_URL = os.getenv(
-    "OAUTH_DISCOVERY_URL",
-    "http://auth.localhost:9000/application/o/kg/.well-known/openid-configuration"
-)
-CLIENT_ID = os.getenv("OAUTH_CLIENT_ID", "rkuclih8uzm44nTUvwasexioUKFk5aG1zhG8jcJX")
-CLIENT_SECRET = os.getenv(
-    "OAUTH_CLIENT_SECRET",
-    "NEb0sAcMc2kTTdvfJMctLYE35Fp0GqyqFp4oOVrstxsevnVMJutiIhvb6TzwPrkbphAh1EiI74oRRO79xRCoZTh1suFYTV9J0tmRJBIFIF4znDYwNyDp3IzUQlESvaS0"
-)
-SESSION_SECRET = os.getenv("SESSION_SECRET", secrets.token_urlsafe(32))
+def require_env(name: str, default: str | None = None) -> str:
+    value = os.getenv(name, default)
+    if value is None:
+        raise RuntimeError(f"Missing required environment variable: {name}")
+    elif value == "":
+        logger.warning(f"Environment variable {name} is empty")
+    return value
+
+config: dict = {
+    "base_url": require_env("BACKEND_BASE_URL", "http://localhost:10090"),
+    "discovery_url": require_env(
+        "OAUTH_DISCOVERY_URL",
+        "http://auth.localhost:9000/application/o/kg/.well-known/openid-configuration"
+    ),
+    "client_id": require_env("OAUTH_CLIENT_ID", "rkuclih8uzm44nTUvwasexioUKFk5aG1zhG8jcJX"),
+    "client_secret": require_env(
+        "OAUTH_CLIENT_SECRET",
+        "NEb0sAcMc2kTTdvfJMctLYE35Fp0GqyqFp4oOVrstxsevnVMJutiIhvb6TzwPrkbphAh1EiI74oRRO79xRCoZTh1suFYTV9J0tmRJBIFIF4znDYwNyDp3IzUQlESvaS0"
+    ),
+    "session_secret": require_env("SESSION_SECRET", secrets.token_urlsafe(32)),
+    "mcp_tool_config_path": require_env("MCP_TOOL_CONFIG_PATH", ""),
+    "llm_model": require_env("LLM_MODEL", ""),
+    "openai_host": require_env("OPENAI_HOST", ""),
+}
