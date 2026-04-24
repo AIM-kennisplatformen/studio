@@ -5,10 +5,12 @@ from loguru import logger
 
 load_dotenv()
 
-def root_question_prompt(question: str) -> str:
+def root_question_prompt(question: str, history_text: str = "") -> str:
+    history_section = f"Conversation History:\n{history_text}\n\n" if history_text else ""
     return (
         "SYSTEM META-INSTRUCTION:\n"
         "Use the `get_literature_supported_knowledge` MCP tool to identify sources relevant to the question.\n\n"
+        f"{history_section}"
         f"full_question:\n\"{question}\"\n\n"
         "keywords_related_to_question=\"Best practices || Target groups || Strategic overview\"\n"
         "Provide an evidence-informed explanation when possible.\n"
@@ -79,7 +81,11 @@ config: dict = {
         "NEb0sAcMc2kTTdvfJMctLYE35Fp0GqyqFp4oOVrstxsevnVMJutiIhvb6TzwPrkbphAh1EiI74oRRO79xRCoZTh1suFYTV9J0tmRJBIFIF4znDYwNyDp3IzUQlESvaS0"
     ),
     "session_secret": require_env("SESSION_SECRET", secrets.token_urlsafe(32)),
-    "mcp_tool_config_path": require_env("MCP_TOOL_CONFIG_PATH", ""),
-    "llm_model": require_env("LLM_MODEL", ""),
-    "openai_host": require_env("OPENAI_HOST", ""),
+    "mcp_tool_config_path": require_env("MCP_TOOL_CONFIG_PATH"),
+    "llm_model": require_env("LLM_MODEL"),
+    "openai_host": require_env("OPENAI_HOST"),
+    "openai_api_key": require_env("OPENAI_API_KEY"),
+    "redis_url": require_env("REDIS_URL", "redis://localhost:6379/0"),
+    "chat_history_limit": int(os.getenv("CHAT_HISTORY_LIMIT", "10")),
+    "chat_history_ttl": int(os.getenv("CHAT_HISTORY_TTL", "86400")),
 }

@@ -11,11 +11,10 @@ from backend.endpoints.auth import auth_router
 from backend.endpoints.chat import chat_router, socket_app
 from backend.endpoints.graph import graph_router
 from backend.endpoints.log_event import log_event_router
+from backend.stores.redis import redis_store
 
 # Build list of allowed CORS origins
 cors_origins = [config["base_url"]]
-
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -28,7 +27,12 @@ async def lifespan(app: FastAPI):
     print(f"✓ Loaded {len(kg_data.questions)} questions")
     print(f"✓ Frontend directory detected: {detect_frontend_dir()}")
 
+    await redis_store.connect()
+
     yield  # application runs here
+    
+    # ---- TEARDOWN ----
+    await redis_store.close()
 
 app = FastAPI(
     title="Knowledge Graph API",
