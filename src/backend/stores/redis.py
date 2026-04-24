@@ -41,15 +41,12 @@ class RedisStore(AbstractStore):
         async with self.redis.pipeline(transaction=True) as pipe:
             pipe.rpush(key, new_item)
             if self.limit > 0:
-                # keep only the last `limit` messages
                 pipe.ltrim(key, -self.limit, -1)
             pipe.expire(key, self.ttl)
             await pipe.execute()
     
     async def get_history(self, session_id: str) -> List[ChatMessage]:
         self._ensure_connected()
-        if not self.redis:
-            return []
             
         key = self._key(session_id)
         items = await self.redis.lrange(key, 0, -1)
