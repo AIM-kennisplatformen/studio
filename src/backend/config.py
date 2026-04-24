@@ -75,6 +75,10 @@ config: dict = {
         "OAUTH_DISCOVERY_URL",
         "http://auth.localhost:9000/application/o/kg/.well-known/openid-configuration"
     ),
+    "logout_url": require_env(
+        "OAUTH_LOGOUT_URL",
+        "https://authscepa.mads-han.src.surf-hosted.nl/application/o/kg-dev/end-session/"
+    ),
     "client_id": require_env("OAUTH_CLIENT_ID", "rkuclih8uzm44nTUvwasexioUKFk5aG1zhG8jcJX"),
     "client_secret": require_env(
         "OAUTH_CLIENT_SECRET",

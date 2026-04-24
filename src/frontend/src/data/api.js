@@ -1,6 +1,5 @@
 const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
-
 const errorResponse = {
   value: "Sorry, I couldn't reach the server. Please try again later.",
   name: "chatbot",
@@ -12,13 +11,13 @@ export async function sendChatMessage(chatId = "1", message) {
   try {
     const response = await fetch(url, {
       method: "POST",
-      credentials: "include",   // Required for cookie-based Auth
+      credentials: "include", // Required for cookie-based Auth
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message }),
     });
 
-	if (!response.ok) {
-	  console.error("Failed to fetch chatbot response:", response.status);
+    if (!response.ok) {
+      console.error("Failed to fetch chatbot response:", response.status);
       return errorResponse;
     }
 
@@ -45,7 +44,7 @@ export async function sendNodeSelection(nodeId) {
   try {
     const response = await fetch(url, {
       method: "POST",
-      credentials: "include",   // Required for cookie-based Auth
+      credentials: "include", // Required for cookie-based Auth
     });
 
     if (!response.ok) {
@@ -58,4 +57,31 @@ export async function sendNodeSelection(nodeId) {
     console.error("Failed to send node selection:", err);
     return null;
   }
+}
+
+export async function logSelectedNode(node) {
+  const url = `${BASE_URL}/log_event`;
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "node_selected",
+        metadata: {
+          nodeId: node.id,
+          nodeLabel: node.data.label,
+        },
+      }),
+    });
+    if (!response.ok) {
+      console.error("Failed to log selected node:", response.status);
+    }
+  } catch (err) {
+    console.error("Failed to log selected node:", err);
+  }
+}
+
+export function logOut() {
+  window.location.href = `${BASE_URL}/auth/logout`;
 }

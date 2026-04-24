@@ -1,6 +1,6 @@
 import json
 import dataclasses
-from typing import List, Dict
+from typing import List
 import redis.asyncio as redis
 from loguru import logger
 

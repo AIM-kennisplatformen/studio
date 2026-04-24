@@ -64,7 +64,7 @@ async def logout(request: Request):
     Clear the user's session and log them out.
     """
     request.session.clear()
-    return RedirectResponse("/")
+    return RedirectResponse(config["logout_url"])
 
 
 @auth_router.get("/me")
@@ -74,6 +74,9 @@ async def me(user=Depends(get_current_user)):
     """
     return {"authenticated": True, "user": user}
 
+@auth_router.get("/")
+async def redirect_to_app(request: Request):
+       return RedirectResponse("/app")
 
 # -------------------------------------------------------
 # WebSocket Authentication
