@@ -18,7 +18,6 @@ cors_origins = [config["base_url"]]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # ---- STARTUP ----
     kg_data = load_knowledge_graph()
     app.state.kg_data = kg_data
 
@@ -29,9 +28,8 @@ async def lifespan(app: FastAPI):
 
     await redis_store.connect()
 
-    yield  # application runs here
+    yield
     
-    # ---- TEARDOWN ----
     await redis_store.close()
 
 app = FastAPI(
