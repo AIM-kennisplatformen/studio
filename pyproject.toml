@@ -40,8 +40,8 @@ dependencies = [
   "langchain-openai", 
   "langchain", 
   "typing-extensions",
-  "mcp-use>=1.5.0,<2", 
- 
+  "mcp-use>=1.5.0,<2",
+  "redis>=5.0.0",
 ]
 
 # ====================================

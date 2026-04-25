@@ -1,22 +1,17 @@
-import time
-from collections import defaultdict
-from typing import List, TypedDict, DefaultDict
 
 import socketio
 from fastapi import APIRouter
 from langfuse import get_client
 
-from backend.config import BASE_URL
-from backend.config import (
-    root_question_prompt,
-)
+from backend.config import config, root_question_prompt
 from backend.endpoints.graph import (
     user_graph_contexts,
     _default_user_graph_context,
     fetch_subnode_stream,
     SUBNODE_MAP,
 )
-
+from backend.models.chat_message import ChatMessage
+from backend.stores.redis import redis_store
 from backend.utility.log_util import end_session, start_session
 from backend.utility.chat_util import (
     push_chat_message,
@@ -28,7 +23,7 @@ from backend.utility.chat_util import (
     sid_connections,
 )
 
-cors_origins = [BASE_URL]
+cors_origins = [config["base_url"]]
 
 sio = socketio.AsyncServer(
     async_mode="asgi",
@@ -40,18 +35,6 @@ register_socketio(sio)
 
 socket_app = socketio.ASGIApp(sio)
 chat_router = APIRouter()
-
-
-class Session(TypedDict):
-    history: List[dict]
-    last_seen: float
-    last_topic: str | None
-
-
-user_sessions: DefaultDict[str, Session] = defaultdict(
-    lambda: {"history": [], "last_seen": time.time(), "last_topic": None}
-)
-
 
 @sio.event
 async def connect(sid, environ, auth):
@@ -111,7 +94,11 @@ async def send_message(sid, data):
         )
         root_span.update(input={"message": user_msg})
 
-        session = user_sessions.setdefault(user_id, {"history": []})
+        limit = config.get("chat_history_limit")
+        history_items = await redis_store.get_history(sid, limit)
+            
+        history_text = "\n".join([f"{item.role.capitalize()}: {item.message}" for item in history_items])
+
         ctx = user_graph_contexts[user_id]
 
         selected_subnode = ctx.get("selected_subnode", "root")
@@ -171,14 +158,14 @@ async def send_message(sid, data):
         # --------------------------------------------------
         # NORMAL ROOT WORKFLOW (user asked a new question in chat)
         # --------------------------------------------------
-        session["history"].append({"role": "user", "message": user_msg})
+        await redis_store.store_message(sid, ChatMessage(role="user", message=user_msg))
 
         ctx["previous_question"] = ctx.get("latest_question")
         ctx["latest_question"] = user_msg
         ctx["selected_subnode"] = "root"
         ctx["dialogue_state_asked"] = False
 
-        synthetic_prompt = root_question_prompt(user_msg)
+        synthetic_prompt = root_question_prompt(user_msg, history_text)
 
         async for evt in stream_agent_events(
             synthetic_prompt, user_id=user_id, trace_id=trace_id,
@@ -200,7 +187,7 @@ async def send_message(sid, data):
         # --------------------------------------------------
         # FINALIZE ROOT RESPONSE
         # --------------------------------------------------
-        session["history"].append({"role": "assistant", "message": full_response})
+        await redis_store.store_message(sid, ChatMessage(role="assistant", message=full_response))
         ctx.setdefault("prefetched", {})["root"] = full_response
 
         root_span.update(output={"response": full_response})
