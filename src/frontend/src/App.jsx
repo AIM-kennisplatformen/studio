@@ -11,6 +11,7 @@ import {
 import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
 import { useAtom } from "jotai";
 import { centerNodeAtom } from "./data/atoms";
+import BreadcrumbOverlay from "./components/BreadcrumbsOverlay";
 
 export default function App() {
   const [leftWidth, setLeftWidth] = useState(66.6);
@@ -78,6 +79,18 @@ export default function App() {
 
       <div className="flex-1 h-full bg-gray-50 flex flex-col">
         <Chat />
+      </div>
+
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          padding: "10px",
+          zIndex: 5000,
+        }}
+      >
+        <BreadcrumbOverlay />
       </div>
     </div>
   );
