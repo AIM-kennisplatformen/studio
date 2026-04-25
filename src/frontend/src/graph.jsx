@@ -8,25 +8,17 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useAtom } from "jotai";
-import { BreadcrumbNode } from "./components/BreadcrumbNode";
-import { BridgeConnectorEdge, SolidEdge } from "./components/CustomEdge";
+import { SolidEdge } from "./components/CustomEdge";
 import { CustomNode } from "./components/CustomNode";
-import { ToggleGroup, ToggleGroupItem } from "./components/ui/toggle-group";
 import {
   breadcrumbsAtom,
   centerNodeAtom,
-  connectorStyleAtom,
   edgesAtom,
   layoutNodesAtom,
   nodesAtom,
   selectedNodeAtom,
 } from "./data/atoms";
 import { sendNodeSelection } from "./data/api";
-import {
-  CONNECTOR_STYLE_CONFIG,
-  buildBridgeEdge,
-  buildBreadcrumbRenderGraph,
-} from "./lib/breadcrumbLayout";
 import { applyDagreLayout } from "./lib/ctrytoscapeLayout";
 import { getEdgeHandles } from "./lib/graphUtils";
 
@@ -79,14 +71,12 @@ export default function Graph({ data, width }) {
   const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom);
   const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom);
   const [layoutNodes, setLayoutNodes] = useAtom(layoutNodesAtom);
-  const [breadcrumbs, setBreadcrumbs] = useAtom(breadcrumbsAtom);
-  const [connectorStyle, setConnectorStyle] = useAtom(connectorStyleAtom);
+  const [, setBreadcrumbs] = useAtom(breadcrumbsAtom);
 
   const { getViewport, setViewport, fitView } = useReactFlow();
   const containerRef = useRef(null);
   const graphNodesRef = useRef([]);
   const edgesRef = useRef([]);
-  const latestForwardNodeIdRef = useRef(null);
   const breadcrumbsCounter = useRef(0);
 
   const centerNodeInView = useCallback(
@@ -112,25 +102,9 @@ export default function Graph({ data, width }) {
     [getViewport, setViewport]
   );
 
-  const mergeAndSetRenderGraph = useCallback(() => {
-    const viewport = getViewport();
-    const containerWidth = containerRef.current?.clientWidth ?? 800;
-    const anchorNodeId = latestForwardNodeIdRef.current ?? centerNodeId;
-    const anchorNode = graphNodesRef.current.find(
-      (node) => node.id === String(anchorNodeId)
-    );
-    const { nodes: breadcrumbNodes, edges: breadcrumbEdges } =
-      buildBreadcrumbRenderGraph(breadcrumbs, viewport, anchorNode?.position);
-    const bridgeEdge = anchorNode
-      ? buildBridgeEdge(breadcrumbs, anchorNodeId, connectorStyle)
-      : null;
-
-    const nextNodes = [...graphNodesRef.current, ...breadcrumbNodes];
-    const nextEdges = [
-      ...edgesRef.current,
-      ...breadcrumbEdges,
-      ...(bridgeEdge ? [bridgeEdge] : []),
-    ];
+  const setRenderGraph = useCallback(() => {
+    const nextNodes = [...graphNodesRef.current];
+    const nextEdges = [...edgesRef.current];
 
     setNodes((currentNodes) =>
       areNodeArraysEqual(currentNodes, nextNodes) ? currentNodes : nextNodes
@@ -138,19 +112,10 @@ export default function Graph({ data, width }) {
     setEdges((currentEdges) =>
       areEdgeArraysEqual(currentEdges, nextEdges) ? currentEdges : nextEdges
     );
-  }, [
-    breadcrumbs,
-    centerNodeId,
-    connectorStyle,
-    getViewport,
-    setEdges,
-    setNodes,
-  ]);
+  }, [setEdges, setNodes]);
 
   const appendBreadcrumb = useCallback(
     (node) => {
-      let appended = false;
-
       setBreadcrumbs((prev) => {
         const lastEntry = prev[prev.length - 1];
 
@@ -169,7 +134,6 @@ export default function Graph({ data, width }) {
           return prev.slice(0, existingIndex + 1);
         }
 
-        appended = true;
         const entry = {
           historyId: `bc-${breadcrumbsCounter.current}`,
           originNodeId: node.id,
@@ -179,10 +143,6 @@ export default function Graph({ data, width }) {
         breadcrumbsCounter.current += 1;
         return [...prev, entry];
       });
-
-      if (appended || latestForwardNodeIdRef.current == null) {
-        latestForwardNodeIdRef.current = node.id;
-      }
     },
     [setBreadcrumbs]
   );
@@ -314,12 +274,7 @@ export default function Graph({ data, width }) {
     graphNodesRef.current = mergedNodes;
     edgesRef.current = newEdges;
 
-    if (latestForwardNodeIdRef.current == null) {
-      latestForwardNodeIdRef.current =
-        selectedNode?.id || mergedNodes[0]?.id || null;
-    }
-
-    mergeAndSetRenderGraph();
+    setRenderGraph();
 
     if (!selectedNode) {
       const nodeToCenter = mergedNodes.find((node) => node.id === "1");
@@ -333,7 +288,7 @@ export default function Graph({ data, width }) {
     centerNodeInView,
     data,
     layoutNodes,
-    mergeAndSetRenderGraph,
+    setRenderGraph,
     selectedNode,
     setLayoutNodes,
     setSelectedNode,
@@ -345,66 +300,22 @@ export default function Graph({ data, width }) {
 
   const onNodesChange = useCallback(
     (changes) => {
-      const realChanges = changes.filter(
-        (change) => !change.id?.startsWith("bc-")
-      );
-
       setNodes((currentNodes) => {
         const updatedNodes = applyNodeChanges(changes, currentNodes);
 
-        if (realChanges.length === 0) {
-          return updatedNodes;
-        }
-
-        const realNodes = updatedNodes.filter(
-          (node) => node.type !== "breadcrumb"
-        );
-
-        graphNodesRef.current = realNodes;
-        edgesRef.current = updateEdges(realNodes, edgesRef.current);
-
-        const viewport = getViewport();
-        const containerWidth = containerRef.current?.clientWidth ?? 800;
-        const anchorNodeId = latestForwardNodeIdRef.current ?? centerNodeId;
-        const anchorNode = realNodes.find(
-          (node) => node.id === String(anchorNodeId)
-        );
-        const { edges: breadcrumbEdges } = buildBreadcrumbRenderGraph(
-          breadcrumbs,
-          viewport,
-          containerWidth,
-          anchorNode?.position
-        );
-        const bridgeEdge = anchorNode
-          ? buildBridgeEdge(breadcrumbs, anchorNodeId, connectorStyle)
-          : null;
-
-        const nextEdges = [
-          ...edgesRef.current,
-          ...breadcrumbEdges,
-          ...(bridgeEdge ? [bridgeEdge] : []),
-        ];
+        graphNodesRef.current = updatedNodes;
+        edgesRef.current = updateEdges(updatedNodes, edgesRef.current);
 
         setEdges((currentEdges) =>
-          areEdgeArraysEqual(currentEdges, nextEdges) ? currentEdges : nextEdges
+          areEdgeArraysEqual(currentEdges, edgesRef.current)
+            ? currentEdges
+            : edgesRef.current
         );
 
-        return [
-          ...realNodes,
-          ...updatedNodes.filter((node) => node.type === "breadcrumb"),
-        ];
+        return updatedNodes;
       });
     },
-    [
-      breadcrumbs,
-      centerNodeId,
-      connectorStyle,
-      getViewport,
-      selectedNode?.id,
-      setEdges,
-      setNodes,
-      updateEdges,
-    ]
+    [setEdges, setNodes, updateEdges]
   );
 
   const onEdgesChange = useCallback(
@@ -420,50 +331,13 @@ export default function Graph({ data, width }) {
 
   const onNodeClick = useCallback(
     (_, node) => {
-      if (node.type === "breadcrumb") {
-        const realNode = graphNodesRef.current.find(
-          (graphNode) => graphNode.id === node.data.originNodeId
-        );
-
-        if (!realNode) {
-          return;
-        }
-        setSelectedNode(realNode);
-
-        setBreadcrumbs((prev) => {
-          if (!selectedNode || node.id !== selectedNode.id) {
-            const clickedIndex = prev.findIndex(
-              (entry) => entry.historyId === node.id
-            );
-
-            if (clickedIndex < 0) {
-              return prev;
-            }
-
-            return prev.slice(0, clickedIndex + 1);
-          }
-        });
-        latestForwardNodeIdRef.current = node.data.originNodeId;
-        setCenterNodeId(Number(node.data.originNodeId));
-        centerNodeInView(realNode);
-        sendNodeSelection(node.data.originNodeId);
-        return;
-      }
-
-      latestForwardNodeIdRef.current = node.id;
       setCenterNodeId(Number(node.id));
       setSelectedNode(node);
       centerNodeInView(node);
       sendNodeSelection(node.id);
       appendBreadcrumb(node);
     },
-    [
-      appendBreadcrumb,
-      centerNodeInView,
-      setBreadcrumbs,
-      setCenterNodeId,
-      setSelectedNode,
-    ]
+    [appendBreadcrumb, centerNodeInView, setCenterNodeId, setSelectedNode]
   );
 
   useEffect(() => {
@@ -479,59 +353,27 @@ export default function Graph({ data, width }) {
         duration: 150,
         nodes: graphNodesRef.current.map((n) => ({ id: n.id })),
       });
-      mergeAndSetRenderGraph();
     });
 
     ro.observe(container);
 
     return () => ro.disconnect();
-  }, [fitView, mergeAndSetRenderGraph]);
+  }, [fitView]);
 
   return (
     <div
       ref={containerRef}
       style={{ height: "100vh", width: `${width}vw`, position: "relative" }}
     >
-      <div className="pointer-events-none absolute right-4 top-4 z-20 max-w-[min(420px,calc(100%-2rem))]">
-        <div className="pointer-events-auto ml-auto w-fit rounded-lg border border-[#038061]/20 bg-white/95 p-2 shadow-md backdrop-blur-sm">
-          <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[#038061]">
-            Connector
-          </div>
-          <ToggleGroup
-            type="single"
-            variant="outline"
-            size="sm"
-            value={connectorStyle}
-            onValueChange={(value) => {
-              if (value) {
-                setConnectorStyle(value);
-              }
-            }}
-            className="flex flex-wrap gap-0"
-          >
-            {Object.values(CONNECTOR_STYLE_CONFIG).map((option) => (
-              <ToggleGroupItem
-                key={option.key}
-                value={option.key}
-                aria-label={`Use ${option.label.toLowerCase()} connector`}
-                className="px-3 text-xs text-[#038061] data-[state=on]:bg-[#038061] data-[state=on]:text-white"
-              >
-                {option.label}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </div>
-      </div>
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        nodeTypes={{ custom: CustomNode, breadcrumb: BreadcrumbNode }}
-        edgeTypes={{ solid: SolidEdge, bridgeConnector: BridgeConnectorEdge }}
+        nodeTypes={{ custom: CustomNode }}
+        edgeTypes={{ solid: SolidEdge }}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeClick={onNodeClick}
-        onMoveEnd={mergeAndSetRenderGraph}
         fitView
         fitViewOptions={{
           padding: 0.5,

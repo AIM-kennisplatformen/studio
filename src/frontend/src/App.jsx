@@ -2,12 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import "./index.css";
 import Chat from "./chat.jsx";
 import Graph from "./graph.jsx";
-import {
-  MiniMap,
-  Panel,
-  ReactFlowProvider,
-  ViewportPortal,
-} from "@xyflow/react";
+import { ReactFlowProvider } from "@xyflow/react";
 import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
 import { useAtom } from "jotai";
 import { centerNodeAtom } from "./data/atoms";
