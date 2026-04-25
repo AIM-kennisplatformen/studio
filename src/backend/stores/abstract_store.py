@@ -16,7 +16,7 @@ class AbstractStore(ABC):
         self._connected: bool = False
         self._connecting: bool = False
 
-    async def connect(self, config: dict | None = None) -> None:
+    async def connect(self, config: dict) -> None:
         """
         Establish connection to the backend.
 
@@ -40,7 +40,7 @@ class AbstractStore(ABC):
         self._connected = False
 
     @abstractmethod
-    async def _connect_impl(self, config: dict | None) -> None:
+    async def _connect_impl(self, config: dict) -> None:
         """Backend-specific connection logic."""
         raise NotImplementedError
 
@@ -64,7 +64,7 @@ class AbstractStore(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_history(self, session_id: str) -> List[ChatMessage]:
+    async def get_history(self, session_id: str, limit: int = 0) -> List[ChatMessage]:
         """
         Retrieve previous messages.
 

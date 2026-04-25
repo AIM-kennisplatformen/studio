@@ -94,7 +94,9 @@ async def send_message(sid, data):
         )
         root_span.update(input={"message": user_msg})
 
-        history_items = await redis_store.get_history(sid)
+        limit = config.get("chat_history_limit")
+        history_items = await redis_store.get_history(sid, limit)
+            
         history_text = "\n".join([f"{item.role.capitalize()}: {item.message}" for item in history_items])
 
         ctx = user_graph_contexts[user_id]

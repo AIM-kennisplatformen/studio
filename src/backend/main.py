@@ -26,7 +26,10 @@ async def lifespan(app: FastAPI):
     print(f"✓ Loaded {len(kg_data.questions)} questions")
     print(f"✓ Frontend directory detected: {detect_frontend_dir()}")
 
-    await redis_store.connect()
+    await redis_store.connect({
+        "redis_url": config["redis_url"],
+        "redis_expiration_time": config["redis_expiration_time"]
+    })
 
     yield
     

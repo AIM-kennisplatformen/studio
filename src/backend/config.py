@@ -17,13 +17,15 @@ def root_question_prompt(question: str, history_text: str = "") -> str:
     )
 
 
-def subnode_question_prompt(question: str, subnode: str) -> str:
+def subnode_question_prompt(question: str, subnode: str, history_text: str = "") -> str:
+    history_section = f"Conversation History:\n{history_text}\n\n" if history_text else ""
     keyword = subnode if subnode != "root" else "Best practices || Target groups || Strategic overview"
     return (
         "SYSTEM META-INSTRUCTION:\n"
         "If relevant, use the `paper_search` MCP tool to identify scientific "
         "literature or studies relevant to the question.\n\n"
         "Don't alter question and keywords below — insert them straight into the tool.\n"
+        f"{history_section}"
         f"full_question:\n\"{question}\"\n\n"
         f"keywords_related_to_question=\"{keyword}\" "
         "Provide an evidence-informed explanation when possible.\n"
@@ -90,6 +92,6 @@ config: dict = {
     "openai_host": require_env("OPENAI_HOST"),
     "openai_api_key": require_env("OPENAI_API_KEY"),
     "redis_url": require_env("REDIS_URL", "redis://localhost:6379/0"),
+    "redis_expiration_time": int(os.getenv("REDIS_EXPIRATION_TIME", "86400")),
     "chat_history_limit": int(os.getenv("CHAT_HISTORY_LIMIT", "10")),
-    "chat_history_ttl": int(os.getenv("CHAT_HISTORY_TTL", "86400")),
 }
