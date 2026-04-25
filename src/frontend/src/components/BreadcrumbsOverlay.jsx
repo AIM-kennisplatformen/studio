@@ -6,7 +6,7 @@ export default function BreadcrumbOverlay({}) {
 
   return (
     <>
-      <div>
+      <div className="opacity-60 hover:opacity-100">
         {breadcrumbs.map((breadcrumb) => {
           return (
             <p
