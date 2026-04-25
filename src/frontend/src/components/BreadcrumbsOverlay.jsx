@@ -4,10 +4,12 @@ import { useAtom } from "jotai";
 export default function BreadcrumbOverlay({}) {
   const [breadcrumbs, setBreadcrumbs] = useAtom(breadcrumbsAtom);
 
+  const withoutMostRecentBreadcrumb = breadcrumbs.slice(0, -1);
+
   return (
     <>
       <div className="opacity-60 hover:opacity-100">
-        {breadcrumbs.map((breadcrumb) => {
+        {withoutMostRecentBreadcrumb.map((breadcrumb) => {
           return (
             <p
               key={breadcrumb.historyId}
