@@ -21,37 +21,52 @@ import {
   messagesAtom,
   textAtom,
   textStatusAtom,
+  lastDoneMessageKeyAtom,
 } from "./data/atoms";
 
 import { useChatWebSocket } from "./data/chatWebsocket";
-import { useRef, useEffect } from "react";
-import { Reasoning, ReasoningTrigger } from "@/components/shadcn-io/ai/reasoning";
+import {
+  Reasoning,
+  ReasoningTrigger,
+} from "@/components/shadcn-io/ai/reasoning";
+import { Action, Actions } from "@/components/shadcn-io/ai/actions";
+import { ThumbsUpIcon, ThumbsDownIcon } from "lucide-react";
+import LogOutButton from "@/components/LogOutButton.jsx";
 
 export default function Chat() {
   return (
-    <div className="flex flex-col h-screen bg-white">
-      {/* Messages container - scrollable */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <Messages />
-      </div>
-
-      {/* Bottom row: Feedback button + InputArea - sticky at bottom */}
-      <div className="flex border-t border-gray-200 bg-white">
-        {/* Left-side Feedback Button */}
-        <div className="flex flex-col justify-end -ml-22 pb-18">
-          <FeedbackButton />
+    <>
+      <div className="flex flex-col h-full bg-white">
+        {/* Messages container - scrollable */}
+        <div className="absolute top-4 right-4 z-10">
+          <LogOutButton />
         </div>
+        <div className="flex-1 min-h-0 h-full overflow-hidden">
+          <Messages />
+        </div>
+        <div className="flex flex-col h-screen bg-white">
+          {/* Messages container - scrollable */}
+          <div className="flex-1 overflow-y-auto p-4">
+            <Messages />
+          </div>
 
-        {/* Input area takes full remaining width */}
-        <div className="flex-1 -ml-9">
-          <InputArea />
+          {/* Bottom row: Feedback button + InputArea - sticky at bottom */}
+          <div className="flex border-t border-gray-200 bg-white">
+            {/* Left-side Feedback Button */}
+            <div className="flex flex-col justify-end -ml-22 pb-18">
+              <FeedbackButton />
+            </div>
+
+            {/* Input area takes full remaining width */}
+            <div className="flex-1 -ml-9">
+              <InputArea />
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
-
-
 
 function InputArea() {
   const [text, setText] = useAtom(textAtom);
@@ -68,8 +83,7 @@ function InputArea() {
     // Add user message instantly
     setMessages((prev) => [
       { key: prev.length + 1, value: text, name: "user" },
-        ...prev,
-
+      ...prev,
     ]);
 
     // Update UI state
@@ -107,30 +121,44 @@ function InputArea() {
 function Messages() {
   const messages = useAtomValue(messagesAtom);
   const status = useAtomValue(textStatusAtom);
-  const bottomRef = useRef(null);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  const lastDoneKey = useAtomValue(lastDoneMessageKeyAtom);
 
   return (
-    <div className="flex flex-col h-full">
-    <Conversation>
-      <ConversationContent className="flex flex-col overflow-y-auto h-full gap-4">
-        <div className="flex-1"></div>
+    <Conversation className="h-full">
+      <ConversationContent className="flex flex-col gap-4 p-4 min-h-full">
+        <div className="flex-1" />
         {[...messages].reverse().map(({ key, value, name }) =>
           name === "chatbot" ? (
-            <div key={key} className="flex items-start gap-2 justify-start pr-20">
-              <Response className="max-w-prose text-sm border border-gray-200 rounded-lg p-2 bg-gray-50 w-fit break-words">
-                {value}
-              </Response>
+            <div
+              key={key}
+              className="flex items-start gap-2 justify-start pr-20"
+            >
+              <div className="flex flex-col items-start">
+                <Response className="max-w-prose text-sm border border-gray-200 rounded-lg p-2 bg-gray-50 break-words">
+                  {value}
+                </Response>
+                {key === lastDoneKey && status === "ready" && (
+                  <Actions>
+                    <Action
+                      style={{ backgroundColor: "#038061", color: "white" }}
+                      onClick={() => console.log("Thumbs up!")}
+                      tooltip="Good response"
+                    >
+                      <ThumbsUpIcon className="size-4" />
+                    </Action>
+                    <Action
+                      style={{ backgroundColor: "#038061", color: "white" }}
+                      onClick={() => console.log("Thumbs down!")}
+                      tooltip="Bad response"
+                    >
+                      <ThumbsDownIcon className="size-4" />
+                    </Action>
+                  </Actions>
+                )}
+              </div>
             </div>
           ) : (
-            <Message
-              from="user"
-              key={key}
-              className="flex justify-end pl-20"
-            >
+            <Message from="user" key={key} className="flex justify-end pl-20">
               <MessageContent
                 className="max-w-prose break-words"
                 style={{ backgroundColor: "#038061", color: "#ffffff" }}
@@ -138,21 +166,27 @@ function Messages() {
                 {value}
               </MessageContent>
             </Message>
-          )
-          
+          ),
         )}
-          {status === "thinking" && (
-            <div>
-              <Reasoning isStreaming={status === "thinking"}>
-                <ReasoningTrigger style={{ backgroundColor: "transparent", color: "black", border: "none", padding: "0", outline: "none", cursor: "text" }}>
-                  🧠 Thinking...
-                </ReasoningTrigger>
-              </Reasoning>
-            </div>
-          )}
-        <div ref={bottomRef} />
+        {status === "thinking" && (
+          <div>
+            <Reasoning isStreaming={status === "thinking"}>
+              <ReasoningTrigger
+                style={{
+                  backgroundColor: "transparent",
+                  color: "black",
+                  border: "none",
+                  padding: "0",
+                  outline: "none",
+                  cursor: "text",
+                }}
+              >
+                🧠 Thinking...
+              </ReasoningTrigger>
+            </Reasoning>
+          </div>
+        )}
       </ConversationContent>
     </Conversation>
-    </div>
   );
 }
