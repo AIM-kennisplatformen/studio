@@ -7,8 +7,8 @@ export default {
         "node_modules/@qavajs/steps-memory/index.js",
         "node_modules/@qavajs/steps-playwright/index.js",
         "node_modules/@qavajs/steps-api/index.js",
-        "step_definition/*.js"
-    ],
+        "step_definition/*.js" 
+    ],  
     format: [
         "@qavajs/console-formatter",
         ["@qavajs/html-formatter", "report/report.html"]
