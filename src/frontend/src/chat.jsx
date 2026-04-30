@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import {
   PromptInput,
@@ -57,7 +57,7 @@ export default function Chat() {
   const [showFeedback, setShowFeedback] = useState(true);
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white relative z-10">
       {/* Header with logout */}
       <div className="flex justify-end px-4 py-2 border-b border-gray-200 bg-white shrink-0">
         <LogOutButton />
@@ -86,28 +86,20 @@ function InputArea({ setShowFeedback }) {
   const [status, setStatus] = useAtom(textStatusAtom);
   const setMessages = useSetAtom(messagesAtom);
 
-  // WebSocket connection
   const { send } = useChatWebSocket(setStatus);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!text || status !== "ready") return;
 
-    // Add user message instantly
     setMessages((prev) => [
       { key: prev.length + 1, value: text, name: "user" },
       ...prev,
     ]);
 
-    // Update UI state
     setStatus("thinking");
-
-    // Send to WebSocket server
     send(text);
-
-    // Clear input
     setText("");
-
     setShowFeedback(true);
   };
 
@@ -120,7 +112,6 @@ function InputArea({ setShowFeedback }) {
           placeholder="Type your message..."
           className="flex-1"
         />
-
         <PromptInputToolbar className="ml-2">
           <PromptInputSubmit
             disabled={!text || status !== "ready"}
@@ -153,63 +144,73 @@ function Messages({
               key={key}
               className="flex items-start gap-2 justify-start w-full pr-[5%]"
             >
-              <div className="flex flex-col items-start">
+              <div className="flex flex-col items-start w-full">
                 <Response className="w-full text-sm border border-gray-200 rounded-lg p-2 bg-gray-50 break-words">
                   {value}
                 </Response>
                 {key === lastDoneKey && status === "ready" && (
-                  <Actions>
-                    {showFeedback ? (
-                      <>
-                        <Action
-                          style={{ backgroundColor: "#038061", color: "white" }}
-                          onClick={() =>
-                            handleFeedback(
-                              key,
-                              "positive",
-                              setShowFeedback,
-                              setFeedbackText,
-                            )
-                          }
-                          tooltip="Good response"
-                        >
-                          <ThumbsUpIcon className="size-4" />
-                        </Action>
-                        <Action
-                          style={{ backgroundColor: "#038061", color: "white" }}
-                          onClick={() =>
-                            handleFeedback(
-                              key,
-                              "negative",
-                              setShowFeedback,
-                              setFeedbackText,
-                            )
-                          }
-                          tooltip="Bad response"
-                        >
-                          <ThumbsDownIcon className="size-4" />
-                        </Action>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-sm text-gray-600">{feedbackText}</p>
-                        <button
-                          type="button"
-                          onClick={() => setShowFeedback(true)}
-                          className="text-sm text-blue-500 hover:underline cursor-pointer hover:text-blue-700 bg-transparent border-0 p-0"
-                        >
-                          Edit Feedback
-                        </button>
-                      </>
-                    )}
-                  </Actions>
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    onSubmit={(e) => e.preventDefault()}
+                    className="ml-7"
+                  >
+                    <Actions>
+                      {showFeedback ? (
+                        <>
+                          <Action
+                            label="Good response"
+                            style={{ backgroundColor: "#038061", color: "white" }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleFeedback(
+                                key,
+                                "positive",
+                                setShowFeedback,
+                                setFeedbackText,
+                              );
+                            }}
+                          >
+                            <ThumbsUpIcon className="size-4" />
+                          </Action>
+                          <Action
+                            label="Bad response"
+                            style={{ backgroundColor: "#038061", color: "white" }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleFeedback(
+                                key,
+                                "negative",
+                                setShowFeedback,
+                                setFeedbackText,
+                              );
+                            }}
+                          >
+                            <ThumbsDownIcon className="size-4" />
+                          </Action>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm text-gray-600">{feedbackText}</p>
+                          <button
+                            type="button"
+                            onClick={() => setShowFeedback(true)}
+                            className="text-sm text-blue-500 hover:underline cursor-pointer hover:text-blue-700 bg-transparent border-0 p-0"
+                          >
+                            Edit Feedback
+                          </button>
+                        </>
+                      )}
+                    </Actions>
+                  </div>
                 )}
               </div>
             </div>
           ) : (
             <Message from="user" key={key} className="flex justify-end pl-[5%]">
-              <MessageContent 
-                className="w-full break-words" 
+              <MessageContent
+                className="w-full break-words"
                 style={{ backgroundColor: "#038061", color: "#ffffff" }}
               >
                 {value}
