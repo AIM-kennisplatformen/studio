@@ -1,7 +1,7 @@
 export default class Memory {
   // Pre-built URLs for the test
-  loginUrl = 'http://localhost:10090/auth/login';
-  meUrl = 'http://localhost:10090/me';
+  loginUrl = 'http://127.0.0.1:10090/auth/login';
+  meUrl = 'http://127.0.0.1:10090/me';
 
   // Authentik test user credentials
   authentikUsername = 'akadmin';
