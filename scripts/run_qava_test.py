@@ -28,12 +28,15 @@ tests_dir = root / "tests" / "bdd"
 
 
 def run(cmd: str | list[str], *, check: bool = True, env: dict | None = None, cwd: Path | None = None) -> int:
-    """Run a command, return the exit code."""
-    merged_env = {**os.environ, **(env or {})}
+    """Run a command, return the exit code.
+
+    If env is provided, it is used AS-IS (not merged with os.environ).
+    If env is None, the subprocess inherits the current environment.
+    """
     if isinstance(cmd, str):
-        result = subprocess.run(cmd, shell=True, cwd=cwd or root, env=merged_env)
+        result = subprocess.run(cmd, shell=True, cwd=cwd or root, env=env)
     else:
-        result = subprocess.run(cmd, cwd=cwd or root, env=merged_env)
+        result = subprocess.run(cmd, cwd=cwd or root, env=env)
     if check and result.returncode != 0:
         sys.exit(result.returncode)
     return result.returncode
@@ -74,6 +77,8 @@ def main() -> int:
         # 6. Run tests
         # Clear LD_LIBRARY_PATH to prevent pixi's conda libs from breaking Chromium's
         # network stack (causes ERR_NAME_NOT_RESOLVED in CI).
+        if os.environ.get("LD_LIBRARY_PATH"):
+            print(f"[DEBUG] Clearing LD_LIBRARY_PATH={os.environ['LD_LIBRARY_PATH']}")
         clean_env = {k: v for k, v in os.environ.items() if k not in ("LD_LIBRARY_PATH", "LD_PRELOAD")}
         exit_code = run(
             ["npx", "qavajs", "run", "--config", "config.mjs"],
