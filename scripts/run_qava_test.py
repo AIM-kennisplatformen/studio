@@ -86,6 +86,12 @@ def main() -> int:
             cwd=tests_dir,
             env=clean_env,
         )
+
+        # 6b. Dump backend logs for debugging test failures
+        if exit_code != 0:
+            print("\n===== BACKEND LOGS (last 80 lines) =====")
+            run(compose_cmd("logs", "--tail=80", "backend"), check=False)
+            print("===== END BACKEND LOGS =====\n")
     finally:
         # 7. Tear down
         run(compose_cmd("stop"), check=False)
