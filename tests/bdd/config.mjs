@@ -23,6 +23,9 @@ export default {
     browser: {
         capabilities: {
             browserName: "chromium",
+            // In CI, use 'chrome' channel to avoid headless shell networking issues
+            // The headless shell binary has broken network access in GitHub Actions
+            ...(isCI && { channel: "chrome" }),
             // CI-specific args: --no-sandbox and --disable-dev-shm-usage are required for GitHub Actions
             // Local: --host-resolver-rules maps host.docker.internal so OAuth redirects work
             args: isCI
