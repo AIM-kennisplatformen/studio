@@ -1,3 +1,5 @@
+import { getFeedbackMessage } from "./feedback.js";
+
 const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
 const errorResponse = {
@@ -59,6 +61,34 @@ export async function sendNodeSelection(nodeId) {
   }
 }
 
+export async function logResponseFeedback(key, feedback) {
+  const url = `${BASE_URL}/log_event`;
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      credentials: "include", // Required for cookie-based Auth
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "response_feedback",
+        metadata: {
+          messagekey: key,
+          feedback: feedback,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Failed to log response feedback:", response.status);
+      return null;
+    }
+    return getFeedbackMessage();
+  } catch (err) {
+    console.error("Failed to log response feedback:", err);
+    return null;
+  }
+}
+
 export async function logSelectedNode(node) {
   const url = `${BASE_URL}/log_event`;
   try {
@@ -79,6 +109,20 @@ export async function logSelectedNode(node) {
     }
   } catch (err) {
     console.error("Failed to log selected node:", err);
+  }
+}
+export async function logEvent(name, metadata) {
+  try {
+    const response = await fetch("/log_event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, metadata }),
+    });
+    if (!response.ok) {
+      console.error("Failed to log event:", await response.text());
+    }
+  } catch (err) {
+    console.error("Error logging event:", err);
   }
 }
 
