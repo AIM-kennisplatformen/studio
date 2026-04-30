@@ -29,7 +29,7 @@ export default {
             // CI-specific args: --no-sandbox and --disable-dev-shm-usage are required for GitHub Actions
             // Local: --host-resolver-rules maps host.docker.internal so OAuth redirects work
             args: isCI
-                ? ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+                ? ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--host-resolver-rules=MAP host.docker.internal 127.0.0.1"]
                 : ["--host-resolver-rules=MAP host.docker.internal 127.0.0.1"]
         },
         timeout: {
