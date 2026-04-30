@@ -49,6 +49,9 @@ jobs:
           AUTHENTIK_BOOTSTRAP_TOKEN=test-api-token
           EOF
 
+      - name: Create external Docker network
+        run: docker network create mcp_server_scepa_studio_net
+
       - name: Install Pixi
         uses: prefix-dev/setup-pixi@v0.8.1
         with:
