@@ -72,10 +72,13 @@ def main() -> int:
         run(compose_cmd("logs", "--tail=30", "backend"), check=False)
 
         # 6. Run tests
+        # Unset LD_LIBRARY_PATH to prevent pixi's conda libs from breaking Chromium's network stack
+        test_env = {k: v for k, v in os.environ.items() if k != "LD_LIBRARY_PATH"}
         exit_code = run(
             ["npx", "qavajs", "run", "--config", "config.mjs"],
             check=False,
             cwd=tests_dir,
+            env=test_env,
         )
     finally:
         # 7. Tear down
