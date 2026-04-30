@@ -72,13 +72,23 @@ def main() -> int:
         run(compose_cmd("logs", "--tail=30", "backend"), check=False)
 
         # 6. Run tests
-        # Unset LD_LIBRARY_PATH to prevent pixi's conda libs from breaking Chromium's network stack
-        test_env = {k: v for k, v in os.environ.items() if k != "LD_LIBRARY_PATH"}
+        # Clear conda/pixi library paths to prevent them from breaking Chromium's network stack.
+        # Pixi's LD_LIBRARY_PATH causes Chromium to load incompatible shared libraries.
+        clean_env = {}
+        for k, v in os.environ.items():
+            if k in ("LD_LIBRARY_PATH", "LD_PRELOAD"):
+                continue
+            # Strip pixi/conda paths from PATH so system node/npx is used
+            if k == "PATH":
+                paths = [p for p in v.split(":") if ".pixi" not in p and "conda" not in p]
+                clean_env[k] = ":".join(paths)
+            else:
+                clean_env[k] = v
         exit_code = run(
             ["npx", "qavajs", "run", "--config", "config.mjs"],
             check=False,
             cwd=tests_dir,
-            env=test_env,
+            env=clean_env,
         )
     finally:
         # 7. Tear down
