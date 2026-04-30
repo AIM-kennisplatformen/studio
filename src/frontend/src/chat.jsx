@@ -195,12 +195,13 @@ function Messages({
                     ) : (
                       <>
                         <p className="text-sm text-gray-600">{feedbackText}</p>
-                        <p
+                        <button
+                          type="button"
                           onClick={() => setShowFeedback(true)}
-                          className="text-sm text-blue-500 hover:underline cursor-pointer hover:text-blue-700"
+                          className="text-sm text-blue-500 hover:underline cursor-pointer hover:text-blue-700 bg-transparent border-0 p-0"
                         >
                           Edit Feedback
-                        </p>
+                        </button>
                       </>
                     )}
                   </Actions>
