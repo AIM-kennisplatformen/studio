@@ -3,18 +3,16 @@ from collections import defaultdict
 
 from fastapi import APIRouter, Depends, Request
 
-from backend.utility.graph_api_models import ContextResponse
+from backend.utility.graph_api_models import GraphResponse
 from backend.endpoints.auth import get_current_user
 from backend.config import subnode_question_prompt
 
 from backend.utility.chat_util import (
-    push_chat_message,
     push_chat_message_stream,
     stream_agent_events,
 )
 
 graph_router = APIRouter()
-
 
 # =====================================================
 # Subnode Mapping
@@ -43,6 +41,7 @@ def _default_user_graph_context() -> Dict[str, Any]:
         "pending": {},  # subnode_name → asyncio.Task
         "dialogue_state_asked": False,
     }
+
 
 
 user_graph_contexts: DefaultDict[str, Dict[str, Any]] = defaultdict(
@@ -108,112 +107,39 @@ async def fetch_subnode_stream(
 # =====================================================
 # Graph Node Selection Endpoint
 # =====================================================
-@graph_router.post("/nodes/{node_id}/context")
-async def get_node_context(
-    node_id: int,
-    request: Request,
-    user=Depends(get_current_user),
-):
+
+
+#Full graph endpoint, to be called on session start and after each question is answered
+
+@graph_router.get("/graph")
+async def get_full_graph(
+        request: Request,
+        user=Depends(get_current_user)):
+   
     user_id = user["sub"]
     ctx = user_graph_contexts[user_id]
+
     kg_data = request.app.state.kg_data
 
-    question = ctx.get("latest_question")
-    # --------------------------------------------------
-    # ROOT NODE
-    # --------------------------------------------------
-    if node_id == 1:
-        ctx["selected_subnode"] = "root"
-
-        if not question:
-            await push_chat_message(
-                user_id,
-                "Do you want to ask an question, answered by the full body of literature? "
-                "Please proceed, by asking me your question?",
-            )
-        else:
-            await push_chat_message(
-                user_id,
-                "Answer a question by using the full body of literature "
-                f"Would you like to ask a different question than: '{question}'? "
-                "**Respond with another question** or type **yes** to repeat the previous question.",
-            )
-        # If a prompt was already pending, cancel it and re-ask
-        ctx["dialogue_state_asked"] = False
-        await push_chat_message_stream(user_id, "done", "", "root")
-
-        ctx["dialogue_state_asked"] = True
-        ctx["previous_question"] = question
-        return
-
-    # --------------------------------------------------
-    # SUBNODE
-    # --------------------------------------------------
-    if node_id in SUBNODE_MAP:
-        subnode = SUBNODE_MAP[node_id]
-        ctx["selected_subnode"] = subnode
-        # If a prompt was already pending, cancel it and re-ask
-        ctx["dialogue_state_asked"] = False
-        if not question:
-            await push_chat_message(
-                user_id,
-                f"You've selected subset {subnode}. Please ask me your question?",
-            )
-        else:
-            await push_chat_message(
-                user_id,
-                "You've selected subset "
-                f"{subnode}. Please ask me your question using this subset. If you want to repeat your previous question: "
-                f"`{question}`"
-                " type **yes**, otherwise **Respond with another question**.",
-            )
-
-        await push_chat_message_stream(user_id, "done", "", subnode)
-
-        ctx["dialogue_state_asked"] = True
-        ctx["previous_question"] = question
-        return
-
-    # --------------------------------------------------
-    # Knowledge Graph Lookup
-    # --------------------------------------------------
     if kg_data is None:
-        return ContextResponse(
-            message="Knowledge graph data not loaded",
+        return GraphResponse(
             nodes=[],
             edges=[],
-            sources=[],
             error="not_loaded",
         )
-
-    node = kg_data.get_entity(node_id)
-    if not node:
-        return ContextResponse(
-            message=f"Node '{node_id}' not found",
-            nodes=[],
-            edges=[],
-            sources=[],
-            error="not_found",
-        )
-
-    edges = [
-        rel
-        for rel in kg_data.relations.values()
-        if int(rel.sourceId) == node_id or int(rel.targetId) == node_id
-    ]
-
-    neighbor_ids = {int(rel.sourceId) for rel in edges} | {
-        int(rel.targetId) for rel in edges
-    }
-
-    neighbor_nodes = [
-        kg_data.entities[nid] for nid in neighbor_ids if nid in kg_data.entities
-    ]
-
-    return ContextResponse(
-        message=f"Context for node {node_id}",
-        nodes=neighbor_nodes,
-        edges=edges,
-        sources=[],
-        error=None,
+    
+    subnode_name = ctx["selected_subnode"]
+    if subnode_name == "root":
+        selected_subnode = None
+    else:
+        selected_subnode = next(
+        (n for n in kg_data.entities.values() if n.title == subnode_name),
+        None,
     )
+    
+    return GraphResponse(
+        nodes=list(kg_data.entities.values()),
+        edges=list(kg_data.relations.values()),
+        selected_subnode= selected_subnode,
+        error=None,
+    ) 

@@ -8,7 +8,6 @@ import {
   PromptInputTextarea,
   PromptInputToolbar,
 } from "@/components/shadcn-io/ai/prompt-input";
-import { FeedbackButton } from "@/components/FeedbackButton";
 
 import { Response } from "@/components/shadcn-io/ai/response";
 import { Message, MessageContent } from "@/components/shadcn-io/ai/message";
@@ -34,6 +33,7 @@ import {
 import { Action, Actions } from "@/components/shadcn-io/ai/actions";
 import { ThumbsUpIcon, ThumbsDownIcon } from "lucide-react";
 import { logResponseFeedback } from "./data/api";
+import LogOutButton from "@/components/LogOutButton.jsx";
 
 async function handleFeedback(
   messageKey,
@@ -56,30 +56,30 @@ export default function Chat() {
   const [feedbackText, setFeedbackText] = useState("");
   const [showFeedback, setShowFeedback] = useState(true);
   return (
-    <div className="flex flex-col h-full bg-white">
-      {/* Messages container - scrollable */}
-      <div className="flex-1 min-h-0 h-full overflow-hidden">
-        <Messages
-          feedbackText={feedbackText}
-          showFeedback={showFeedback}
-          setFeedbackText={setFeedbackText}
-          setShowFeedback={setShowFeedback}
-        />
-      </div>
-
-      {/* Bottom row: Feedback button + InputArea - sticky at bottom */}
-      <div className="flex border-t border-gray-200 bg-white">
-        {/* Left-side Feedback Button */}
-        <div className="flex flex-col justify-end -ml-22 pb-18">
-          <FeedbackButton />
+    <>
+      <div className="flex flex-col h-full bg-white">
+        {/* Messages container - scrollable */}
+        <div className="absolute top-4 right-4 z-10">
+          <LogOutButton />
+        </div>
+        <div className="flex-1 min-h-0 h-full overflow-hidden">
+          <Messages
+            feedbackText={feedbackText}
+            showFeedback={showFeedback}
+            setFeedbackText={setFeedbackText}
+            setShowFeedback={setShowFeedback}
+          />
         </div>
 
-        {/* Input area takes full remaining width */}
-        <div className="flex-1 -ml-9">
-          <InputArea setShowFeedback={setShowFeedback} />
+        {/* Bottom row: InputArea - sticky at bottom */}
+        <div className="flex border-t border-gray-200 bg-white">
+          {/* Input area takes full remaining width */}
+          <div className="flex-1 -ml-9">
+            <InputArea setShowFeedback={setShowFeedback} />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

@@ -4,32 +4,34 @@ import Chat from "./chat.jsx";
 import Graph from "./graph.jsx";
 import { ReactFlowProvider } from "@xyflow/react";
 import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
-import { useAtom } from "jotai";
-import { centerNodeAtom } from "./data/atoms";
+import { useAtom, useAtomValue } from "jotai";
+import { centerNodeAtom, graphRefetchTriggerAtom } from "./data/atoms";
+import { FeedbackButton } from "./components/FeedbackButton.jsx";
 
 export default function App() {
   const [leftWidth, setLeftWidth] = useState(66.6);
   const containerRef = useRef(null);
   const [data, setData] = useState(null);
   const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom);
+  //const [refetchTrigger, setRefetchTrigger] = useAtom(graphRefetchTriggerAtom); //Read/write if we want to trigger refetch from here, but currently only chatbot triggers refetch, so read only is enough
+  const refetchTrigger = useAtomValue(graphRefetchTriggerAtom); //Read only to trigger refetch when chatbot signals done
 
   // Load graph once on mount or when center node changes for the first time
   useEffect(() => {
     let mounted = true;
-    if (!centerNodeId) setCenterNodeId(1);
+    //if (!centerNodeId) setCenterNodeId(1);
 
     (async () => {
       try {
-        const resp = await fetchAnswer(centerNodeId);
+        const resp = await fetchAnswer();
         if (!mounted) return;
         setData(resp);
       } catch (err) {
         console.warn("Failed to load graph data", err);
       }
     })();
-
     return () => (mounted = false);
-  }, [centerNodeId, setCenterNodeId]);
+  }, [refetchTrigger]);
 
   const handleMouseDown = (e) => {
     e.preventDefault();
@@ -40,8 +42,8 @@ export default function App() {
       if (!containerRef.current) return;
       const containerWidth = containerRef.current.offsetWidth;
       const newWidth =
-        ((startWidth / 100) * containerWidth + (e.clientX - startX)) /
-        containerWidth *
+        (((startWidth / 100) * containerWidth + (e.clientX - startX)) /
+          containerWidth) *
         100;
       if (newWidth > 10 && newWidth < 90) setLeftWidth(newWidth);
     };
@@ -57,10 +59,23 @@ export default function App() {
 
   return (
     <div ref={containerRef} className="flex h-screen w-screen">
-      <div className="h-full bg-gray-100 overflow-hidden" style={{ width: `${leftWidth}%` }}>
+      <div
+        className="h-full bg-gray-100 overflow-hidden"
+        style={{ width: `${leftWidth}%` }}
+      >
         <ReactFlowProvider>
           <Graph data={data} width={leftWidth} />
         </ReactFlowProvider>
+      </div>
+
+      <div
+        className="absolute z-50 pointer-events-auto"
+        style={{
+          left: `calc(${leftWidth}% - 86px)`,
+          bottom: "120px",
+        }}
+      >
+        <FeedbackButton />
       </div>
 
       <div
