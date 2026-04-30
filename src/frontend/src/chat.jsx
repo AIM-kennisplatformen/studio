@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 
 import {
   PromptInput,
@@ -64,7 +64,7 @@ export default function Chat() {
       </div>
 
       {/* Messages - scrollable */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <Messages
           feedbackText={feedbackText}
           showFeedback={showFeedback}
@@ -133,110 +133,135 @@ function Messages({
   const messages = useAtomValue(messagesAtom);
   const status = useAtomValue(textStatusAtom);
   const lastDoneKey = useAtomValue(lastDoneMessageKeyAtom);
+  const bottomRef = useRef(null);
+  const containerRef = useRef(null);
+  const userScrolledUp = useRef(false);
+
+  // Detect if user has scrolled up
+  const handleScroll = () => {
+    const el = containerRef.current;
+    if (!el) return;
+    const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 50;
+    userScrolledUp.current = !isAtBottom;
+  };
+
+  // Only auto-scroll on new user message (not while streaming)
+  useEffect(() => {
+    if (!userScrolledUp.current) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages.length]); // only trigger on new messages, not content updates
 
   return (
-    <Conversation className="h-full">
-      <ConversationContent className="flex flex-col gap-4 p-4 min-h-full">
-        <div className="flex-1" />
-        {[...messages].reverse().map(({ key, value, name }) =>
-          name === "chatbot" ? (
-            <div
-              key={key}
-              className="flex items-start gap-2 justify-start w-full pr-[5%]"
-            >
-              <div className="flex flex-col items-start w-full">
-                <Response className="w-full text-sm border border-gray-200 rounded-lg p-2 bg-gray-50 break-words">
-                  {value}
-                </Response>
-                {key === lastDoneKey && status === "ready" && (
-                  <div
-                    onClick={(e) => e.stopPropagation()}
-                    onSubmit={(e) => e.preventDefault()}
-                    className="ml-7"
-                  >
-                    <Actions>
-                      {showFeedback ? (
-                        <>
-                          <Action
-                            label="Good response"
-                            style={{ backgroundColor: "#038061", color: "white" }}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleFeedback(
-                                key,
-                                "positive",
-                                setShowFeedback,
-                                setFeedbackText,
-                              );
-                            }}
-                          >
-                            <ThumbsUpIcon className="size-4" />
-                          </Action>
-                          <Action
-                            label="Bad response"
-                            style={{ backgroundColor: "#038061", color: "white" }}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleFeedback(
-                                key,
-                                "negative",
-                                setShowFeedback,
-                                setFeedbackText,
-                              );
-                            }}
-                          >
-                            <ThumbsDownIcon className="size-4" />
-                          </Action>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-sm text-gray-600">{feedbackText}</p>
-                          <button
-                            type="button"
-                            onClick={() => setShowFeedback(true)}
-                            className="text-sm text-blue-500 hover:underline cursor-pointer hover:text-blue-700 bg-transparent border-0 p-0"
-                          >
-                            Edit Feedback
-                          </button>
-                        </>
-                      )}
-                    </Actions>
-                  </div>
-                )}
+    <div
+      ref={containerRef}
+      onScroll={handleScroll}
+      className="h-full overflow-y-auto"
+    >
+      <Conversation>
+        <ConversationContent className="flex flex-col gap-4 p-4 min-h-full">
+          <div className="flex-1" />
+          {[...messages].reverse().map(({ key, value, name }) =>
+            name === "chatbot" ? (
+              <div
+                key={key}
+                className="flex items-start gap-2 justify-start w-full pr-[5%]"
+              >
+                <div className="flex flex-col items-start w-full">
+                  <Response className="w-full text-sm border border-gray-200 rounded-lg p-2 bg-gray-50 break-words">
+                    {value}
+                  </Response>
+                  {key === lastDoneKey && status === "ready" && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      onSubmit={(e) => e.preventDefault()}
+                      className="ml-7"
+                    >
+                      <Actions>
+                        {showFeedback ? (
+                          <>
+                            <Action
+                              label="Good response"
+                              style={{ backgroundColor: "#038061", color: "white" }}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleFeedback(
+                                  key,
+                                  "positive",
+                                  setShowFeedback,
+                                  setFeedbackText,
+                                );
+                              }}
+                            >
+                              <ThumbsUpIcon className="size-4" />
+                            </Action>
+                            <Action
+                              label="Bad response"
+                              style={{ backgroundColor: "#038061", color: "white" }}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleFeedback(
+                                  key,
+                                  "negative",
+                                  setShowFeedback,
+                                  setFeedbackText,
+                                );
+                              }}
+                            >
+                              <ThumbsDownIcon className="size-4" />
+                            </Action>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm text-gray-600">{feedbackText}</p>
+                            <button
+                              type="button"
+                              onClick={() => setShowFeedback(true)}
+                              className="text-sm text-blue-500 hover:underline cursor-pointer hover:text-blue-700 bg-transparent border-0 p-0"
+                            >
+                              Edit Feedback
+                            </button>
+                          </>
+                        )}
+                      </Actions>
+                    </div>
+                  )}
+                </div>
               </div>
+            ) : (
+              <Message from="user" key={key} className="flex justify-end pl-[5%]">
+                <MessageContent
+                  className="w-full break-words"
+                  style={{ backgroundColor: "#038061", color: "#ffffff" }}
+                >
+                  {value}
+                </MessageContent>
+              </Message>
+            ),
+          )}
+          {status === "thinking" && (
+            <div>
+              <Reasoning isStreaming={status === "thinking"}>
+                <ReasoningTrigger
+                  style={{
+                    backgroundColor: "transparent",
+                    color: "black",
+                    border: "none",
+                    padding: "0",
+                    outline: "none",
+                    cursor: "text",
+                  }}
+                >
+                  🧠 Thinking...
+                </ReasoningTrigger>
+              </Reasoning>
             </div>
-          ) : (
-            <Message from="user" key={key} className="flex justify-end pl-[5%]">
-              <MessageContent
-                className="w-full break-words"
-                style={{ backgroundColor: "#038061", color: "#ffffff" }}
-              >
-                {value}
-              </MessageContent>
-            </Message>
-          ),
-        )}
-        {status === "thinking" && (
-          <div>
-            <Reasoning isStreaming={status === "thinking"}>
-              <ReasoningTrigger
-                style={{
-                  backgroundColor: "transparent",
-                  color: "black",
-                  border: "none",
-                  padding: "0",
-                  outline: "none",
-                  cursor: "text",
-                }}
-              >
-                🧠 Thinking...
-              </ReasoningTrigger>
-            </Reasoning>
-          </div>
-        )}
-      </ConversationContent>
-    </Conversation>
+          )}
+          <div ref={bottomRef} />
+        </ConversationContent>
+      </Conversation>
+    </div>
   );
 }
