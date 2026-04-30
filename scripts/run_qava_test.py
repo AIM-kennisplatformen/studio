@@ -75,16 +75,10 @@ def main() -> int:
         run(compose_cmd("logs", "--tail=30", "backend"), check=False)
 
         # 6. Run tests
-        # Clear LD_LIBRARY_PATH to prevent pixi's conda libs from breaking Chromium's
-        # network stack (causes ERR_NAME_NOT_RESOLVED in CI).
-        if os.environ.get("LD_LIBRARY_PATH"):
-            print(f"[DEBUG] Clearing LD_LIBRARY_PATH={os.environ['LD_LIBRARY_PATH']}")
-        clean_env = {k: v for k, v in os.environ.items() if k not in ("LD_LIBRARY_PATH", "LD_PRELOAD")}
         exit_code = run(
             ["npx", "qavajs", "run", "--config", "config.mjs"],
             check=False,
             cwd=tests_dir,
-            env=clean_env,
         )
 
         # 6b. Dump backend logs for debugging test failures
