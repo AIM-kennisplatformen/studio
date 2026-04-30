@@ -53,8 +53,10 @@ def main() -> int:
     # 1. npm install
     run(["npm", "install"], cwd=tests_dir)
 
-    # 1b. Install Playwright browsers (needed in CI)
-    run(["npx", "playwright", "install", "--with-deps", "chromium"], cwd=tests_dir)
+    # 1b. Install Playwright browser + OS dependencies (needed in CI)
+    # Browser binary is cached by the workflow; OS deps (apt packages) always run but are fast
+    run(["npx", "playwright", "install", "chromium"], cwd=tests_dir)
+    run(["npx", "playwright", "install-deps", "chromium"], cwd=tests_dir)
 
     # 2. Build frontend
     run([sys.executable, "scripts/build_frontend.py"])
