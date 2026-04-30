@@ -28,12 +28,15 @@ tests_dir = root / "tests" / "bdd"
 
 
 def run(cmd: str | list[str], *, check: bool = True, env: dict | None = None, cwd: Path | None = None) -> int:
-    """Run a command, return the exit code."""
-    merged_env = {**os.environ, **(env or {})}
+    """Run a command, return the exit code.
+
+    If env is provided, it is used AS-IS (not merged with os.environ).
+    If env is None, the subprocess inherits the current environment.
+    """
     if isinstance(cmd, str):
-        result = subprocess.run(cmd, shell=True, cwd=cwd or root, env=merged_env)
+        result = subprocess.run(cmd, shell=True, cwd=cwd or root, env=env)
     else:
-        result = subprocess.run(cmd, cwd=cwd or root, env=merged_env)
+        result = subprocess.run(cmd, cwd=cwd or root, env=env)
     if check and result.returncode != 0:
         sys.exit(result.returncode)
     return result.returncode
@@ -51,6 +54,9 @@ def main() -> int:
     # 1. npm install
     run(["npm", "install"], cwd=tests_dir)
 
+    # 1b. Install Playwright browsers (needed in CI)
+    run(["npx", "playwright", "install", "--with-deps", "chromium"], cwd=tests_dir)
+
     # 2. Build frontend
     run([sys.executable, "scripts/build_frontend.py"])
 
@@ -64,12 +70,28 @@ def main() -> int:
         # 5. Wait for services
         run(["npx", "wait-on", "tcp:10090", "tcp:9000"], cwd=tests_dir)
 
+        # 5b. Debug: verify backend is reachable
+        run("curl -v http://127.0.0.1:10090/ 2>&1 || true", check=False)
+        run(compose_cmd("logs", "--tail=30", "backend"), check=False)
+
         # 6. Run tests
+        # Clear LD_LIBRARY_PATH to prevent pixi's conda libs from breaking Chromium's
+        # network stack (causes ERR_NAME_NOT_RESOLVED in CI).
+        if os.environ.get("LD_LIBRARY_PATH"):
+            print(f"[DEBUG] Clearing LD_LIBRARY_PATH={os.environ['LD_LIBRARY_PATH']}")
+        clean_env = {k: v for k, v in os.environ.items() if k not in ("LD_LIBRARY_PATH", "LD_PRELOAD")}
         exit_code = run(
             ["npx", "qavajs", "run", "--config", "config.mjs"],
             check=False,
             cwd=tests_dir,
+            env=clean_env,
         )
+
+        # 6b. Dump backend logs for debugging test failures
+        if exit_code != 0:
+            print("\n===== BACKEND LOGS (last 80 lines) =====")
+            run(compose_cmd("logs", "--tail=80", "backend"), check=False)
+            print("===== END BACKEND LOGS =====\n")
     finally:
         # 7. Tear down
         run(compose_cmd("stop"), check=False)

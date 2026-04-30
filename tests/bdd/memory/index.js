@@ -1,5 +1,5 @@
 export default class Memory {
-  // Pre-built URLs for the test
+  // Use localhost to match the OAuth redirect_uri domain (cookie must be on same domain for session continuity)
   loginUrl = 'http://localhost:10090/auth/login';
   meUrl = 'http://localhost:10090/me';
 

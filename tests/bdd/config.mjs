@@ -1,14 +1,16 @@
 import Memory from "./memory/index.js";
 import App from "./page_object/index.js";
 
+const isCI = !!process.env.CI;
+
 export default {
     paths: ["features/*.feature"],
     require: [
         "node_modules/@qavajs/steps-memory/index.js",
         "node_modules/@qavajs/steps-playwright/index.js",
         "node_modules/@qavajs/steps-api/index.js",
-        "step_definition/*.js" 
-    ],  
+        "step_definition/*.js"
+    ],
     format: [
         "@qavajs/console-formatter",
         ["@qavajs/html-formatter", "report/report.html"]
@@ -21,9 +23,14 @@ export default {
     browser: {
         capabilities: {
             browserName: "chromium",
-            // Map host.docker.internal to localhost so OAuth redirects work
-            // (Authentik returns URLs with host.docker.internal when accessed from Docker)
-            args: ["--host-resolver-rules=MAP host.docker.internal 127.0.0.1"]
+            // In CI, use 'chrome' channel to avoid headless shell networking issues
+            // The headless shell binary has broken network access in GitHub Actions
+            ...(isCI && { channel: "chrome" }),
+            // CI-specific args: --no-sandbox and --disable-dev-shm-usage are required for GitHub Actions
+            // Local: --host-resolver-rules maps host.docker.internal so OAuth redirects work
+            args: isCI
+                ? ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--host-resolver-rules=MAP host.docker.internal 127.0.0.1"]
+                : ["--host-resolver-rules=MAP host.docker.internal 127.0.0.1"]
         },
         timeout: {
             // Playwright context default timeout for actions (type, click, fill)
