@@ -15,39 +15,39 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create .env file from secrets
+        env:
+          OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
+          OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
+          OAUTH_DISCOVERY_URL: ${{ secrets.OAUTH_DISCOVERY_URL }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+          LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+          LANGFUSE_HOST: ${{ secrets.LANGFUSE_HOST }}
+          OPENAI_HOST: ${{ secrets.OPENAI_HOST }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
         run: |
-          cat <<EOF > .env
-          # Backend
-          BACKEND_BASE_URL=http://localhost:10090
-          MCP_USE_OAUTH=false
-          MCP_TOOL_CONFIG_PATH=scepa_tools.json
-          REDIS_URL=redis://localhost:6379/0
-
-          # OAuth (Authentik - configured by setup script)
-          OAUTH_CLIENT_ID=${{ secrets.OAUTH_CLIENT_ID }}
-          OAUTH_CLIENT_SECRET=${{ secrets.OAUTH_CLIENT_SECRET }}
-          OAUTH_DISCOVERY_URL=${{ secrets.OAUTH_DISCOVERY_URL }}
-
-          # Session
-          SESSION_SECRET=${{ secrets.SESSION_SECRET }}
-
-          # Langfuse
-          LANGFUSE_SECRET_KEY=${{ secrets.LANGFUSE_SECRET_KEY }}
-          LANGFUSE_PUBLIC_KEY=${{ secrets.LANGFUSE_PUBLIC_KEY }}
-          LANGFUSE_HOST=${{ secrets.LANGFUSE_HOST }}
-
-          # OpenAI
-          OPENAI_HOST=${{ secrets.OPENAI_HOST }}
-          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-          LLM_MODEL=${{ secrets.LLM_MODEL }}
-
-          # Authentik (test instance)
-          PG_PASS=ci-test-password
-          AUTHENTIK_SECRET_KEY=ci-test-secret-key
-          AUTHENTIK_BOOTSTRAP_PASSWORD=admin
-          AUTHENTIK_BOOTSTRAP_EMAIL=admin@localhost
-          AUTHENTIK_BOOTSTRAP_TOKEN=test-api-token
-          EOF
+          {
+            echo "BACKEND_BASE_URL=http://localhost:10090"
+            echo "MCP_USE_OAUTH=false"
+            echo "MCP_TOOL_CONFIG_PATH=scepa_tools.json"
+            echo "REDIS_URL=redis://localhost:6379/0"
+            echo "OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}"
+            echo "OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET}"
+            echo "OAUTH_DISCOVERY_URL=${OAUTH_DISCOVERY_URL}"
+            echo "SESSION_SECRET=${SESSION_SECRET}"
+            echo "LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}"
+            echo "LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}"
+            echo "LANGFUSE_HOST=${LANGFUSE_HOST}"
+            echo "OPENAI_HOST=${OPENAI_HOST}"
+            echo "OPENAI_API_KEY=${OPENAI_API_KEY}"
+            echo "LLM_MODEL=${LLM_MODEL}"
+            echo "PG_PASS=ci-test-password"
+            echo "AUTHENTIK_SECRET_KEY=ci-test-secret-key"
+            echo "AUTHENTIK_BOOTSTRAP_PASSWORD=admin"
+            echo "AUTHENTIK_BOOTSTRAP_EMAIL=admin@localhost"
+            echo "AUTHENTIK_BOOTSTRAP_TOKEN=test-api-token"
+          } > .env
 
       - name: Create external Docker network
         run: docker network create mcp_server_scepa_studio_net
