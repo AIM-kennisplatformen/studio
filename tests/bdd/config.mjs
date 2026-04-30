@@ -21,13 +21,15 @@ export default {
     browser: {
         capabilities: {
             browserName: "chromium",
+            headless: true,
             // Map host.docker.internal to localhost so OAuth redirects work
             // (Authentik returns URLs with host.docker.internal when accessed from Docker)
-            // --no-sandbox is required for CI runners (GitHub Actions runs as root)
+            // --no-sandbox and --disable-dev-shm-usage are required for CI runners
             args: [
                 "--host-resolver-rules=MAP host.docker.internal 127.0.0.1",
                 "--no-sandbox",
-                "--disable-setuid-sandbox"
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage"
             ]
         },
         timeout: {
