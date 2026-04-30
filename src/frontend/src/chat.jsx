@@ -6,7 +6,6 @@ import {
   PromptInputTextarea,
   PromptInputToolbar,
 } from "@/components/shadcn-io/ai/prompt-input";
-import { FeedbackButton } from "@/components/FeedbackButton";
 
 import { Response } from "@/components/shadcn-io/ai/response";
 import { Message, MessageContent } from "@/components/shadcn-io/ai/message";
@@ -52,11 +51,6 @@ export default function Chat() {
 
           {/* Bottom row: Feedback button + InputArea - sticky at bottom */}
           <div className="flex border-t border-gray-200 bg-white">
-            {/* Left-side Feedback Button */}
-            <div className="flex flex-col justify-end -ml-22 pb-18">
-              <FeedbackButton />
-            </div>
-
             {/* Input area takes full remaining width */}
             <div className="flex-1 -ml-9">
               <InputArea />

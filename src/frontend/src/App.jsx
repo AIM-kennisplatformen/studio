@@ -6,6 +6,7 @@ import { ReactFlowProvider } from "@xyflow/react";
 import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
 import { useAtom, useAtomValue } from "jotai";
 import { centerNodeAtom, graphRefetchTriggerAtom } from "./data/atoms";
+import { FeedbackButton } from "./components/FeedbackButton.jsx";
 
 export default function App() {
   const [leftWidth, setLeftWidth] = useState(66.6);
@@ -41,8 +42,8 @@ export default function App() {
       if (!containerRef.current) return;
       const containerWidth = containerRef.current.offsetWidth;
       const newWidth =
-        ((startWidth / 100) * containerWidth + (e.clientX - startX)) /
-        containerWidth *
+        (((startWidth / 100) * containerWidth + (e.clientX - startX)) /
+          containerWidth) *
         100;
       if (newWidth > 10 && newWidth < 90) setLeftWidth(newWidth);
     };
@@ -58,10 +59,23 @@ export default function App() {
 
   return (
     <div ref={containerRef} className="flex h-screen w-screen">
-      <div className="h-full bg-gray-100 overflow-hidden" style={{ width: `${leftWidth}%` }}>
+      <div
+        className="h-full bg-gray-100 overflow-hidden"
+        style={{ width: `${leftWidth}%` }}
+      >
         <ReactFlowProvider>
           <Graph data={data} width={leftWidth} />
         </ReactFlowProvider>
+      </div>
+
+      <div
+        className="absolute z-50 pointer-events-auto"
+        style={{
+          left: `calc(${leftWidth}% - 86px)`,
+          bottom: "120px",
+        }}
+      >
+        <FeedbackButton />
       </div>
 
       <div
