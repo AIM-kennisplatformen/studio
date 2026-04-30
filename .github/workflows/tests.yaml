@@ -31,7 +31,7 @@ jobs:
             echo "BACKEND_BASE_URL=http://localhost:10090"
             echo "MCP_USE_OAUTH=false"
             echo "MCP_TOOL_CONFIG_PATH=scepa_tools.json"
-            echo "REDIS_URL=redis://localhost:6379/0"
+            echo "REDIS_URL=redis://redis:6379/0"
             echo "OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}"
             echo "OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET}"
             echo "OAUTH_DISCOVERY_URL=${OAUTH_DISCOVERY_URL}"
