@@ -67,6 +67,10 @@ def main() -> int:
         # 5. Wait for services
         run(["npx", "wait-on", "tcp:10090", "tcp:9000"], cwd=tests_dir)
 
+        # 5b. Debug: verify backend is reachable
+        run("curl -v http://127.0.0.1:10090/ 2>&1 || true", check=False)
+        run(compose_cmd("logs", "--tail=30", "backend"), check=False)
+
         # 6. Run tests
         exit_code = run(
             ["npx", "qavajs", "run", "--config", "config.mjs"],
