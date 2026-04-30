@@ -289,6 +289,7 @@ export default function Graph({ data, width }) {
             label: nodeToCenter.data.label,
           };
 
+          breadcrumbsCounter.current += 1;
           return [entry];
         });
       }

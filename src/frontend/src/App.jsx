@@ -81,7 +81,7 @@ export default function App() {
           position: "fixed",
           top: 0,
           left: 0,
-          padding: "10px",
+          paddingLeft: "10px",
           zIndex: 5000,
         }}
       >
