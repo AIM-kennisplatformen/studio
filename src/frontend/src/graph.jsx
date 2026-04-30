@@ -282,6 +282,15 @@ export default function Graph({ data, width }) {
       if (nodeToCenter && containerRef.current) {
         centerNodeInView(nodeToCenter);
         setSelectedNode(nodeToCenter);
+        setBreadcrumbs(() => {
+          const entry = {
+            historyId: `bc-${breadcrumbsCounter.current}`,
+            originNodeId: nodeToCenter.id,
+            label: nodeToCenter.data.label,
+          };
+
+          return [entry];
+        });
       }
     }
   }, [
