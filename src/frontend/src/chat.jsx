@@ -55,31 +55,29 @@ async function handleFeedback(
 export default function Chat() {
   const [feedbackText, setFeedbackText] = useState("");
   const [showFeedback, setShowFeedback] = useState(true);
-  return (
-    <>
-      <div className="flex flex-col h-full bg-white">
-        {/* Messages container - scrollable */}
-        <div className="absolute top-4 right-4 z-10">
-          <LogOutButton />
-        </div>
-        <div className="flex-1 min-h-0 h-full overflow-hidden">
-          <Messages
-            feedbackText={feedbackText}
-            showFeedback={showFeedback}
-            setFeedbackText={setFeedbackText}
-            setShowFeedback={setShowFeedback}
-          />
-        </div>
 
-        {/* Bottom row: InputArea - sticky at bottom */}
-        <div className="flex border-t border-gray-200 bg-white">
-          {/* Input area takes full remaining width */}
-          <div className="flex-1 -ml-9">
-            <InputArea setShowFeedback={setShowFeedback} />
-          </div>
-        </div>
+  return (
+    <div className="flex flex-col h-full bg-white">
+      {/* Header with logout */}
+      <div className="flex justify-end px-4 py-2 border-b border-gray-200 bg-white shrink-0">
+        <LogOutButton />
       </div>
-    </>
+
+      {/* Messages - scrollable */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <Messages
+          feedbackText={feedbackText}
+          showFeedback={showFeedback}
+          setFeedbackText={setFeedbackText}
+          setShowFeedback={setShowFeedback}
+        />
+      </div>
+
+      {/* Input - sticky at bottom */}
+      <div className="border-t border-gray-200 bg-white shrink-0">
+        <InputArea setShowFeedback={setShowFeedback} />
+      </div>
+    </div>
   );
 }
 
@@ -153,10 +151,10 @@ function Messages({
           name === "chatbot" ? (
             <div
               key={key}
-              className="flex items-start gap-2 justify-start pr-20"
+              className="flex items-start gap-2 justify-start w-full pr-[5%]"
             >
               <div className="flex flex-col items-start">
-                <Response className="max-w-prose text-sm border border-gray-200 rounded-lg p-2 bg-gray-50 break-words">
+                <Response className="w-full text-sm border border-gray-200 rounded-lg p-2 bg-gray-50 break-words">
                   {value}
                 </Response>
                 {key === lastDoneKey && status === "ready" && (
@@ -209,9 +207,9 @@ function Messages({
               </div>
             </div>
           ) : (
-            <Message from="user" key={key} className="flex justify-end pl-20">
-              <MessageContent
-                className="max-w-prose break-words"
+            <Message from="user" key={key} className="flex justify-end pl-[5%]">
+              <MessageContent 
+                className="w-full break-words" 
                 style={{ backgroundColor: "#038061", color: "#ffffff" }}
               >
                 {value}
