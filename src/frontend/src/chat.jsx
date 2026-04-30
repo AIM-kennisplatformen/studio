@@ -47,6 +47,7 @@ async function handleFeedback(
     setFeedbackText(
       "An error occurred while sending your feedback. Please try again.",
     );
+    return;
   }
   setFeedbackText(response);
 }
