@@ -57,10 +57,25 @@ jobs:
         with:
           node-version: 22
 
+      - name: Cache npm dependencies (BDD tests)
+        uses: actions/cache@v4
+        with:
+          path: tests/bdd/node_modules
+          key: npm-bdd-${{ hashFiles('tests/bdd/package-lock.json') }}
+          restore-keys: npm-bdd-
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('tests/bdd/package-lock.json') }}
+          restore-keys: playwright-
+
       - name: Install Pixi
         uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.46.0
+          cache: true
 
       - name: Run QAVA tests
         run: pixi run qava_test
