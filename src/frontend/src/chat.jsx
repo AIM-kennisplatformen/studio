@@ -45,7 +45,7 @@ async function handleFeedback(
   const response = await logResponseFeedback(messageKey, feedback);
   if (response === null) {
     setFeedbackText(
-      "An error has occured with your sent feedback, please try again.",
+      "An error occurred while sending your feedback. Please try again.",
     );
   }
   setFeedbackText(response);
