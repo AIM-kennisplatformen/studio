@@ -14,6 +14,41 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Create .env file from secrets
+        run: |
+          cat <<EOF > .env
+          # Backend
+          BACKEND_BASE_URL=http://localhost:10090
+          MCP_USE_OAUTH=false
+          MCP_TOOL_CONFIG_PATH=scepa_tools.json
+          REDIS_URL=redis://localhost:6379/0
+
+          # OAuth (Authentik - configured by setup script)
+          OAUTH_CLIENT_ID=${{ secrets.OAUTH_CLIENT_ID }}
+          OAUTH_CLIENT_SECRET=${{ secrets.OAUTH_CLIENT_SECRET }}
+          OAUTH_DISCOVERY_URL=${{ secrets.OAUTH_DISCOVERY_URL }}
+
+          # Session
+          SESSION_SECRET=${{ secrets.SESSION_SECRET }}
+
+          # Langfuse
+          LANGFUSE_SECRET_KEY=${{ secrets.LANGFUSE_SECRET_KEY }}
+          LANGFUSE_PUBLIC_KEY=${{ secrets.LANGFUSE_PUBLIC_KEY }}
+          LANGFUSE_HOST=${{ secrets.LANGFUSE_HOST }}
+
+          # OpenAI
+          OPENAI_HOST=${{ secrets.OPENAI_HOST }}
+          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+          LLM_MODEL=${{ secrets.LLM_MODEL }}
+
+          # Authentik (test instance)
+          PG_PASS=ci-test-password
+          AUTHENTIK_SECRET_KEY=ci-test-secret-key
+          AUTHENTIK_BOOTSTRAP_PASSWORD=admin
+          AUTHENTIK_BOOTSTRAP_EMAIL=admin@localhost
+          AUTHENTIK_BOOTSTRAP_TOKEN=test-api-token
+          EOF
+
       - name: Install Pixi
         uses: prefix-dev/setup-pixi@v0.8.1
         with:
