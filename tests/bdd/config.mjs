@@ -23,7 +23,12 @@ export default {
             browserName: "chromium",
             // Map host.docker.internal to localhost so OAuth redirects work
             // (Authentik returns URLs with host.docker.internal when accessed from Docker)
-            args: ["--host-resolver-rules=MAP host.docker.internal 127.0.0.1"]
+            // --no-sandbox is required for CI runners (GitHub Actions runs as root)
+            args: [
+                "--host-resolver-rules=MAP host.docker.internal 127.0.0.1",
+                "--no-sandbox",
+                "--disable-setuid-sandbox"
+            ]
         },
         timeout: {
             // Playwright context default timeout for actions (type, click, fill)
