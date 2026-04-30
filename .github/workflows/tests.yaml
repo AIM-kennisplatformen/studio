@@ -57,9 +57,5 @@ jobs:
         with:
           pixi-version: v0.46.0
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-        working-directory: tests/bdd
-
       - name: Run QAVA tests
         run: pixi run qava_test

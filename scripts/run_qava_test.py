@@ -51,6 +51,9 @@ def main() -> int:
     # 1. npm install
     run(["npm", "install"], cwd=tests_dir)
 
+    # 1b. Install Playwright browsers (needed in CI)
+    run(["npx", "playwright", "install", "--with-deps", "chromium"], cwd=tests_dir)
+
     # 2. Build frontend
     run([sys.executable, "scripts/build_frontend.py"])
 
