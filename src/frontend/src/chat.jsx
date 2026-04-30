@@ -36,13 +36,13 @@ import { ThumbsUpIcon, ThumbsDownIcon } from "lucide-react";
 import { logResponseFeedback } from "./data/api";
 
 async function handleFeedback(
-  message,
+  messageKey,
   feedback,
   setShowFeedback,
   setFeedbackText,
 ) {
   setShowFeedback(false);
-  const response = await logResponseFeedback(message, feedback);
+  const response = await logResponseFeedback(messageKey, feedback);
   if (response === null) {
     setFeedbackText(
       "An error has occured with your sent feedback, please try again.",
