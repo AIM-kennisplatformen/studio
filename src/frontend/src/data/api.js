@@ -111,6 +111,20 @@ export async function logSelectedNode(node) {
     console.error("Failed to log selected node:", err);
   }
 }
+export async function logEvent(name, metadata) {
+  try {
+    const response = await fetch("/log_event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, metadata }),
+    });
+    if (!response.ok) {
+      console.error("Failed to log event:", await response.text());
+    }
+  } catch (err) {
+    console.error("Error logging event:", err);
+  }
+}
 
 export function logOut() {
   window.location.href = `${BASE_URL}/auth/logout`;
