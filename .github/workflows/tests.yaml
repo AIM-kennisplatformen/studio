@@ -52,6 +52,11 @@ jobs:
       - name: Create external Docker network
         run: docker network create mcp_server_scepa_studio_net
 
+      - name: Set up system Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: Install Pixi
         uses: prefix-dev/setup-pixi@v0.8.1
         with:
