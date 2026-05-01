@@ -6,6 +6,9 @@ on:
       - dev
       - main
 
+permissions:
+  contents: read
+
 jobs:
   qava-test:
     name: QAVA Tests
