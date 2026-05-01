@@ -30,7 +30,7 @@ npm install
 
 ### Option 1: Full run (builds containers, runs tests, stops containers)
 
-This is the recommended way to run tests from a clean state. It builds and starts all Docker containers (backend, MCP server, LLM worker, Authentik, Qdrant), waits for them to be ready, runs the tests, and stops everything afterwards.
+This is the recommended way to run tests from a clean state. It builds and starts all Docker containers (backend, MCP server, Authentik, Qdrant), waits for them to be ready, runs the tests, and stops everything afterwards.
 
 ```bash
 pixi run qava_test

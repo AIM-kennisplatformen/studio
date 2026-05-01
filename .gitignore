@@ -222,3 +222,7 @@ tests/bdd/report/
 
 # Remove auto-generated pycache folder
 src/studio
+
+# Nix shell
+shell.nix
+.vscode/settings.json

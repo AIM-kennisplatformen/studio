@@ -4,18 +4,18 @@ from typing import List, Optional
 
 class Node(BaseModel):
     """Graph node representation"""
-    id: str
+    id: int
     type: str = "unknown"
-    label: str
+    title: str
     attributes: dict  # Additional attributes for the node
 
 
 class Edge(BaseModel):
     """Graph edge representation"""
-    id: str
-    sourceId: str
-    targetId: str
-    labelToSource: Optional[str] = None
+    id: int
+    source_id: int
+    target_id: int
+    labelToSource: Optional[str] = None 
     labelToTarget: Optional[str] = None
     type: str = "unknown"
     attributes: Optional[dict]  # Additional attributes for the edge
@@ -45,4 +45,13 @@ class ContextResponse(BaseModel):
     nodes: List[Node] = []
     edges: List[Edge] = []
     sources: List[Source] = []
+    error: Optional[str] = None
+
+class GraphResponse(BaseModel): 
+    #Added selected subnode to return the currently selected subnode in the graph, which can be used by the frontend to maintain context
+    """Response for full graph endpoint"""
+    nodes: List[Node] = []
+    edges: List[Edge] = []
+    selected_subnode: Optional[Node] = None
+    # metadata: dict = {}
     error: Optional[str] = None

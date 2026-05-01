@@ -30,9 +30,9 @@ class KnowledgeGraphData:
             
             # Create Node
             node = Node(
-                id=str(entity_id),
+                id= entity_id,
                 type=nugget.get('type', 'nugget'),
-                label=nugget.get('title', f"Entity {entity_id}"),
+                title=nugget.get('title', f"Entity {entity_id}"),
                 attributes=attributes
             )
             
@@ -49,9 +49,9 @@ class KnowledgeGraphData:
             
             # Create Edge
             edge = Edge(
-                id=str(rel_id),
-                sourceId=str(relationship['source_id']),
-                targetId=str(relationship['target_id']),
+                id=rel_id,
+                source_id= relationship['source_id'],
+                target_id= relationship['target_id'],
                 labelToTarget=relationship.get('label_forward'),
                 labelToSource=relationship.get('label_backward'),
                 type='relation',
