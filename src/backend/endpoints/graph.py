@@ -1,18 +1,18 @@
 from typing import DefaultDict, Dict, Any
 from collections import defaultdict
 
-import httpx
 from fastapi import APIRouter, Depends, Request
 
-from backend.utility.graph_api_models import ContextResponse
+from backend.utility.graph_api_models import GraphResponse
 from backend.endpoints.auth import get_current_user
-from backend.config import LLM_WORKER_URL, LLM_WORKER_PORT
+from backend.config import subnode_question_prompt
 
-from src.backend.utility.chat_util import push_chat_message
-
+from backend.utility.chat_util import (
+    push_chat_message_stream,
+    stream_agent_events,
+)
 
 graph_router = APIRouter()
-
 
 # =====================================================
 # Subnode Mapping
@@ -26,31 +26,23 @@ SUBNODE_MAP = {
 
 SUBNODES = list(SUBNODE_MAP.values())
 
-def strip_think(text: str) -> str:
-    while True:
-        start = text.find("<think>")
-        if start == -1:
-            break
-        end = text.find("</think>", start)
-        if end == -1:
-            text = text[:start]
-            break
-        text = text[:start] + text[end + len("</think>"):]
-    return text.strip()
-
-
 # =====================================================
 # Per-user Graph Context
 # =====================================================
+
 
 def _default_user_graph_context() -> Dict[str, Any]:
     return {
         "selected_subnode": "root",
         "latest_question": None,
+        "previous_question": None,
         "latest_keywords": [],
-        "prefetched": {},   # subnode_name → llm_answer
-        "pending": {},      # subnode_name → asyncio.Task
+        "prefetched": {},  # subnode_name → llm_answer
+        "pending": {},  # subnode_name → asyncio.Task
+        "dialogue_state_asked": False,
     }
+
+
 
 user_graph_contexts: DefaultDict[str, Dict[str, Any]] = defaultdict(
     _default_user_graph_context
@@ -61,138 +53,93 @@ user_graph_contexts: DefaultDict[str, Dict[str, Any]] = defaultdict(
 # Prefetch Logic
 # =====================================================
 
-async def prefetch_subnode(user_id: str, question: str, subnode: str):
+
+async def fetch_subnode_stream(
+    user_id: str,
+    question: str,
+    subnode: str,
+    trace_id: str | None = None,
+    session_id: str | None = None,
+):
     """
-    Prefetches a subnode answer from the LLM worker.
-    - Saves result to user_graph_contexts[user_id]["prefetched"]
-    - If the user is viewing that subnode, pushes it immediately.
+    Stream an LLM response for a subnode question.
+
+    :param user_id: Authenticated user id.
+    :param question: The user's question text.
+    :param subnode: Which subnode perspective to use.
+    :param trace_id: Optional Langfuse trace id to keep all
+        observations under a single per-turn trace.
+    :param session_id: Optional Socket.IO sid used as Langfuse session_id.
     """
     ctx = user_graph_contexts[user_id]
 
     try:
-        # Build prefetch prompt
-        prompt = (
-            "SYSTEM META-INSTRUCTION:\n"
-            "If relevant, use the `paper_search` MCP tool to identify scientific "
-            "literature or studies relevant to the question.\n\n"
-            "Don't alter question and keywords below — insert them straight into the tool.\n"
-            f"full_question:\n\"{question}\"\n\n"
-            f"keywords_related_to_question=\"{subnode}\" "
-            "Provide an evidence-informed explanation when possible.\n"
+        keyword = (
+            subnode
+            if subnode != "root"
+            else "Best practices || Target groups || Strategic overview"
         )
 
-        async with httpx.AsyncClient(timeout=200) as client:
-            worker_url = f"{LLM_WORKER_URL}:{LLM_WORKER_PORT}"
-            resp = await client.post(
-                f"{worker_url}/ask",
-                json={"chat_id": "prefetch", "message": prompt},
-            )
+        synthetic_prompt = subnode_question_prompt(question, keyword)
 
-        resp.raise_for_status()
-        answer = resp.json().get("llm", "")
-        answer = strip_think(answer)
+        full_response = ""
 
-        ctx["prefetched"][subnode] = answer
+        # ← Direct generator call — no HTTP, no SSE parsing
+        async for evt in stream_agent_events(
+            synthetic_prompt, user_id=user_id, trace_id=trace_id,
+            session_id=session_id,
+        ):
+            event_type = evt["type"]
+            event_data = evt["data"]
 
+            await push_chat_message_stream(user_id, event_type, event_data, subnode)
 
-        # Store prefetch result
-        ctx["prefetched"][subnode] = answer
+            if event_type == "on_chat_model_stream" and event_data:
+                full_response += event_data
 
-        # Auto-push if user is viewing this subnode
-        if ctx["selected_subnode"] == subnode:
-            await push_chat_message(user_id, answer)
+        ctx["prefetched"][subnode] = full_response
+        await push_chat_message_stream(user_id, "done", full_response)
 
     except Exception as e:
         print(f"[PREFETCH ERROR - {subnode}] {e}")
-
-    finally:
-        # Clean up pending entry
-        ctx["pending"].pop(subnode, None)
 
 
 # =====================================================
 # Graph Node Selection Endpoint
 # =====================================================
-@graph_router.post("/nodes/{node_id}/context")
-async def get_node_context(
-    node_id: int,
-    request: Request,
-    user=Depends(get_current_user),
-):
-    """
-    User clicked a graph node. This:
-    - updates the user's selected subnode
-    - pushes prefetch results if available
-    - returns standard KG node context to frontend
-    """
+
+
+#Full graph endpoint, to be called on session start and after each question is answered
+
+@graph_router.get("/graph")
+async def get_full_graph(
+        request: Request,
+        user=Depends(get_current_user)):
+   
     user_id = user["sub"]
     ctx = user_graph_contexts[user_id]
+
     kg_data = request.app.state.kg_data
 
-    # --------------------------------------------------
-    # ROOT NODE SELECTED
-    # --------------------------------------------------
-    if node_id == 1:
-        ctx["selected_subnode"] = "root"
-
-        if "root" in ctx["prefetched"]:
-            await push_chat_message(user_id, ctx["prefetched"]["root"])
-
-    # --------------------------------------------------
-    # SUBNODE SELECTED
-    # --------------------------------------------------
-    elif node_id in SUBNODE_MAP:
-        subnode = SUBNODE_MAP[node_id]
-        ctx["selected_subnode"] = subnode
-
-        # Push cached prefetch result immediately
-        prefetched_answer = ctx["prefetched"].get(subnode)
-        if prefetched_answer:
-            await push_chat_message(user_id, prefetched_answer)
-
-    # --------------------------------------------------
-    # Knowledge Graph Lookup
-    # --------------------------------------------------
     if kg_data is None:
-        return ContextResponse(
-            message="Knowledge graph data not loaded",
+        return GraphResponse(
             nodes=[],
             edges=[],
-            sources=[],
             error="not_loaded",
         )
-
-    node = kg_data.get_entity(node_id)
-    if not node:
-        return ContextResponse(
-            message=f"Node '{node_id}' not found",
-            nodes=[],
-            edges=[],
-            sources=[],
-            error="not_found",
-        )
-
-    # Gather edges involving this node
-    edges = [
-        rel for rel in kg_data.relations.values()
-        if int(rel.sourceId) == node_id or int(rel.targetId) == node_id
-    ]
-
-    # Gather neighbor nodes
-    neighbor_ids = (
-        {int(rel.sourceId) for rel in edges} |
-        {int(rel.targetId) for rel in edges}
+    
+    subnode_name = ctx["selected_subnode"]
+    if subnode_name == "root":
+        selected_subnode = None
+    else:
+        selected_subnode = next(
+        (n for n in kg_data.entities.values() if n.title == subnode_name),
+        None,
     )
-
-    neighbor_nodes = [
-        kg_data.entities[nid] for nid in neighbor_ids
-        if nid in kg_data.entities
-    ]
-
-    return ContextResponse(
-        message=f"Context for node {node_id}",
-        nodes=neighbor_nodes,
-        edges=edges,
-        sources=[],
+    
+    return GraphResponse(
+        nodes=list(kg_data.entities.values()),
+        edges=list(kg_data.relations.values()),
+        selected_subnode= selected_subnode,
         error=None,
-    )
+    ) 

@@ -1,0 +1,40 @@
+version: 1
+metadata:
+  name: Studio OAuth2 Application
+  labels:
+    blueprints.goauthentik.io/instantiate: "true"
+entries:
+  # ─── OAuth2/OpenID Connect Provider ─────────────────────────────
+  - model: authentik_providers_oauth2.oauth2provider
+    id: studio-provider
+    identifiers:
+      name: Studio OAuth2 Provider
+    attrs:
+      name: Studio OAuth2 Provider
+      # Use implicit consent flow so BDD tests don't need to click a consent button
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      client_type: confidential
+      client_id: "9h9FmtG9XSqvm4zyUVqIzpV3q0p2EVG5MsGJPoa2"
+      client_secret: "Wfx8Z7FAxFB9g5t7BJRmNTsOUYuXzXIIPc8KTNpkyv5jO34Ia4q3uSYmQwoMAgMpMpoOz5AO1qraJBfxLOy2zxskp7vXsLTlrzatLoECnDW6YmDBvjuwwM92QyUG09Db"
+      redirect_uris: |
+        http://localhost:10090/auth/callback
+        http://host.docker.internal:10090/auth/callback
+      sub_mode: hashed_user_id
+      include_claims_in_id_token: true
+      issuer_mode: per_provider
+      property_mappings:
+        - !Find [authentik_providers_oauth2.scopemapping, [scope_name, openid]]
+        - !Find [authentik_providers_oauth2.scopemapping, [scope_name, email]]
+        - !Find [authentik_providers_oauth2.scopemapping, [scope_name, profile]]
+
+  # ─── Application ────────────────────────────────────────────────
+  - model: authentik_core.application
+    id: studio-app
+    identifiers:
+      slug: studio
+    attrs:
+      name: Studio
+      slug: studio
+      provider: !KeyOf studio-provider
+      meta_launch_url: "http://localhost:10090/"
+      policy_engine_mode: any
