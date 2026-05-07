@@ -191,7 +191,7 @@ function Messages({
                 </Response>
                 {key === lastDoneKey &&
                   status === "ready" &&
-                  value.substr(1, 24) === "You've selected subset" && (
+                  !value.startsWith("You've selected subset") && (
                     <div
                       onClick={(e) => e.stopPropagation()}
                       onSubmit={(e) => e.preventDefault()}
