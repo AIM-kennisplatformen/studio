@@ -78,10 +78,7 @@ export default function Chat() {
 
       {/* Input - sticky at bottom */}
       <div className="border-t border-gray-200 bg-white shrink-0">
-        <InputArea
-          setShowFeedback={setShowFeedback}
-          shouldLog={shouldLog}
-        />
+        <InputArea setShowFeedback={setShowFeedback} shouldLog={shouldLog} />
       </div>
     </div>
   );
@@ -150,7 +147,8 @@ function Messages({
     const prevStatus = prevStatusRef.current;
     prevStatusRef.current = status;
 
-    if (status !== "ready" || !["thinking", "streaming"].includes(prevStatus)) return;
+    if (status !== "ready" || !["thinking", "streaming"].includes(prevStatus))
+      return;
     if (!lastDoneKey) return;
     if (!shouldLog.current) return;
     shouldLog.current = false;
@@ -169,7 +167,10 @@ function Messages({
   }, [status, lastDoneKey]);
 
   const reversedMessages = [...messages].reverse();
-  const lastDoneIndex = reversedMessages.findIndex(({ key }) => key === lastDoneKey);
+  const lastDoneIndex = reversedMessages.findIndex(
+    ({ key }) => key === lastDoneKey,
+  );
+  const lastDoneMessage = reversedMessages.find(({ key }) => key === lastDoneKey);
   const questionForFeedback =
     lastDoneIndex !== -1 && lastDoneIndex + 1 < reversedMessages.length
       ? reversedMessages[lastDoneIndex + 1]?.value
@@ -179,83 +180,115 @@ function Messages({
     <Conversation className="h-full">
       <ConversationContent className="flex flex-col gap-4 p-4 min-h-full">
         <div className="flex-1" />
-        {reversedMessages.map(({ key, value, name }) =>
-          name === "chatbot" ? (
-            <div
-              key={key}
-              className="flex items-start gap-2 justify-start w-full pr-[5%]"
-            >
-              <div className="flex flex-col items-start w-full">
-                <Response className="w-full text-sm border border-gray-200 rounded-lg p-2 bg-gray-50 break-words">
-                  {value}
-                </Response>
-                {key === lastDoneKey && status === "ready" && (
-                  <div
-                    onClick={(e) => e.stopPropagation()}
-                    onSubmit={(e) => e.preventDefault()}
-                    className="ml-7 mt-1"
-                  >
-                    {questionForFeedback && (
-                      <p className="text-xs text-gray-400 mb-1 italic">
-                        Feedback for: "{questionForFeedback.length > 80
-                          ? questionForFeedback.slice(0, 80) + "…"
-                          : questionForFeedback}"
-                      </p>
-                    )}
-                    <Actions>
-                      {showFeedback ? (
-                        <>
-                          <Action
-                            label="Good response"
-                            style={{ backgroundColor: "#038061", color: "white" }}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleFeedback(
-                                key,
-                                "positive",
-                                setShowFeedback,
-                                setFeedbackText,
-                              );
-                            }}
-                          >
-                            <ThumbsUpIcon className="size-4" />
-                          </Action>
-                          <Action
-                            label="Bad response"
-                            style={{ backgroundColor: "#038061", color: "white" }}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleFeedback(
-                                key,
-                                "negative",
-                                setShowFeedback,
-                                setFeedbackText,
-                              );
-                            }}
-                          >
-                            <ThumbsDownIcon className="size-4" />
-                          </Action>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-sm text-gray-600">{feedbackText}</p>
-                          <button
-                            type="button"
-                            onClick={() => setShowFeedback(true)}
-                            className="text-sm text-blue-500 hover:underline cursor-pointer hover:text-blue-700 bg-transparent border-0 p-0"
-                          >
-                            Edit Feedback
-                          </button>
-                        </>
-                      )}
-                    </Actions>
-                  </div>
-                )}
+        {reversedMessages.map(({ key, value, name }) => {
+          if (name === "system_prompt") {
+            return (
+              <div
+                key={key}
+                className="flex items-start gap-2 justify-start w-full pr-[5%]"
+              >
+                <div className="flex flex-col items-start w-full">
+                  <Response className="w-full text-sm border border-gray-200 rounded-lg p-2 bg-gray-50 break-words">
+                    {value}
+                  </Response>
+                </div>
               </div>
-            </div>
-          ) : (
+            );
+          }
+
+          if (name === "chatbot") {
+            return (
+              <div
+                key={key}
+                className="flex items-start gap-2 justify-start w-full pr-[5%]"
+              >
+                <div className="flex flex-col items-start w-full">
+                  <Response className="w-full text-sm border border-gray-200 rounded-lg p-2 bg-gray-50 break-words">
+                    {value}
+                  </Response>
+                  {key === lastDoneKey &&
+                    status === "ready" &&
+                    lastDoneMessage?.name === "chatbot" && (
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        onSubmit={(e) => e.preventDefault()}
+                        className="ml-7 mt-1"
+                      >
+                        {questionForFeedback && (
+                          <p className="text-xs text-gray-400 mb-1 italic">
+                            Feedback for: "
+                            {questionForFeedback.length > 80
+                              ? questionForFeedback.slice(0, 80) + "…"
+                              : questionForFeedback}
+                            "
+                          </p>
+                        )}
+                        <Actions>
+                          {showFeedback ? (
+                            <>
+                              <Action
+                                label="Good response"
+                                style={{
+                                  backgroundColor: "#038061",
+                                  color: "white",
+                                }}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleFeedback(
+                                    key,
+                                    "positive",
+                                    setShowFeedback,
+                                    setFeedbackText,
+                                  );
+                                }}
+                              >
+                                <ThumbsUpIcon className="size-4" />
+                              </Action>
+                              <Action
+                                label="Bad response"
+                                style={{
+                                  backgroundColor: "#038061",
+                                  color: "white",
+                                }}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleFeedback(
+                                    key,
+                                    "negative",
+                                    setShowFeedback,
+                                    setFeedbackText,
+                                  );
+                                }}
+                              >
+                                <ThumbsDownIcon className="size-4" />
+                              </Action>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-sm text-gray-600">
+                                {feedbackText}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => setShowFeedback(true)}
+                                className="text-sm cursor-pointer hover:underline border-0 p-0"
+                                style={{ color: "white", backgroundColor: "#038061" }}
+                              >
+                                Edit Feedback
+                              </button>
+                            </>
+                          )}
+                        </Actions>
+                      </div>
+                    )}
+                </div>
+              </div>
+            );
+          }
+
+          return (
             <Message from="user" key={key} className="flex justify-end pl-[5%]">
               <MessageContent
                 className="max-w-prose break-words"
@@ -264,8 +297,8 @@ function Messages({
                 {value}
               </MessageContent>
             </Message>
-          ),
-        )}
+          );
+        })}
         {status === "thinking" && (
           <div>
             <Reasoning isStreaming={status === "thinking"}>
