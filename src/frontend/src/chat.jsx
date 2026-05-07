@@ -191,7 +191,13 @@ function Messages({
                 </Response>
                 {key === lastDoneKey &&
                   status === "ready" &&
-                  !value.startsWith("You've selected subset") && (
+                  !value.startsWith("You've selected subset") &&
+                  !value.startsWith(
+                    "Answer a question by using the full body of literature",
+                  ) &&
+                  !value.startsWith(
+                    "Do you want to ask an question, answered by the full body of literature?",
+                  ) && (
                     <div
                       onClick={(e) => e.stopPropagation()}
                       onSubmit={(e) => e.preventDefault()}

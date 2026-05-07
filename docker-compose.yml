@@ -46,4 +46,4 @@ services:
 networks:
   mcp_server_scepa_studio_net:
     driver: bridge
-    external: true  # Reference the external network from MCP stack
+    # external: true  # Reference the external network from MCP stack
