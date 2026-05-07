@@ -1,8 +1,7 @@
 "use client";
-
 import { useEffect, useRef } from "react";
 import { useSetAtom } from "jotai";
-import { messagesAtom, lastDoneMessageKeyAtom, graphRefetchTriggerAtom, selectNodeEmitAtom} from "./atoms";
+import { messagesAtom, lastDoneMessageKeyAtom, graphRefetchTriggerAtom, selectNodeEmitAtom } from "./atoms";
 import { io } from "socket.io-client";
 
 const SOCKET_URL = import.meta.env.VITE_BACKEND_BASE_URL;
@@ -13,7 +12,6 @@ export function useChatWebSocket(setStatus) {
   const triggerRefetch = useSetAtom(graphRefetchTriggerAtom);
   const setSelectedNodeEmit = useSetAtom(selectNodeEmitAtom);
   const socketRef = useRef(null);
-
   const streamingKeyRef = useRef(null);
   const chatModelStartCountRef = useRef(0);
 
@@ -40,8 +38,21 @@ export function useChatWebSocket(setStatus) {
     socket.on("message", (data) => {
       if (data.role !== "chatbot") return;
 
-      const token = data.content || "";
+      if (data.subnode === "system_prompt") {
+        const content = data.content || "";
+        setLastDoneMessageKey(null); // clear feedback from previous chatbot message
+        setMessages((prev) => {
+          const newKey = (prev[0]?.key || 0) + 1;
+          return [
+            { key: newKey, name: "system_prompt", value: content, reasoning: null },
+            ...prev,
+          ];
+        });
+        return;
+      }
 
+      // Regular chatbot streaming
+      const token = data.content || "";
       setMessages((prev) => {
         if (streamingKeyRef.current !== null) {
           return prev.map((m) =>
@@ -50,10 +61,8 @@ export function useChatWebSocket(setStatus) {
               : m
           );
         }
-
         const newKey = (prev[0]?.key || 0) + 1;
         streamingKeyRef.current = newKey;
-
         return [
           { key: newKey, name: "chatbot", value: token, reasoning: null },
           ...prev,
@@ -81,7 +90,7 @@ export function useChatWebSocket(setStatus) {
 
     return () => {
       socket.disconnect();
-      setSelectedNodeEmit(null); 
+      setSelectedNodeEmit(null);
     };
   }, []);
 

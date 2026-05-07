@@ -3,7 +3,14 @@ import socketio
 from fastapi import APIRouter
 from langfuse import get_client
 
-from backend.config import config, root_question_prompt
+from backend.config import (
+    config,
+    root_question_prompt,
+    node_no_question_prompt,
+    node_repeat_question_prompt,
+    subnode_no_question_prompt,
+    subnode_repeat_question_prompt,
+)
 from backend.endpoints.graph import (
     user_graph_contexts,
     _default_user_graph_context,
@@ -215,15 +222,14 @@ async def select_node(sid, data):
         if not question:
             await push_chat_message(
                 user_id,
-                "Do you want to ask an question, answered by the full body of literature? "
-                "Please proceed, by asking me your question?",
+                node_no_question_prompt(),
+                "system_prompt",  # ← was missing
             )
         else:
             await push_chat_message(
                 user_id,
-                "Answer a question by using the full body of literature "
-                f"Would you like to ask a different question than: '{question}'? "
-                "**Respond with another question** or type **yes** to repeat the previous question.",
+                node_repeat_question_prompt(question),
+                "system_prompt",  # ← was missing
             )
         ctx["dialogue_state_asked"] = True
         ctx["previous_question"] = question
@@ -237,14 +243,14 @@ async def select_node(sid, data):
         if not question:
             await push_chat_message(
                 user_id,
-                f"You've selected subset {subnode}. Please ask me your question.",
+                subnode_no_question_prompt(subnode),
+                "system_prompt",
             )
         else:
             await push_chat_message(
                 user_id,
-                f"You've selected subset {subnode}. Please ask me your question using this subset. "
-                f"If you want to repeat your previous question: `{question}` "
-                "type **yes**, otherwise **respond with another question**.",
+                subnode_repeat_question_prompt(subnode, question),
+                "system_prompt",
             )
 
         ctx["dialogue_state_asked"] = True

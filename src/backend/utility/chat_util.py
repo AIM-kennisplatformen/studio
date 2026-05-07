@@ -184,6 +184,7 @@ async def push_chat_message(
     user_id: str,
     message: str,
     subnode: str | None = None,
+    message_type: str | None = None,
 ):
     """
     Sends a full assistant message (non-streamed) to the user.
@@ -214,6 +215,7 @@ async def push_chat_message(
                 "full_response": message,
                 "mode": "replace",
                 "subnode": subnode,
+                "message_kind":  message_type
             },
             to=sid,
         )
