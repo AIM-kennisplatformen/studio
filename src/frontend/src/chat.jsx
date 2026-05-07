@@ -273,7 +273,8 @@ function Messages({
                               <button
                                 type="button"
                                 onClick={() => setShowFeedback(true)}
-                                className="text-sm text-blue-500 hover:underline cursor-pointer hover:text-blue-700 bg-transparent border-0 p-0"
+                                className="text-sm cursor-pointer hover:underline border-0 p-0"
+                                style={{ color: "white", backgroundColor: "#038061" }}
                               >
                                 Edit Feedback
                               </button>
