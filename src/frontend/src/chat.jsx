@@ -179,7 +179,7 @@ function Messages({
     <Conversation className="h-full">
       <ConversationContent className="flex flex-col gap-4 p-4 min-h-full">
         <div className="flex-1" />
-        {reversedMessages.map(({ key, value, name }) =>
+        {reversedMessages.map(({ key, value, name, mode = null }) =>
           name === "chatbot" ? (
             <div
               key={key}
@@ -191,14 +191,9 @@ function Messages({
                 </Response>
                 {key === lastDoneKey &&
                   status === "ready" &&
-                  ![
-                    "You've selected subset",
-                    "Answer a question by using the full body of literature",
-                    "Do you want to ask an question, answered by the full body of literature?",
-                  ].some((prefix) => value.startsWith(prefix)) && (
+                  mode !== "replace" && (
                     <div
                       onClick={(e) => e.stopPropagation()}
-                      onSubmit={(e) => e.preventDefault()}
                       className="ml-7 mt-1"
                     >
                       {questionForFeedback && (

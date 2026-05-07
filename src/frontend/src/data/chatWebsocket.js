@@ -41,6 +41,7 @@ export function useChatWebSocket(setStatus) {
       if (data.role !== "chatbot") return;
 
       const token = data.content || "";
+      const mode = data.mode || null;
 
       setMessages((prev) => {
         if (streamingKeyRef.current !== null) {
@@ -55,7 +56,7 @@ export function useChatWebSocket(setStatus) {
         streamingKeyRef.current = newKey;
 
         return [
-          { key: newKey, name: "chatbot", value: token, reasoning: null },
+          { key: newKey, name: "chatbot", value: token, reasoning: null, mode },
           ...prev,
         ];
       });
