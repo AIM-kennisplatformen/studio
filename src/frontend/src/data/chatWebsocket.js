@@ -40,7 +40,7 @@ export function useChatWebSocket(setStatus) {
 
       if (data.subnode === "system_prompt") {
         const content = data.content || "";
-        setLastDoneMessageKey(null); // clear feedback from previous chatbot message
+        setLastDoneMessageKey(null);
         setMessages((prev) => {
           const newKey = (prev[0]?.key || 0) + 1;
           return [
@@ -51,7 +51,6 @@ export function useChatWebSocket(setStatus) {
         return;
       }
 
-      // Regular chatbot streaming
       const token = data.content || "";
       setMessages((prev) => {
         if (streamingKeyRef.current !== null) {
