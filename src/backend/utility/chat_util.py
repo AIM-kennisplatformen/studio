@@ -1,5 +1,14 @@
-from typing import Optional, Dict
+import time
+from typing import Optional, Dict, AsyncGenerator
+ 
 import socketio
+from langchain_openai import ChatOpenAI
+from langfuse import get_client
+from langfuse.langchain import CallbackHandler
+from mcp_use import MCPAgent, MCPClient
+from mcp_use.client.config import load_config_file
+
+from backend.config import config
 
 # =====================================================
 # Socket.IO broker state
@@ -49,9 +58,108 @@ def unbind_sid(sid: str) -> Optional[str]:
     return user_id
 
 
-# =====================================================
-# Emitting Messages
-# =====================================================
+async def _create_agent() -> MCPAgent:
+    mcp_config = load_config_file(config["mcp_tool_config_path"])
+    client = MCPClient(mcp_config)
+    llm = ChatOpenAI(
+        model=config["llm_model"],
+        base_url=config["openai_host"],
+    )
+    return MCPAgent(
+        llm=llm,
+        client=client,
+        max_steps=30,
+        callbacks=[CallbackHandler()],
+    )
+
+async def run_agent(
+    message: str,
+    user_id: str | None = None,
+    trace_id: str | None = None,
+    session_id: str | None = None,
+) -> str:
+    """
+    Run the agent to completion and return the full response string.
+
+    When *trace_id* is supplied the entire agent execution is recorded
+    under that existing Langfuse trace (the CallbackHandler created
+    inside ``_create_agent`` automatically joins the current observation
+    context).
+    """
+    langfuse = get_client()
+
+    if trace_id is not None:
+        with langfuse.start_as_current_observation(
+            as_type="span",
+            name="run_agent",
+            trace_context={"trace_id": trace_id},
+        ) as span:
+            span.update_trace(user_id=user_id, session_id=session_id)
+            agent = await _create_agent()
+            result = await agent.run(message)
+        langfuse.flush()
+        return result
+
+    # Fallback: no trace_id provided — original behaviour
+    agent = await _create_agent()
+    try:
+        return await agent.run(message)
+    finally:
+        langfuse.flush()
+
+
+async def stream_agent_events(
+    message: str,
+    user_id: str | None = None,
+    trace_id: str | None = None,
+    session_id: str | None = None,
+) -> AsyncGenerator[dict, None]:
+    """
+    Async generator that yields parsed event dicts:
+      {"type": str, "data": str, "timestamp": float}
+
+    When *trace_id* is supplied the streaming execution is recorded
+    under that existing Langfuse trace.
+    """
+    langfuse = get_client()
+
+    if trace_id is not None:
+        with langfuse.start_as_current_observation(
+            as_type="span",
+            name="stream_agent_events",
+            trace_context={"trace_id": trace_id},
+        ) as span:
+            span.update_trace(user_id=user_id, session_id=session_id)
+            agent = await _create_agent()
+            async for event in agent.stream_events(message):
+                event_type = event.get("event", "")
+                data = ""
+                if event_type == "on_chat_model_stream":
+                    data = event["data"]["chunk"].content or ""
+                yield {
+                    "type": event_type,
+                    "data": data,
+                    "timestamp": time.time(),
+                }
+        langfuse.flush()
+        return
+
+    # Fallback: no trace_id provided — original behaviour
+    agent = await _create_agent()
+    try:
+        async for event in agent.stream_events(message):
+            event_type = event.get("event", "")
+            data = ""
+            if event_type == "on_chat_model_stream":
+                data = event["data"]["chunk"].content or ""
+            yield {
+                "type": event_type,
+                "data": data,
+                "timestamp": time.time(),
+            }
+    finally:
+        langfuse.flush()
+ 
 
 async def emit_to_user(user_id: str, event: str, payload: dict):
     """
@@ -76,6 +184,7 @@ async def push_chat_message(
     user_id: str,
     message: str,
     subnode: str | None = None,
+    message_type: str | None = None,
 ):
     """
     Sends a full assistant message (non-streamed) to the user.
@@ -106,6 +215,7 @@ async def push_chat_message(
                 "full_response": message,
                 "mode": "replace",
                 "subnode": subnode,
+                "message_kind":  message_type
             },
             to=sid,
         )

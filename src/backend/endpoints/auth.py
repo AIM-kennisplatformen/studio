@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, Depends, HTTPException, WebSocket
 from fastapi.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
 
-from backend.config import BASE_URL, DISCOVERY_URL, CLIENT_ID, CLIENT_SECRET
+from backend.config import config
 
 # -------------------------------------------------------
 # OAuth Client Setup
@@ -11,9 +11,9 @@ from backend.config import BASE_URL, DISCOVERY_URL, CLIENT_ID, CLIENT_SECRET
 oauth = OAuth()
 oauth.register(
     name="authentik",
-    server_metadata_url=DISCOVERY_URL,
-    client_id=CLIENT_ID,
-    client_secret=CLIENT_SECRET,
+    server_metadata_url=config["discovery_url"],
+    client_id=config["client_id"],
+    client_secret=config["client_secret"],
     client_kwargs={"scope": "openid email profile"},
 )
 
@@ -44,7 +44,7 @@ async def login(request: Request):
     """
     Redirect the user to Authentik for authentication.
     """
-    redirect_uri = BASE_URL + "/auth/callback"
+    redirect_uri = config["base_url"] + "/auth/callback"
     return await oauth.authentik.authorize_redirect(request, redirect_uri)
 
 
@@ -64,7 +64,7 @@ async def logout(request: Request):
     Clear the user's session and log them out.
     """
     request.session.clear()
-    return RedirectResponse("/")
+    return RedirectResponse(config["logout_url"])
 
 
 @auth_router.get("/me")
@@ -74,6 +74,9 @@ async def me(user=Depends(get_current_user)):
     """
     return {"authenticated": True, "user": user}
 
+@auth_router.get("/")
+async def redirect_to_app(request: Request):
+       return RedirectResponse("/app")
 
 # -------------------------------------------------------
 # WebSocket Authentication
