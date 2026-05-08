@@ -17,6 +17,7 @@ import {
   layoutNodesAtom,
   nodesAtom,
   selectedNodeAtom,
+  selectedNodeScreenPositionAtom,
 } from "./data/atoms";
 import { sendNodeSelection } from "./data/api";
 import { applyDagreLayout } from "./lib/ctrytoscapeLayout";
@@ -78,6 +79,18 @@ export default function Graph({ data, width }) {
   const graphNodesRef = useRef([]);
   const edgesRef = useRef([]);
   const breadcrumbsCounter = useRef(0);
+
+  const { flowToScreenPosition } = useReactFlow();
+  const [, setSelectedNodeScreenPosition] = useAtom(
+    selectedNodeScreenPositionAtom
+  );
+
+  // useEffect(() => {
+  //   setSelectedNodeScreenPosition(screenPositionSelectedNode);
+  // }, [screenPositionSelectedNode]);
+  // console.log(selectedNode != null ? selectedNode.data.label : "niets");
+
+  // console.log(screenPositionSelectedNode);
 
   const centerNodeInView = useCallback(
     (node) => {
@@ -346,6 +359,11 @@ export default function Graph({ data, width }) {
       centerNodeInView(node);
       sendNodeSelection(node.id);
       appendBreadcrumb(node);
+
+      const screenPositionSelectedNode = flowToScreenPosition(
+        selectedNode != null ? selectedNode.position : { x: 0, y: 0 }
+      );
+      setSelectedNodeScreenPosition(screenPositionSelectedNode);
     },
     [appendBreadcrumb, centerNodeInView, setCenterNodeId, setSelectedNode]
   );

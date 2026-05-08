@@ -2,7 +2,7 @@ import { breadcrumbsAtom } from "@/data/atoms";
 import { useAtom } from "jotai";
 
 export default function BreadcrumbOverlay({}) {
-  const [breadcrumbs, setBreadcrumbs] = useAtom(breadcrumbsAtom);
+  const [breadcrumbs] = useAtom(breadcrumbsAtom);
 
   const withoutMostRecentBreadcrumb = breadcrumbs.slice(0, -1);
 

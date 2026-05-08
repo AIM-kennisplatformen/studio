@@ -5,7 +5,7 @@ import Graph from "./graph.jsx";
 import { ReactFlowProvider } from "@xyflow/react";
 import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
 import { useAtom } from "jotai";
-import { centerNodeAtom } from "./data/atoms";
+import { centerNodeAtom, selectedNodeScreenPositionAtom } from "./data/atoms";
 import BreadcrumbOverlay from "./components/BreadcrumbsOverlay";
 
 export default function App() {
@@ -13,6 +13,9 @@ export default function App() {
   const containerRef = useRef(null);
   const [data, setData] = useState(null);
   const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom);
+  const [selectedNodePostition] = useAtom(selectedNodeScreenPositionAtom);
+
+  const verticalNodeHeight = selectedNodePostition.y;
 
   // Load graph once on mount or when center node changes for the first time
   useEffect(() => {
@@ -55,6 +58,7 @@ export default function App() {
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
   };
+  console.log(verticalNodeHeight);
 
   return (
     <div ref={containerRef} className="flex h-screen w-screen">
@@ -78,8 +82,8 @@ export default function App() {
 
       <div
         style={{
-          position: "fixed",
-          top: 0,
+          position: "absolute",
+          top: `${verticalNodeHeight}px`,
           left: 0,
           paddingLeft: "10px",
           zIndex: 5000,
