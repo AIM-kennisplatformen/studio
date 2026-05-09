@@ -17,6 +17,8 @@ export default function App() {
 
   const verticalNodeHeight = selectedNodePostition.y;
 
+  console.log(verticalNodeHeight);
+
   // Load graph once on mount or when center node changes for the first time
   useEffect(() => {
     let mounted = true;
@@ -58,7 +60,6 @@ export default function App() {
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
   };
-  console.log(verticalNodeHeight);
 
   return (
     <div ref={containerRef} className="flex h-screen w-screen">
@@ -83,7 +84,7 @@ export default function App() {
       <div
         style={{
           position: "absolute",
-          top: `${verticalNodeHeight}px`,
+          bottom: "50%", //`${verticalNodeHeight}px`,
           left: 0,
           paddingLeft: "10px",
           zIndex: 5000,

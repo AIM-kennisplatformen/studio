@@ -23,12 +23,12 @@ export default function BreadcrumbOverlay({}) {
         ) : null}
         {withoutMostRecentBreadcrumb.map((breadcrumb) => {
           return (
-            <p
+            <div
               key={breadcrumb.historyId}
               className="text-green-800 bg-white border-green-700  border-2 rounded-lg p-3 mb-5 max-w-50 min-w-50"
             >
               {breadcrumb.label}
-            </p>
+            </div>
           );
         })}
       </div>

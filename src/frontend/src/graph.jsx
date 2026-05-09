@@ -360,9 +360,10 @@ export default function Graph({ data, width }) {
       sendNodeSelection(node.id);
       appendBreadcrumb(node);
 
-      const screenPositionSelectedNode = flowToScreenPosition(
-        selectedNode != null ? selectedNode.position : { x: 0, y: 0 }
-      );
+      const screenPositionSelectedNode = flowToScreenPosition(node.position);
+      console.log(screenPositionSelectedNode);
+      console.log(node.position);
+
       setSelectedNodeScreenPosition(screenPositionSelectedNode);
     },
     [appendBreadcrumb, centerNodeInView, setCenterNodeId, setSelectedNode]
@@ -410,6 +411,9 @@ export default function Graph({ data, width }) {
         }}
         attributionPosition="bottom-left"
         proOptions={{ hideAttribution: true }}
+        onMove={(e, viewport) => {
+          console.log("moving", viewport);
+        }}
       />
     </div>
   );
