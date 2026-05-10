@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function HamburgerMenu(setCurrentChat = () => {}) {
+export default function ChatHamburgerMenu(setCurrentChat = () => {}) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -29,23 +29,35 @@ export default function HamburgerMenu(setCurrentChat = () => {}) {
           </svg>
         </button>
 
-        {isOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-20">
-            <a
-              href="#"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              Chat History
-            </a>
-            <p>
-              Lorem ipsum, dolor sit amet consectetur adipisicing elit.
-              Assumenda, explicabo illo! Nesciunt molestiae distinctio provident
-              laborum consequatur quam optio laboriosam itaque eaque expedita in
-              unde blanditiis, iusto ipsam esse ab.
-            </p>
-          </div>
-        )}
+        {isOpen && <ChatHistoryMenu />}
       </div>
     </>
+  );
+}
+
+function ChatHistoryMenu() {
+  return (
+    <div className="absolute left-0 mt-4 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-20">
+      <a
+        href="#"
+        className="flex rounded items-center px-4 py-2 text-sm !text-white bg-[#038061] hover:bg-[#038061]/90 transition duration-150"
+      >
+        Start a New Chat
+      </a>
+      <ChatSessionButton session={{ title: "Chat Session 1" }} />
+      <ChatSessionButton session={{ title: "Chat Session 2" }} />
+    </div>
+  );
+}
+
+function ChatSessionButton({ session }) {
+  return (
+    <a
+      href="#"
+      className="flex rounded items-center my-1px-4 py-2 text-sm !text-[#038061] bg-white hover:bg-gray-100 transition duration-150"
+      onClick={() => {}}
+    >
+      {session.title}
+    </a>
   );
 }

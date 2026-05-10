@@ -36,7 +36,7 @@ import { ThumbsUpIcon, ThumbsDownIcon } from "lucide-react";
 import { logResponseFeedback, logEvent } from "./data/api";
 import LogOutButton from "@/components/LogOutButton.jsx";
 import NewChatButton from "@/components/NewChatButton.jsx";
-import HamburgerMenu from "./components/HamburgerMenu";
+import ChatHamburgerMenu from "./components/ChatHamburgerMenu";
 
 async function handleFeedback(
   messageKey,
@@ -64,7 +64,7 @@ export default function Chat() {
     <div className="flex flex-col h-full bg-white relative z-10">
       {/* Header with logout */}
       <div className="flex justify-between px-4 py-2 border-b border-gray-200 bg-white shrink-0">
-        <HamburgerMenu />
+        <ChatHamburgerMenu />
         <NewChatButton />
         <LogOutButton />
       </div>
