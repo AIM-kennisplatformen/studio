@@ -1,9 +1,14 @@
-import { breadcrumbsAtom, selectedNodeAtom } from "@/data/atoms";
+import {
+  breadcrumbsAtom,
+  centerNodeAtom,
+  selectedNodeAtom,
+} from "@/data/atoms";
 import { useAtom } from "jotai";
 
 export default function BreadcrumbOverlay({}) {
   const [breadcrumbs] = useAtom(breadcrumbsAtom);
   const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom);
+  const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom);
 
   const withoutMostRecentBreadcrumb = breadcrumbs.slice(0, -1);
 
@@ -27,7 +32,7 @@ export default function BreadcrumbOverlay({}) {
             <div
               key={breadcrumb.historyId}
               className="text-green-800 bg-white border-green-700  border-2 rounded-lg p-3 mb-5 max-w-50 min-w-50 cursor-pointer"
-              onClick={() => console.log("klik: " + breadcrumb.label)}
+              onClick={() => setCenterNodeId(breadcrumb.originNodeId)}
             >
               {breadcrumb.label}
             </div>

@@ -106,6 +106,8 @@ export default function Graph({ data, width }) {
 
   const nodesRef = useRef([]);
 
+  console.log(centerNodeId);
+
   const centerNodeInView = useCallback(
     (node) => {
       if (!containerRef.current) return;
@@ -361,10 +363,10 @@ export default function Graph({ data, width }) {
       sendNodeSelection(node.id);
       appendBreadcrumb(node);
 
-      const screenPositionSelectedNode = flowToScreenPosition(node.position);
-      console.log(screenPositionSelectedNode);
-      console.log(node.position);
-      setSelectedNodeScreenPosition(screenPositionSelectedNode);
+      // const screenPositionSelectedNode = flowToScreenPosition(node.position);
+      // console.log(screenPositionSelectedNode);
+      // console.log(node.position);
+      // setSelectedNodeScreenPosition(screenPositionSelectedNode);
 
       emitSelectNode?.(Number(node.id));
       if (fullDataRef.current) {
@@ -404,6 +406,19 @@ export default function Graph({ data, width }) {
     return () => ro.disconnect();
   }, [fitView]);
 
+  // useEffect(() => {
+  //   const nodeToBeCentered = nodes.find((node) => node.id === centerNodeId);
+  //   centerNodeInView(nodeToBeCentered);
+  // }, [centerNodeId]);
+
+  useEffect(() => {
+    const nodeToBeCentered = nodes.find((node) => node.id === centerNodeId);
+
+    if (nodeToBeCentered) {
+      centerNodeInView(nodeToBeCentered);
+    }
+  }, [centerNodeId, nodes]);
+
   return (
     <div
       ref={containerRef}
@@ -425,9 +440,9 @@ export default function Graph({ data, width }) {
         }}
         attributionPosition="bottom-left"
         proOptions={{ hideAttribution: true }}
-        onMove={(e, viewport) => {
-          console.log("moving", viewport);
-        }}
+        // onMove={(e, viewport) => {
+        //   console.log("moving", viewport);
+        // }}
       />
     </div>
   );
