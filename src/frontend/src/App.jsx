@@ -4,38 +4,39 @@ import Chat from "./chat.jsx";
 import Graph from "./graph.jsx";
 import { ReactFlowProvider } from "@xyflow/react";
 import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
-import { useAtom } from "jotai";
-import { centerNodeAtom, selectedNodeScreenPositionAtom } from "./data/atoms";
+import { useAtom, useAtomValue } from "jotai";
+import { selectedNodeScreenPositionAtom, graphRefetchTriggerAtom } from "./data/atoms";
 import BreadcrumbOverlay from "./components/BreadcrumbsOverlay";
+import { FeedbackButton } from "./components/FeedbackButton.jsx";
 
 export default function App() {
   const [leftWidth, setLeftWidth] = useState(66.6);
   const containerRef = useRef(null);
   const [data, setData] = useState(null);
-  const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom);
   const [selectedNodePostition] = useAtom(selectedNodeScreenPositionAtom);
 
   const verticalNodeHeight = selectedNodePostition.y;
 
   console.log(verticalNodeHeight);
+  //const [refetchTrigger, setRefetchTrigger] = useAtom(graphRefetchTriggerAtom); //Read/write if we want to trigger refetch from here, but currently only chatbot triggers refetch, so read only is enough
+  const refetchTrigger = useAtomValue(graphRefetchTriggerAtom); //Read only to trigger refetch when chatbot signals done
 
   // Load graph once on mount or when center node changes for the first time
   useEffect(() => {
     let mounted = true;
-    if (!centerNodeId) setCenterNodeId(1);
+    //if (!centerNodeId) setCenterNodeId(1);
 
     (async () => {
       try {
-        const resp = await fetchAnswer(centerNodeId);
+        const resp = await fetchAnswer();
         if (!mounted) return;
         setData(resp);
       } catch (err) {
         console.warn("Failed to load graph data", err);
       }
     })();
-
     return () => (mounted = false);
-  }, [centerNodeId, setCenterNodeId]);
+  }, [refetchTrigger]);
 
   const handleMouseDown = (e) => {
     e.preventDefault();
@@ -73,11 +74,21 @@ export default function App() {
       </div>
 
       <div
+        className="absolute z-50 pointer-events-auto"
+        style={{
+          left: `calc(${leftWidth}% - 86px)`,
+          bottom: "120px",
+        }}
+      >
+        <FeedbackButton />
+      </div>
+
+      <div
         className="w-1 bg-gray-400 cursor-col-resize hover:bg-gray-600"
         onMouseDown={handleMouseDown}
       />
 
-      <div className="flex-1 h-full bg-gray-50 flex flex-col">
+      <div className="flex-1 h-full bg-gray-50 flex flex-col overflow-hidden">
         <Chat />
       </div>
 

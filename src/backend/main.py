@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-from backend.config import SESSION_SECRET, BASE_URL
+from backend.config import config
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -10,15 +10,14 @@ from backend.endpoints.assets import asset_router, frontend, detect_frontend_dir
 from backend.endpoints.auth import auth_router
 from backend.endpoints.chat import chat_router, socket_app
 from backend.endpoints.graph import graph_router
+from backend.endpoints.log_event import log_event_router
+from backend.stores.redis import redis_store
 
 # Build list of allowed CORS origins
-cors_origins = [BASE_URL]
-
-
+cors_origins = [config["base_url"]]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # ---- STARTUP ----
     kg_data = load_knowledge_graph()
     app.state.kg_data = kg_data
 
@@ -27,7 +26,14 @@ async def lifespan(app: FastAPI):
     print(f"✓ Loaded {len(kg_data.questions)} questions")
     print(f"✓ Frontend directory detected: {detect_frontend_dir()}")
 
-    yield  # application runs here
+    await redis_store.connect({
+        "redis_url": config["redis_url"],
+        "redis_expiration_time": config["redis_expiration_time"]
+    })
+
+    yield
+    
+    await redis_store.close()
 
 app = FastAPI(
     title="Knowledge Graph API",
@@ -38,7 +44,7 @@ app = FastAPI(
 
 app.add_middleware(
     SessionMiddleware,
-    secret_key=SESSION_SECRET,
+    secret_key=config["session_secret"],
     same_site="lax",        # REQUIRED for cross-site requests
     https_only=False,        # Only True if you deploy with HTTPS
 )
@@ -56,4 +62,5 @@ app.include_router(asset_router)
 app.include_router(auth_router)
 app.include_router(chat_router)
 app.include_router(graph_router)
+app.include_router(log_event_router)
 app.include_router(frontend)
