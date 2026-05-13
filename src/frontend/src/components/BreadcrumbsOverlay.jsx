@@ -1,8 +1,9 @@
-import { breadcrumbsAtom } from "@/data/atoms";
+import { breadcrumbsAtom, selectedNodeAtom } from "@/data/atoms";
 import { useAtom } from "jotai";
 
 export default function BreadcrumbOverlay({}) {
   const [breadcrumbs] = useAtom(breadcrumbsAtom);
+  const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom);
 
   const withoutMostRecentBreadcrumb = breadcrumbs.slice(0, -1);
 
@@ -17,7 +18,7 @@ export default function BreadcrumbOverlay({}) {
               className="w-full h-full"
             >
               <rect height="100" width="23" y="90" x="38.5" fill="#016630" />
-              <ellipse ry="30" rx="30" cy="60" cx="50" fill="#016630" />{" "}
+              <ellipse ry="30" rx="30" cy="60" cx="50" fill="#016630" />
             </svg>
           </div>
         ) : null}
@@ -25,7 +26,8 @@ export default function BreadcrumbOverlay({}) {
           return (
             <div
               key={breadcrumb.historyId}
-              className="text-green-800 bg-white border-green-700  border-2 rounded-lg p-3 mb-5 max-w-50 min-w-50"
+              className="text-green-800 bg-white border-green-700  border-2 rounded-lg p-3 mb-5 max-w-50 min-w-50 cursor-pointer"
+              onClick={() => console.log("klik: " + breadcrumb.label)}
             >
               {breadcrumb.label}
             </div>
