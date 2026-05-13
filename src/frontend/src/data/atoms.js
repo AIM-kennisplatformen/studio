@@ -29,6 +29,9 @@ What would you like to explore today?`,
   },
 ]);
 
+// Atom for the last completed chatbot message key (show actions on this message)
+export const lastDoneMessageKeyAtom = atom(null);
+
 //Atoms for the InputArea component
 export const textStatusAtom = atom("ready");
 export const textAtom = atom("");
@@ -38,7 +41,6 @@ export const timerAtom = atom(null);
 export const nodesAtom = atom([]);
 export const edgesAtom = atom([]);
 export const selectedNodeAtom = atom(null);
-export const draggingNodeIdAtom = atom(null);
 export const centerNodeAtom = atom(1);
 export const dataAtom = atom(null);
 export const layoutNodesAtom = atom([]);
@@ -53,3 +55,5 @@ export const breadcrumbsAtom = atom([]);
   }
 
 */
+export const graphRefetchTriggerAtom = atom(0);       
+export const selectNodeEmitAtom = atom(null);     
