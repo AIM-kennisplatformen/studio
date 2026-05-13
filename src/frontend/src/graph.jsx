@@ -6,7 +6,7 @@ import {
   useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { SolidEdge } from "./components/CustomEdge";
 import { CustomNode } from "./components/CustomNode";
 import { getEdgeHandles } from "./lib/graphUtils";
@@ -19,7 +19,7 @@ import {
   layoutNodesAtom,
   selectedNodeScreenPositionAtom,
   breadcrumbsAtom,
-  selectNodeEmitAtom
+  selectNodeEmitAtom,
 } from "./data/atoms";
 import { sendNodeSelection } from "./data/api";
 
@@ -99,10 +99,12 @@ export default function Graph({ data, width }) {
   const [, setSelectedNodeScreenPosition] = useAtom(
     selectedNodeScreenPositionAtom
   );
-    const fullDataRef = useRef(null);
+  const fullDataRef = useRef(null);
   const layoutNodesRef = useRef(layoutNodes);
   const selectedNodeRef = useRef(null);
   const allPositionsRef = useRef(new Map());
+
+  const nodesRef = useRef([]);
 
   const centerNodeInView = useCallback(
     (node) => {
@@ -180,129 +182,136 @@ export default function Graph({ data, width }) {
     selectedNodeRef.current = selectedNode;
   }, [selectedNode]);
 
-  const prepareGraphData = useCallback((graphData) => {
-    if (!graphData?.nodes || !graphData?.edges) return;
+  const prepareGraphData = useCallback(
+    (graphData) => {
+      if (!graphData?.nodes || !graphData?.edges) return;
 
-    const previousPositions = allPositionsRef.current;
-    const nodeMap = new Map();
+      const previousPositions = allPositionsRef.current;
+      const nodeMap = new Map();
 
-    // Create nodes
-    const newNodes = graphData.nodes.map((node) => {
-      const isCenter = node.id === 1;
-      const reactFlowNode = {
-        id: String(node.id),
-        type: "custom",
-        position: previousPositions.get(String(node.id)) || { x: 0, y: 0 },
-        data: {
-          label: node.title,
-          background: isCenter ? "#038061" : "#ffffff",
-          color: isCenter ? "#ffffff" : "#038061",
-          border: "2px solid #038061",
-          borderRadius: "8px",
-          padding: "8px",
-          fontSize: "12px",
-          width: 160,
-          whiteSpace: "pre-wrap",
-          boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-        },
-      };
-
-      nodeMap.set(reactFlowNode.id, reactFlowNode);
-      return reactFlowNode;
-    });
-
-
-    // Create edges
-    const newEdges = graphData.edges
-      .map((edge) => {
-        const sourceNode = nodeMap.get(String(edge.source_id));
-        const targetNode = nodeMap.get(String(edge.target_id));
-
-        if (!sourceNode || !targetNode) {
-          return null;
-        }
-
-        const { sourceHandle, targetHandle } = getEdgeHandles(
-          sourceNode.position.x,
-          sourceNode.position.y,
-          targetNode.position.x,
-          targetNode.position.y,
-        );
-
-        return {
-          id: String(edge.id),
-          source: String(edge.source_id),
-          target: String(edge.target_id),
-          label: edge.labelToTarget,
-          type: "solid",
-          sourceHandle,
-          targetHandle,
-          labelStyle: { fill: "#666", fontSize: 10 },
-          labelBgStyle: { fill: "white", fillOpacity: 0.8 },
+      // Create nodes
+      const newNodes = graphData.nodes.map((node) => {
+        const isCenter = node.id === 1;
+        const reactFlowNode = {
+          id: String(node.id),
+          type: "custom",
+          position: previousPositions.get(String(node.id)) || { x: 0, y: 0 },
+          data: {
+            label: node.title,
+            background: isCenter ? "#038061" : "#ffffff",
+            color: isCenter ? "#ffffff" : "#038061",
+            border: "2px solid #038061",
+            borderRadius: "8px",
+            padding: "8px",
+            fontSize: "12px",
+            width: 160,
+            whiteSpace: "pre-wrap",
+            boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+          },
         };
-      })
-      .filter(Boolean);
 
+        nodeMap.set(reactFlowNode.id, reactFlowNode);
+        return reactFlowNode;
+      });
 
-    const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
+      // Create edges
+      const newEdges = graphData.edges
+        .map((edge) => {
+          const sourceNode = nodeMap.get(String(edge.source_id));
+          const targetNode = nodeMap.get(String(edge.target_id));
 
-    // Apply dagre layout to new nodes, keeping fixed nodes in place
-    const layoutPositions = applyDagreLayout(newNodes, newEdges, {
-      quality: "proof",
-      nodeSeparation: 200,
-      idealEdgeLength: 300,
-      nodeRepulsion: 50000,
-      maxIterations: 2000,
-      animationDuration: 1000,
-      gravity: 0.05,
-      numIter: 5000,
-      tile: true,
-      tilingPaddingVertical: 20,
-      tilingPaddingHorizontal: 20,
-      incremental: true,
-      nodeDimensionsIncludeLabels: true,
-      fixedNodeConstraint: fixedNodes.map((n) => ({
-        nodeId: n.id,
-        position: n.position,
-      })),
-    });
+          if (!sourceNode || !targetNode) {
+            return null;
+          }
 
-    // Merge positions: keep old positions, use layout positions for new nodes
-    const mergedNodes = newNodes.map((n) => ({
-      ...n,
-      position:
-        previousPositions.get(n.id) || layoutPositions[n.id] || n.position,
-    }));
+          const { sourceHandle, targetHandle } = getEdgeHandles(
+            sourceNode.position.x,
+            sourceNode.position.y,
+            targetNode.position.x,
+            targetNode.position.y
+          );
 
-    // Persist positions for all seen nodes across subgraph changes
-    mergedNodes.forEach((n) => allPositionsRef.current.set(n.id, n.position));
-
-    setLayoutNodes(mergedNodes);
-    nodesRef.current = mergedNodes;
-    edgesRef.current = newEdges;
-    setNodes(mergedNodes);
-    setEdges(newEdges);
-
-    // Center node 1 on first load only
-    if (!selectedNodeRef.current) {
-      const nodeToCenter = mergedNodes.find((n) => n.id === "1");
-      if (nodeToCenter && containerRef.current) {
-        centerNodeInView(nodeToCenter);
-        setSelectedNode(nodeToCenter);
-        setBreadcrumbs(() => {
-          const entry = {
-            historyId: `bc-${breadcrumbsCounter.current}`,
-            originNodeId: nodeToCenter.id,
-            label: nodeToCenter.data.label,
+          return {
+            id: String(edge.id),
+            source: String(edge.source_id),
+            target: String(edge.target_id),
+            label: edge.labelToTarget,
+            type: "solid",
+            sourceHandle,
+            targetHandle,
+            labelStyle: { fill: "#666", fontSize: 10 },
+            labelBgStyle: { fill: "white", fillOpacity: 0.8 },
           };
+        })
+        .filter(Boolean);
 
-          breadcrumbsCounter.current += 1;
-          return [entry];
-        });
+      const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
+
+      // Apply dagre layout to new nodes, keeping fixed nodes in place
+      const layoutPositions = applyDagreLayout(newNodes, newEdges, {
+        quality: "proof",
+        nodeSeparation: 200,
+        idealEdgeLength: 300,
+        nodeRepulsion: 50000,
+        maxIterations: 2000,
+        animationDuration: 1000,
+        gravity: 0.05,
+        numIter: 5000,
+        tile: true,
+        tilingPaddingVertical: 20,
+        tilingPaddingHorizontal: 20,
+        incremental: true,
+        nodeDimensionsIncludeLabels: true,
+        fixedNodeConstraint: fixedNodes.map((n) => ({
+          nodeId: n.id,
+          position: n.position,
+        })),
+      });
+
+      // Merge positions: keep old positions, use layout positions for new nodes
+      const mergedNodes = newNodes.map((n) => ({
+        ...n,
+        position:
+          previousPositions.get(n.id) || layoutPositions[n.id] || n.position,
+      }));
+
+      // Persist positions for all seen nodes across subgraph changes
+      mergedNodes.forEach((n) => allPositionsRef.current.set(n.id, n.position));
+
+      setLayoutNodes(mergedNodes);
+      nodesRef.current = mergedNodes;
+      edgesRef.current = newEdges;
+      setNodes(mergedNodes);
+      setEdges(newEdges);
+
+      // Center node 1 on first load only
+      if (!selectedNodeRef.current) {
+        const nodeToCenter = mergedNodes.find((n) => n.id === "1");
+        if (nodeToCenter && containerRef.current) {
+          centerNodeInView(nodeToCenter);
+          setSelectedNode(nodeToCenter);
+          setBreadcrumbs(() => {
+            const entry = {
+              historyId: `bc-${breadcrumbsCounter.current}`,
+              originNodeId: nodeToCenter.id,
+              label: nodeToCenter.data.label,
+            };
+
+            breadcrumbsCounter.current += 1;
+            return [entry];
+          });
+        }
       }
-    }
-  }, [setLayoutNodes, setNodes, setEdges, centerNodeInView, setSelectedNode, setBreadcrumbs]);
-
+    },
+    [
+      setLayoutNodes,
+      setNodes,
+      setEdges,
+      centerNodeInView,
+      setSelectedNode,
+      setBreadcrumbs,
+    ]
+  );
 
   // On first load show node 1's neighbourhood; on refetch just update fullDataRef
   useEffect(() => {
@@ -311,7 +320,6 @@ export default function Graph({ data, width }) {
     fullDataRef.current = data;
     if (isFirstLoad) prepareGraphData(getSubgraph(data, 1));
   }, [data, prepareGraphData]);
-
 
   /** Update edge handles when nodes move */
   const updateEdges = useCallback((nodes, edges) => {
@@ -327,7 +335,7 @@ export default function Graph({ data, width }) {
         targetNode.position.x,
         targetNode.position.y,
         160,
-        80,
+        80
       );
 
       return { ...edge, sourceHandle, targetHandle };
@@ -337,12 +345,12 @@ export default function Graph({ data, width }) {
   const onEdgesChange = useCallback(
     (changes) =>
       setEdges((currentEdges) => applyEdgeChanges(changes, currentEdges)),
-    [setEdges],
+    [setEdges]
   );
 
   const onConnect = useCallback(
     (params) => setEdges((es) => addEdge(params, es)),
-    [setEdges],
+    [setEdges]
   );
 
   const onNodeClick = useCallback(
@@ -363,10 +371,17 @@ export default function Graph({ data, width }) {
         prepareGraphData(getSubgraph(fullDataRef.current, node.id));
       }
     },
-    [setCenterNodeId, setSelectedNode, centerNodeInView, appendBreadcrumb, flowToScreenPosition, setSelectedNodeScreenPosition, emitSelectNode, prepareGraphData]
+    [
+      setCenterNodeId,
+      setSelectedNode,
+      centerNodeInView,
+      appendBreadcrumb,
+      flowToScreenPosition,
+      setSelectedNodeScreenPosition,
+      emitSelectNode,
+      prepareGraphData,
+    ]
   );
-
-
 
   /** Fit view on container resize */
   useEffect(() => {
