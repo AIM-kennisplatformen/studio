@@ -1,0 +1,22 @@
+name: Frontend linter
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: src/frontend
+
+      - name: Run checks
+        run: npm run check
+        working-directory: src/frontend
