@@ -23,49 +23,6 @@ import {
 } from "./data/atoms";
 import { sendNodeSelection } from "./data/api";
 
-function arePositionsEqual(a = { x: 0, y: 0 }, b = { x: 0, y: 0 }) {
-  return a.x === b.x && a.y === b.y;
-}
-
-function areNodeArraysEqual(currentNodes, nextNodes) {
-  if (currentNodes.length !== nextNodes.length) {
-    return false;
-  }
-
-  return currentNodes.every((node, index) => {
-    const nextNode = nextNodes[index];
-
-    return (
-      node.id === nextNode.id &&
-      node.type === nextNode.type &&
-      node.draggable === nextNode.draggable &&
-      node.selectable === nextNode.selectable &&
-      node.connectable === nextNode.connectable &&
-      arePositionsEqual(node.position, nextNode.position) &&
-      JSON.stringify(node.data) === JSON.stringify(nextNode.data)
-    );
-  });
-}
-
-function areEdgeArraysEqual(currentEdges, nextEdges) {
-  if (currentEdges.length !== nextEdges.length) {
-    return false;
-  }
-
-  return currentEdges.every((edge, index) => {
-    const nextEdge = nextEdges[index];
-
-    return (
-      edge.id === nextEdge.id &&
-      edge.source === nextEdge.source &&
-      edge.target === nextEdge.target &&
-      edge.sourceHandle === nextEdge.sourceHandle &&
-      edge.targetHandle === nextEdge.targetHandle &&
-      JSON.stringify(edge.style || {}) === JSON.stringify(nextEdge.style || {})
-    );
-  });
-}
-
 function getSubgraph(data, nodeId) {
   const id = String(nodeId);
   const connectedEdges = data.edges.filter(
@@ -106,8 +63,6 @@ export default function Graph({ data, width }) {
 
   const nodesRef = useRef([]);
 
-  console.log(centerNodeId);
-
   const centerNodeInView = useCallback(
     (node) => {
       if (!containerRef.current) return;
@@ -130,18 +85,6 @@ export default function Graph({ data, width }) {
     },
     [getViewport, setViewport]
   );
-
-  const setRenderGraph = useCallback(() => {
-    const nextNodes = [...graphNodesRef.current];
-    const nextEdges = [...edgesRef.current];
-
-    setNodes((currentNodes) =>
-      areNodeArraysEqual(currentNodes, nextNodes) ? currentNodes : nextNodes
-    );
-    setEdges((currentEdges) =>
-      areEdgeArraysEqual(currentEdges, nextEdges) ? currentEdges : nextEdges
-    );
-  }, [setEdges, setNodes]);
 
   const appendBreadcrumb = useCallback(
     (node) => {
@@ -322,27 +265,6 @@ export default function Graph({ data, width }) {
     fullDataRef.current = data;
     if (isFirstLoad) prepareGraphData(getSubgraph(data, 1));
   }, [data, prepareGraphData]);
-
-  /** Update edge handles when nodes move */
-  const updateEdges = useCallback((nodes, edges) => {
-    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
-    return edges.map((edge) => {
-      const sourceNode = nodeMap.get(edge.source);
-      const targetNode = nodeMap.get(edge.target);
-      if (!sourceNode || !targetNode) return edge;
-
-      const { sourceHandle, targetHandle } = getEdgeHandles(
-        sourceNode.position.x,
-        sourceNode.position.y,
-        targetNode.position.x,
-        targetNode.position.y,
-        160,
-        80
-      );
-
-      return { ...edge, sourceHandle, targetHandle };
-    });
-  }, []);
 
   const onEdgesChange = useCallback(
     (changes) =>
