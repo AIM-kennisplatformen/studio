@@ -55,35 +55,68 @@ async function handleFeedback(
   setFeedbackText(response);
 }
 
+// const [currentChat, setCurrentChat] = useState(0);
+
 export default function Chat() {
   const [feedbackText, setFeedbackText] = useState("");
   const [showFeedback, setShowFeedback] = useState(true);
+  const [chatActive, setChatActive] = useState(false);
   const shouldLog = useRef(false);
 
   return (
     <div className="flex flex-col h-full bg-white relative z-10">
       {/* Header with logout */}
       <div className="flex justify-between px-4 py-2 border-b border-gray-200 bg-white shrink-0">
-        <ChatHamburgerMenu />
+        <ChatHamburgerMenu
+          setChatActive={setChatActive}
+          chatActive={chatActive}
+        />
         <NewChatButton />
         <LogOutButton />
       </div>
+      {chatActive ? (
+        <>
+          {/* Messages - scrollable */}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <Messages
+              feedbackText={feedbackText}
+              showFeedback={showFeedback}
+              setFeedbackText={setFeedbackText}
+              setShowFeedback={setShowFeedback}
+              shouldLog={shouldLog}
+            />
+          </div>
 
-      {/* Messages - scrollable */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <Messages
-          feedbackText={feedbackText}
-          showFeedback={showFeedback}
-          setFeedbackText={setFeedbackText}
-          setShowFeedback={setShowFeedback}
-          shouldLog={shouldLog}
-        />
-      </div>
+          {/* Input - sticky at bottom */}
+          <div className="border-t border-gray-200 bg-white shrink-0">
+            <InputArea
+              setShowFeedback={setShowFeedback}
+              shouldLog={shouldLog}
+            />
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Chat History overview */}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <Messages
+              feedbackText={feedbackText}
+              showFeedback={showFeedback}
+              setFeedbackText={setFeedbackText}
+              setShowFeedback={setShowFeedback}
+              shouldLog={shouldLog}
+            />
+          </div>
 
-      {/* Input - sticky at bottom */}
-      <div className="border-t border-gray-200 bg-white shrink-0">
-        <InputArea setShowFeedback={setShowFeedback} shouldLog={shouldLog} />
-      </div>
+          {/* New chat button - at the bottom */}
+          <div className="border-t border-gray-200 bg-white shrink-0">
+            <InputArea
+              setShowFeedback={setShowFeedback}
+              shouldLog={shouldLog}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }

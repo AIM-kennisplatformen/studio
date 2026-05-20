@@ -1,6 +1,16 @@
 import { useState } from "react";
 
-export default function ChatHamburgerMenu(setCurrentChat = () => {}) {
+const ExampleSessions = [
+  { title: "Chat Session 1" },
+  { title: "Chat Session 2" },
+  { title: "Chat Session 3" },
+];
+
+export default function ChatHamburgerMenu(
+  setCurrentChat = () => {},
+  setChatActive = () => {},
+  chatActive = false,
+) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -44,8 +54,9 @@ function ChatHistoryMenu() {
       >
         Start a New Chat
       </a>
-      <ChatSessionButton session={{ title: "Chat Session 1" }} />
-      <ChatSessionButton session={{ title: "Chat Session 2" }} />
+      {ExampleSessions.map((session, index) => (
+        <ChatSessionButton key={index} session={session} />
+      ))}
     </div>
   );
 }
