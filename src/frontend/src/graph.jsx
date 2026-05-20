@@ -406,18 +406,22 @@ export default function Graph({ data, width }) {
     return () => ro.disconnect();
   }, [fitView]);
 
-  // useEffect(() => {
-  //   const nodeToBeCentered = nodes.find((node) => node.id === centerNodeId);
-  //   centerNodeInView(nodeToBeCentered);
-  // }, [centerNodeId]);
-
   useEffect(() => {
-    const nodeToBeCentered = nodes.find((node) => node.id === centerNodeId);
+    const nodeIdStr = String(centerNodeId);
+    const nodeToBeCentered = nodes.find((node) => node.id === nodeIdStr);
 
     if (nodeToBeCentered) {
+      setSelectedNode(nodeToBeCentered);
       centerNodeInView(nodeToBeCentered);
+      appendBreadcrumb(nodeToBeCentered);
+      sendNodeSelection(nodeIdStr);
+      emitSelectNode?.(Number(centerNodeId));
+
+      if (fullDataRef.current) {
+        prepareGraphData(getSubgraph(fullDataRef.current, centerNodeId));
+      }
     }
-  }, [centerNodeId, nodes]);
+  }, [centerNodeId]);
 
   return (
     <div
