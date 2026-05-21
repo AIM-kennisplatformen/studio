@@ -35,6 +35,7 @@ services:
       - mcp_server_scepa_studio_net
     depends_on:
       - redis
+      - studio_postgres
   redis:
     image: redis:8-alpine
     container_name: studio_redis
@@ -42,8 +43,25 @@ services:
       - "6379:6379"
     networks:
       - mcp_server_scepa_studio_net
+  studio_postgres:
+    image: postgres:18-alpine
+    container_name: studio_postgres
+    environment:
+      POSTGRES_DB: studio
+      POSTGRES_USER: studio
+      POSTGRES_PASSWORD: studio
+      PGDATA: /var/lib/postgresql/18/docker
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    networks:
+      - mcp_server_scepa_studio_net
 
 networks:
   mcp_server_scepa_studio_net:
     driver: bridge
     external: true # Reference the external network from MCP stack
+
+volumes:
+  postgres_data:

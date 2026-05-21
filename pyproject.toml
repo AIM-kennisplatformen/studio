@@ -42,6 +42,7 @@ dependencies = [
   "typing-extensions",
   "mcp-use>=1.5.0,<2",
   "redis>=5.0.0",
+  "asyncpg>=0.30.0",
 ]
 
 # ====================================
@@ -52,6 +53,7 @@ dev = [
   "isort>=7.0.0",
   "mypy>=1.18.2",
   "nest-asyncio",
+  "pytest>=8.0.0",
   "ruff>=0.14.5",
   "toml-sort>=0.24.3"
 ]
@@ -88,6 +90,7 @@ nodejs = ">=22.13.0,<22.14"
 ruff = "*"
 
 mypy = "*"
+pytest = "*"
 # Smaller libs
 einops = ">=0.8.1"
 itsdangerous = ">=2.2.0,<3"

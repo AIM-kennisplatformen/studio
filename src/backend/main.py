@@ -11,6 +11,8 @@ from backend.endpoints.auth import auth_router
 from backend.endpoints.chat import chat_router, socket_app
 from backend.endpoints.graph import graph_router
 from backend.endpoints.log_event import log_event_router
+from backend.endpoints.sessions import sessions_router
+from backend.stores.postgres import postgres_store
 from backend.stores.redis import redis_store
 
 # Build list of allowed CORS origins
@@ -30,9 +32,13 @@ async def lifespan(app: FastAPI):
         "redis_url": config["redis_url"],
         "redis_expiration_time": config["redis_expiration_time"]
     })
+    await postgres_store.connect({
+        "postgres_url": config["postgres_url"],
+    })
 
     yield
-    
+
+    await postgres_store.close()
     await redis_store.close()
 
 app = FastAPI(
@@ -63,4 +69,5 @@ app.include_router(auth_router)
 app.include_router(chat_router)
 app.include_router(graph_router)
 app.include_router(log_event_router)
+app.include_router(sessions_router)
 app.include_router(frontend)
