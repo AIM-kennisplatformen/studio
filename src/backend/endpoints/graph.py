@@ -58,6 +58,7 @@ async def fetch_subnode_stream(
     user_id: str,
     question: str,
     subnode: str,
+    history_text: str = "",
     trace_id: str | None = None,
     session_id: str | None = None,
 ):
@@ -67,9 +68,10 @@ async def fetch_subnode_stream(
     :param user_id: Authenticated user id.
     :param question: The user's question text.
     :param subnode: Which subnode perspective to use.
+    :param history_text: Existing conversation context to include in the prompt.
     :param trace_id: Optional Langfuse trace id to keep all
         observations under a single per-turn trace.
-    :param session_id: Optional Socket.IO sid used as Langfuse session_id.
+    :param session_id: Optional durable chat session id used as Langfuse session_id.
     """
     ctx = user_graph_contexts[user_id]
 
@@ -80,7 +82,7 @@ async def fetch_subnode_stream(
             else "Best practices || Target groups || Strategic overview"
         )
 
-        synthetic_prompt = subnode_question_prompt(question, keyword)
+        synthetic_prompt = subnode_question_prompt(question, keyword, history_text)
 
         full_response = ""
 
