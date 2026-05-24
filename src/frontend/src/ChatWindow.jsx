@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Chat from "./chat";
+import Chat from "./components/chat/chat";
 import UserMenu from "@/components/UserMenu.jsx";
 import ChatSelectionToggle from "@/components/ChatSelectionToggle.jsx";
 import ChatSessionOverview from "@/components/chat/ChatSessionOverview.jsx";

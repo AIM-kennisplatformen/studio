@@ -24,9 +24,9 @@ import {
   textStatusAtom,
   lastDoneMessageKeyAtom,
   selectedNodeAtom,
-} from "./data/atoms";
+} from "../../data/atoms";
 
-import { useChatWebSocket } from "./data/chatWebsocket";
+import { useChatWebSocket } from "../../data/chatWebsocket";
 import {
   Reasoning,
   ReasoningTrigger,
@@ -37,7 +37,7 @@ import {
   logResponseFeedback,
   logEvent,
   getChatSessionDetails,
-} from "./data/api";
+} from "../../data/api";
 
 async function handleFeedback(
   messageKey,
