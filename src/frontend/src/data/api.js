@@ -132,18 +132,39 @@ export function logOut() {
 
 export function getChatSessions() {
   const url = `${BASE_URL}/sessions`; //GET
-  return fetch(url, {
-    method: "GET",
-    credentials: "include", // Required for cookie-based Auth
-  });
+  try {
+    return fetch(url, {
+      method: "GET",
+      credentials: "include", // Required for cookie-based Auth
+    });
+  } catch (err) {
+    console.error("Error fetching chat sessions:", err);
+    return null;
+  }
 }
 
 export function getChatSessionDetails(sessionId) {
   const url = `${BASE_URL}/sessions/${sessionId}`; //GET
-  return null; // Placeholder for future implementation
+  try {
+    return fetch(url, {
+      method: "GET",
+      credentials: "include", // Required for cookie-based Auth
+    });
+  } catch (err) {
+    console.error("Error fetching chat session details:", err);
+    return null;
+  }
 }
 
 export function setActiveChatSession(sessionId) {
   const url = `${BASE_URL}/sessions/${sessionId}`; //POST
-  return null; // Placeholder for future implementation
+  try {
+    return fetch(url, {
+      method: "POST",
+      credentials: "include", // Required for cookie-based Auth
+    });
+  } catch (err) {
+    console.error("Error setting active chat session:", err);
+    return null;
+  }
 }
