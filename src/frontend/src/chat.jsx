@@ -61,7 +61,9 @@ export default function Chat() {
   return (
     <div className="flex flex-col h-full bg-white relative z-10">
       {/* Header */}
-      <div className="flex justify-end px-4 py-2 border-b border-gray-200 bg-white shrink-0">
+      <div className="flex justify-between px-4 py-2 border-b border-gray-200 bg-white shrink-0">
+        <p>placeholder</p>
+        <p>placeholder</p>
         <UserMenu />
       </div>
 

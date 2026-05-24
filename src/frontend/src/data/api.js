@@ -129,3 +129,18 @@ export async function logEvent(name, metadata) {
 export function logOut() {
   window.location.href = `${BASE_URL}/auth/logout`;
 }
+
+export function getChatSessions() {
+  const url = `${BASE_URL}/sessions`; //GET
+  return null; // Placeholder for future implementation
+}
+
+export function getChatSessionDetails(sessionId) {
+  const url = `${BASE_URL}/sessions/${sessionId}`; //GET
+  return null; // Placeholder for future implementation
+}
+
+export function setActiveChatSession(sessionId) {
+  const url = `${BASE_URL}/sessions/${sessionId}`; //POST
+  return null; // Placeholder for future implementation
+}
