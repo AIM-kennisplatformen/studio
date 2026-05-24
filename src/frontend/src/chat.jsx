@@ -34,7 +34,7 @@ import {
 import { Action, Actions } from "@/components/shadcn-io/ai/actions";
 import { ThumbsUpIcon, ThumbsDownIcon } from "lucide-react";
 import { logResponseFeedback, logEvent } from "./data/api";
-import LogOutButton from "@/components/LogOutButton.jsx";
+import UserMenu from "@/components/UserMenu.jsx";
 
 async function handleFeedback(
   messageKey,
@@ -60,9 +60,9 @@ export default function Chat() {
 
   return (
     <div className="flex flex-col h-full bg-white relative z-10">
-      {/* Header with logout */}
+      {/* Header */}
       <div className="flex justify-end px-4 py-2 border-b border-gray-200 bg-white shrink-0">
-        <LogOutButton />
+        <UserMenu />
       </div>
 
       {/* Messages - scrollable */}
@@ -170,7 +170,9 @@ function Messages({
   const lastDoneIndex = reversedMessages.findIndex(
     ({ key }) => key === lastDoneKey,
   );
-  const lastDoneMessage = reversedMessages.find(({ key }) => key === lastDoneKey);
+  const lastDoneMessage = reversedMessages.find(
+    ({ key }) => key === lastDoneKey,
+  );
   const questionForFeedback =
     lastDoneIndex !== -1 && lastDoneIndex + 1 < reversedMessages.length
       ? reversedMessages[lastDoneIndex + 1]?.value
@@ -274,7 +276,10 @@ function Messages({
                                 type="button"
                                 onClick={() => setShowFeedback(true)}
                                 className="text-sm cursor-pointer hover:underline border-0 p-0"
-                                style={{ color: "white", backgroundColor: "#038061" }}
+                                style={{
+                                  color: "white",
+                                  backgroundColor: "#038061",
+                                }}
                               >
                                 Edit Feedback
                               </button>
