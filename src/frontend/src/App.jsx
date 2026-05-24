@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import "./index.css";
-import Chat from "./chat.jsx";
+import ChatWindow from "./ChatWindow.jsx";
 import Graph from "./graph.jsx";
 import { ReactFlowProvider } from "@xyflow/react";
 import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
@@ -84,7 +84,7 @@ export default function App() {
       />
 
       <div className="flex-1 h-full bg-gray-50 flex flex-col overflow-hidden">
-        <Chat />
+        <ChatWindow />
       </div>
     </div>
   );

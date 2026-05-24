@@ -33,20 +33,11 @@ import {
 } from "@/components/shadcn-io/ai/reasoning";
 import { Action, Actions } from "@/components/shadcn-io/ai/actions";
 import { ThumbsUpIcon, ThumbsDownIcon } from "lucide-react";
-import { logResponseFeedback, logEvent } from "./data/api";
-import UserMenu from "@/components/UserMenu.jsx";
-import ChatSelectionToggle from "./components/ChatSelectionToggle";
-
-const exampleChats = [
-  {
-    name: "Chat Session 1",
-    updated_at: "2024-01-01",
-  },
-  {
-    name: "Chat Session 2",
-    updated_at: "2024-01-02",
-  },
-];
+import {
+  logResponseFeedback,
+  logEvent,
+  getChatSessionDetails,
+} from "./data/api";
 
 async function handleFeedback(
   messageKey,
@@ -65,27 +56,21 @@ async function handleFeedback(
   setFeedbackText(response);
 }
 
-export default function Chat() {
+export default function Chat(setChatActive, currentChat) {
   const [feedbackText, setFeedbackText] = useState("");
   const [showFeedback, setShowFeedback] = useState(true);
   const shouldLog = useRef(false);
 
-  const [currentChat, setCurrentChat] = useState(null);
-  const [chatActive, setChatActive] = useState(false);
+  // useEffect(() => {
+  //   if (currentChat === null) return;
+  //   getChatSessionDetails(currentChat).then((details) => {
+  //     // You can use the details to set up your chat session, e.g. load messages
+  //     console.log("Chat session details:", details);
+  //   });
+  // }, [currentChat]);
 
   return (
     <div className="flex flex-col h-full bg-white relative z-10">
-      {/* Header */}
-      <div className="flex justify-between px-4 py-2 border-b border-gray-200 bg-white shrink-0">
-        <ChatSelectionToggle
-          setCurrentChat={setCurrentChat}
-          setChatActive={setChatActive}
-          chatActive={chatActive}
-        />
-        <ChatSelector />
-        <UserMenu />
-      </div>
-
       {/* Messages - scrollable */}
       <div className="flex-1 min-h-0 overflow-hidden">
         <Messages
@@ -102,18 +87,6 @@ export default function Chat() {
         <InputArea setShowFeedback={setShowFeedback} shouldLog={shouldLog} />
       </div>
     </div>
-  );
-}
-
-function ChatSelector() {
-  return (
-    <button
-      className="!bg-white text-[#038061] px-3 py-1 rounded"
-      onClick={() => {}}
-      aria-label="New Chat"
-    >
-      Current Chat Name
-    </button>
   );
 }
 
