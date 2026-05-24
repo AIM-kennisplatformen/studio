@@ -1,42 +1,34 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getChatSessions } from "../../data/api";
 
-const exampleChats = [
-  {
-    name: "Chat Session 1",
-    updated_at: "2024-01-01",
-  },
-  {
-    name: "Chat Session 2",
-    updated_at: "2024-01-02",
-  },
-];
-
+const [chats, setChats] = useState([]);
 async function fetchChatSessions() {
   try {
     const sessions = await getChatSessions();
-    console.log("Fetched chat sessions:", sessions);
-    return sessions;
+    setChats(sessions);
   } catch (err) {
-    console.error("Error fetching chat sessions:", err);
     return [];
   }
 }
 
-// useEffect(() => {
-//   //fetchChatSessions();
-// }, []);
+useEffect(() => {
+  fetchChatSessions();
+}, []);
 
 export default function ChatSessionOverview({ setChatActive, setCurrentChat }) {
   return (
     <>
       <div className="flex flex-col h-full p-4">
         <div className="flex-1 min-h-0 overflow-hidden">
-          <h2 className="text-sm font-semibold mb-2 text-black/70">
-            CONTINUE A PREVIOUS CHAT
-          </h2>
+            {chats.length === 0 ? (
+              <p className="text-gray-500">No previous chats available.</p>
+            ) : (
+              <h2 className="text-sm font-semibold mb-2 text-black/70">
+                CONTINUE A PREVIOUS CHAT
+              </h2>
+            
           <ul className="space-y-2">
-            {exampleChats.map((chat, index) => (
+            {chats.map((chat, index) => (
               <li key={index}>
                 <button
                   onClick={() => {
@@ -53,6 +45,7 @@ export default function ChatSessionOverview({ setChatActive, setCurrentChat }) {
               </li>
             ))}
           </ul>
+          )}
         </div>
         <div className="border-t border-gray-200 bg-white shrink-0 pt-4">
           <button

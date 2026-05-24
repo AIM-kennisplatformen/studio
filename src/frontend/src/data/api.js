@@ -132,7 +132,10 @@ export function logOut() {
 
 export function getChatSessions() {
   const url = `${BASE_URL}/sessions`; //GET
-  return null; // Placeholder for future implementation
+  return fetch(url, {
+    method: "GET",
+    credentials: "include", // Required for cookie-based Auth
+  });
 }
 
 export function getChatSessionDetails(sessionId) {
