@@ -35,6 +35,18 @@ import { Action, Actions } from "@/components/shadcn-io/ai/actions";
 import { ThumbsUpIcon, ThumbsDownIcon } from "lucide-react";
 import { logResponseFeedback, logEvent } from "./data/api";
 import UserMenu from "@/components/UserMenu.jsx";
+import ChatSelectionToggle from "./components/ChatSelectionToggle";
+
+const exampleChats = [
+  {
+    name: "Chat Session 1",
+    updated_at: "2024-01-01",
+  },
+  {
+    name: "Chat Session 2",
+    updated_at: "2024-01-02",
+  },
+];
 
 async function handleFeedback(
   messageKey,
@@ -58,12 +70,19 @@ export default function Chat() {
   const [showFeedback, setShowFeedback] = useState(true);
   const shouldLog = useRef(false);
 
+  const [currentChat, setCurrentChat] = useState(null);
+  const [chatActive, setChatActive] = useState(false);
+
   return (
     <div className="flex flex-col h-full bg-white relative z-10">
       {/* Header */}
       <div className="flex justify-between px-4 py-2 border-b border-gray-200 bg-white shrink-0">
-        <p>placeholder</p>
-        <p>placeholder</p>
+        <ChatSelectionToggle
+          setCurrentChat={setCurrentChat}
+          setChatActive={setChatActive}
+          chatActive={chatActive}
+        />
+        <ChatSelector />
         <UserMenu />
       </div>
 
@@ -83,6 +102,18 @@ export default function Chat() {
         <InputArea setShowFeedback={setShowFeedback} shouldLog={shouldLog} />
       </div>
     </div>
+  );
+}
+
+function ChatSelector() {
+  return (
+    <button
+      className="!bg-white text-[#038061] px-3 py-1 rounded"
+      onClick={() => {}}
+      aria-label="New Chat"
+    >
+      Current Chat Name
+    </button>
   );
 }
 
