@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "check": "npm run lint && npm run format:check"
+    "check": "npm run lint && npx prettier --check ."
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
