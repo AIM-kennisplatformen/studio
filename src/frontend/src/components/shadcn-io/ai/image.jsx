@@ -18,7 +18,7 @@ import { cn } from '@repo/shadcn-ui/lib/utils';
 
 export const Image = ({
   base64,
-  uint8Array,
+  uint8Array: _uint8Array,
   mediaType,
   ...props
 }) => (

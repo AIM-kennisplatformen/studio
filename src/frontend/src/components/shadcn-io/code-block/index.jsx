@@ -295,7 +295,7 @@ export const CodeBlockFiles = ({
 };
 
 export const CodeBlockFilename = ({
-  className,
+  className: _className,
   icon,
   value,
   children,

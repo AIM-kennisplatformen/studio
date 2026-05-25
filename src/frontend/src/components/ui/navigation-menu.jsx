@@ -139,6 +139,7 @@ function NavigationMenuIndicator({
   );
 }
 
+/* eslint-disable react-refresh/only-export-components */
 export {
   NavigationMenu,
   NavigationMenuList,
