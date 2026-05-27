@@ -20,6 +20,15 @@ async def list_sessions(user=Depends(get_current_user)):
     return await postgres_store.list_sessions(user_id)
 
 
+@sessions_router.post("/", response_model=Session)
+async def create_session(request: Request, user=Depends(get_current_user)):
+    user_id = user["sub"]
+    session = await postgres_store.create_session(user_id)
+    request.session[ACTIVE_SESSION_KEY] = str(session.session_id)
+    set_active_session_id(user_id, session.session_id)
+    return session
+
+
 @sessions_router.get("/{session_id}", response_model=SessionDetail)
 async def get_session(session_id: UUID, user=Depends(get_current_user)):
     user_id = user["sub"]

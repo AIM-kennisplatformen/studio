@@ -41,6 +41,15 @@ class _FakeSessionStore:
             ),
         ]
 
+    async def create_session(self, user_id):
+        self.created_session = Session(
+            session_id=uuid4(),
+            user_id=user_id,
+            name="New session",
+            updated_at=datetime.now(UTC),
+        )
+        return self.created_session
+
     async def list_sessions(self, user_id):
         return [self.session] if user_id == self.session.user_id else []
 
@@ -72,6 +81,26 @@ def test_list_sessions_returns_only_current_user_sessions(monkeypatch):
         response = await sessions_module.list_sessions(user={"sub": "user-1"})
 
         assert response == [fake_store.session]
+
+    asyncio.run(exercise_endpoint())
+
+
+def test_create_session_updates_http_and_socket_visible_state(monkeypatch):
+    async def exercise_endpoint():
+        fake_store = _FakeSessionStore()
+        request = _FakeRequest()
+        _install_fake_store(monkeypatch, fake_store)
+        active_session_ids.clear()
+
+        response = await sessions_module.create_session(
+            request,
+            user={"sub": "user-1"},
+        )
+
+        assert response.session_id == fake_store.created_session.session_id
+        assert response.user_id == "user-1"
+        assert active_session_ids["user-1"] == response.session_id
+        assert request.session[ACTIVE_SESSION_KEY] == str(response.session_id)
 
     asyncio.run(exercise_endpoint())
 
