@@ -42,5 +42,5 @@ export const centerNodeAtom = atom(1);
 export const dataAtom = atom(null);
 export const layoutNodesAtom = atom([]);
 
-export const graphRefetchTriggerAtom = atom(0);       
-export const selectNodeEmitAtom = atom(null);     
+export const graphRefetchTriggerAtom = atom(0);
+export const selectNodeEmitAtom = atom(null);

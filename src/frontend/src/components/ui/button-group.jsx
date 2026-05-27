@@ -1,8 +1,8 @@
-import { Slot } from "@radix-ui/react-slot"
+import { Slot } from "@radix-ui/react-slot";
 import { cva } from "class-variance-authority";
 
-import { cn } from "@/lib/utils"
-import { Separator } from "@/components/ui/separator"
+import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 const buttonGroupVariants = cva(
   "flex w-fit items-stretch [&>*]:focus-visible:z-10 [&>*]:focus-visible:relative [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-md has-[>[data-slot=button-group]]:gap-2",
@@ -19,29 +19,22 @@ const buttonGroupVariants = cva(
       orientation: "horizontal",
     },
   }
-)
+);
 
-function ButtonGroup({
-  className,
-  orientation,
-  ...props
-}) {
+function ButtonGroup({ className, orientation, ...props }) {
   return (
     <div
       role="group"
       data-slot="button-group"
       data-orientation={orientation}
       className={cn(buttonGroupVariants({ orientation }), className)}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function ButtonGroupText({
-  className,
-  asChild = false,
-  ...props
-}) {
-  const Comp = asChild ? Slot : "div"
+function ButtonGroupText({ className, asChild = false, ...props }) {
+  const Comp = asChild ? Slot : "div";
 
   return (
     <Comp
@@ -49,7 +42,8 @@ function ButtonGroupText({
         "bg-muted flex items-center gap-2 rounded-md border px-4 text-sm font-medium shadow-xs [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
         className
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
 
@@ -66,13 +60,15 @@ function ButtonGroupSeparator({
         "bg-input relative !m-0 self-stretch data-[orientation=vertical]:h-auto",
         className
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
 
+/* eslint-disable react-refresh/only-export-components */
 export {
   ButtonGroup,
   ButtonGroupSeparator,
   ButtonGroupText,
   buttonGroupVariants,
-}
+};

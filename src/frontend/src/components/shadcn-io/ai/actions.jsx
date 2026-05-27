@@ -14,22 +14,18 @@
  * limitations under the License.
  */
 
-'use client';;
-import { Button } from '@repo/shadcn-ui/components/ui/button';
+"use client";
+import { Button } from "@repo/shadcn-ui/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@repo/shadcn-ui/components/ui/tooltip';
-import { cn } from '@repo/shadcn-ui/lib/utils';
+} from "@repo/shadcn-ui/components/ui/tooltip";
+import { cn } from "@repo/shadcn-ui/lib/utils";
 
-export const Actions = ({
-  className,
-  children,
-  ...props
-}) => (
-  <div className={cn('flex items-center gap-1', className)} {...props}>
+export const Actions = ({ className, children, ...props }) => (
+  <div className={cn("flex items-center gap-1", className)} {...props}>
     {children}
   </div>
 );
@@ -39,13 +35,16 @@ export const Action = ({
   children,
   label,
   className,
-  variant = 'ghost',
-  size = 'sm',
+  variant = "ghost",
+  size = "sm",
   ...props
 }) => {
   const button = (
     <Button
-      className={cn('size-9 p-1.5 text-muted-foreground hover:text-foreground', className)}
+      className={cn(
+        "text-muted-foreground hover:text-foreground size-9 p-1.5",
+        className
+      )}
       size={size}
       type="button"
       variant={variant}

@@ -1,7 +1,12 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { useSetAtom } from "jotai";
-import { messagesAtom, lastDoneMessageKeyAtom, graphRefetchTriggerAtom, selectNodeEmitAtom } from "./atoms";
+import {
+  messagesAtom,
+  lastDoneMessageKeyAtom,
+  graphRefetchTriggerAtom,
+  selectNodeEmitAtom,
+} from "./atoms";
 import { io } from "socket.io-client";
 
 const SOCKET_URL = import.meta.env.VITE_BACKEND_BASE_URL;
@@ -23,7 +28,9 @@ export function useChatWebSocket(setStatus) {
     });
 
     socketRef.current = socket;
-    setSelectedNodeEmit(() => (nodeId) => socket.emit("select_node", { node_id: nodeId }));
+    setSelectedNodeEmit(
+      () => (nodeId) => socket.emit("select_node", { node_id: nodeId })
+    );
 
     socket.on("connect", () => {
       console.log("Socket.IO connected:", socket.id);
@@ -44,7 +51,12 @@ export function useChatWebSocket(setStatus) {
         setMessages((prev) => {
           const newKey = (prev[0]?.key || 0) + 1;
           return [
-            { key: newKey, name: "system_prompt", value: content, reasoning: null },
+            {
+              key: newKey,
+              name: "system_prompt",
+              value: content,
+              reasoning: null,
+            },
             ...prev,
           ];
         });
@@ -91,6 +103,7 @@ export function useChatWebSocket(setStatus) {
       socket.disconnect();
       setSelectedNodeEmit(null);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const send = (msg) => {
