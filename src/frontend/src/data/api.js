@@ -133,10 +133,21 @@ export function logOut() {
 export function getChatSessions() {
   const url = `${BASE_URL}/sessions`; //GET
   try {
-    return fetch(url, {
-      method: "GET",
-      credentials: "include", // Required for cookie-based Auth
-    });
+    // const response = fetch(url, {
+    //   method: "GET",
+    //   credentials: "include", // Required for cookie-based Auth
+    // });
+    // const json = response.json();
+    return [
+      {
+        name: "chat 1",
+        updated_at: "01-01-2026"
+      },
+      {
+        name: "chat 2",
+        updated_at: "01-01-2026"
+      }
+    ]
   } catch (err) {
     console.error("Error fetching chat sessions:", err);
     return null;
