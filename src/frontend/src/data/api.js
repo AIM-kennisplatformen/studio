@@ -131,36 +131,29 @@ export function logOut() {
 }
 
 export function getChatSessions() {
-  const url = `${BASE_URL}/sessions`; //GET
+  const url = `${BASE_URL}/sessions`;
   try {
-    // const response = fetch(url, {
-    //   method: "GET",
-    //   credentials: "include", // Required for cookie-based Auth
-    // });
-    // const json = response.json();
-    return [
-      {
-        name: "chat 1",
-        updated_at: "01-01-2026"
-      },
-      {
-        name: "chat 2",
-        updated_at: "01-01-2026"
-      }
-    ]
+    const response = fetch(url, {
+      method: "GET",
+      credentials: "include", // Required for cookie-based Auth
+    });
+    const json = response.json();
+    return json;
   } catch (err) {
     console.error("Error fetching chat sessions:", err);
-    return null;
+    return [];
   }
 }
 
 export function getChatSessionDetails(sessionId) {
-  const url = `${BASE_URL}/sessions/${sessionId}`; //GET
+  const url = `${BASE_URL}/sessions/${sessionId}`;
   try {
-    return fetch(url, {
+    const response = fetch(url, {
       method: "GET",
       credentials: "include", // Required for cookie-based Auth
     });
+    const json = response.json();
+    return json;
   } catch (err) {
     console.error("Error fetching chat session details:", err);
     return null;
@@ -168,14 +161,28 @@ export function getChatSessionDetails(sessionId) {
 }
 
 export function setActiveChatSession(sessionId) {
-  const url = `${BASE_URL}/sessions/${sessionId}`; //POST
+  const url = `${BASE_URL}/sessions/${sessionId}`;
+  try {
+    fetch(url, {
+      method: "POST",
+      credentials: "include", // Required for cookie-based Auth
+    });
+    return;
+  } catch (err) {
+    console.error("Error setting active chat session:", err);
+    return;
+  }
+}
+
+export function newSession() {
+  const url = `${BASE_URL}/sessions`; //POST
   try {
     return fetch(url, {
       method: "POST",
       credentials: "include", // Required for cookie-based Auth
     });
   } catch (err) {
-    console.error("Error setting active chat session:", err);
+    console.error("Error creating new chat session:", err);
     return null;
   }
 }
