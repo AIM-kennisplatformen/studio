@@ -7,20 +7,21 @@ import ChatSessionOverview from "@/components/chat/ChatSessionOverview.jsx";
 export default function ChatWindow() {
   const [currentChat, setCurrentChat] = useState(null);
   const [chatActive, setChatActive] = useState(false);
-  
+
   return (
     <div className="flex flex-col h-full bg-white relative z-10">
-    {/* Header */}
+      {/* Header */}
       <div className="flex justify-between px-4 py-2 border-b border-gray-200 bg-white shrink-0 z-20">
         <ChatSelectionToggle
           setCurrentChat={setCurrentChat}
           setChatActive={setChatActive}
           chatActive={chatActive}
         />
-          {chatActive && <ChatName currentChat={currentChat} />}
+        {chatActive && <ChatName currentChat={currentChat} />}
         <UserMenu />
       </div>
 
+      {/* Body */}
       <div className="flex-1 min-h-0">
         {chatActive ? (
           <Chat currentChat={currentChat} setChatActive={setChatActive} />

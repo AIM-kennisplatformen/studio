@@ -4,11 +4,7 @@ const ExampleSessions = [
   { title: "Chat Session 3" },
 ];
 
-export default function ChatSelection({
-  setCurrentChat = () => {},
-  setChatActive,
-  chatActive,
-}) {
+export default function ChatSelection({ setChatActive, chatActive }) {
   return (
     <>
       <div className="relative inline-block text-left">

@@ -10,7 +10,7 @@ import { CustomNode } from "./components/CustomNode";
 import { SolidEdge } from "./components/CustomEdge";
 import { getEdgeHandles } from "./lib/graphUtils";
 import { applyDagreLayout } from "./lib/ctrytoscapeLayout";
-import { useAtom, useAtomValue} from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import {
   nodesAtom,
   edgesAtom,
@@ -23,10 +23,10 @@ import {
 function getSubgraph(data, nodeId) {
   const id = String(nodeId);
   const connectedEdges = data.edges.filter(
-    (e) => String(e.source_id) === id || String(e.target_id) === id
+    (e) => String(e.source_id) === id || String(e.target_id) === id,
   );
   const neighborIds = new Set(
-    connectedEdges.flatMap((e) => [String(e.source_id), String(e.target_id)])
+    connectedEdges.flatMap((e) => [String(e.source_id), String(e.target_id)]),
   );
   return {
     nodes: data.nodes.filter((n) => neighborIds.has(String(n.id))),
@@ -241,7 +241,6 @@ export default function Graph({ data, width }) {
     },
     [getViewport, setViewport],
   );
-
 
   /** Fit view on container resize */
   useEffect(() => {

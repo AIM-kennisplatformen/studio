@@ -124,13 +124,7 @@ export default function Chat({ currentChat }) {
     return () => {
       isCurrent = false;
     };
-  }, [
-    currentChat,
-    setLastDoneMessageKey,
-    setMessages,
-    setStatus,
-    setText,
-  ]);
+  }, [currentChat, setLastDoneMessageKey, setMessages, setStatus, setText]);
 
   return (
     <div className="flex flex-col h-full bg-white relative z-10">
