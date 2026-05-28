@@ -83,25 +83,15 @@ This starts:
 
 The application serves the built frontend from `kg/` and exposes the API at `http://localhost:10090`.
 
-### Frontend Build
+### Frontend HMR
 
-To refresh the frontend files served by the FastAPI application:
+To start the Vite dev server and switch `/app` to it while it is running:
 
 ```bash
 pixi run frontend_hmr
 ```
 
-This writes the Vite production build to `kg/`, which is the first location the application checks when serving `/app`.
-
-### Vite Dev Server
-
-For frontend development, start the optional Vite dev server in the running application container:
-
-```bash
-pixi run frontend_dev
-```
-
-This starts a build watcher that keeps `kg/` updated, then starts Vite at `http://localhost:5173`. You can use the backend-served build at `http://localhost:10090/app` and the Vite dev server interchangeably while the application container keeps running.
+This starts Vite at `http://localhost:5173`. While it is running, `http://localhost:10090/app` stays on the backend URL and proxies frontend files from Vite; when it stops, the application serves the built frontend from `kg/` again.
 
 ### Direct Docker Commands
 

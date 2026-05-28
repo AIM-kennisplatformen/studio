@@ -101,8 +101,8 @@ python-dotenv = ">=1.1.0"
 # Pixi tasks
 # ====================================
 [tool.pixi.tasks]
-application = "docker compose up && npm run build --prefix src/frontend"
-frontend_hmr = "docker compose exec -T application pixi run npm run build --prefix src/frontend -- --watch"
+application = "docker compose up -d && bash scripts/application.sh"
+frontend_hmr = "docker compose exec application bash scripts/frontend_hmr.sh"
 lint = "ruff check"
 typecheck = "mypy ."
 test = "pytest -q"
