@@ -8,8 +8,7 @@ import {
   selectNodeEmitAtom,
 } from "./atoms";
 import { io } from "socket.io-client";
-
-const SOCKET_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+import { BACKEND_BASE_URL, SOCKET_PATH } from "./backend.js";
 
 export function useChatWebSocket(setStatus) {
   const setMessages = useSetAtom(messagesAtom);
@@ -21,8 +20,8 @@ export function useChatWebSocket(setStatus) {
   const chatModelStartCountRef = useRef(0);
 
   useEffect(() => {
-    const socket = io(SOCKET_URL, {
-      path: "/socket.io",
+    const socket = io(BACKEND_BASE_URL, {
+      path: SOCKET_PATH,
       withCredentials: true,
       transports: ["polling", "websocket"],
     });

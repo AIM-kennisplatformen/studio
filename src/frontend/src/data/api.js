@@ -1,6 +1,5 @@
 import { getFeedbackMessage } from "./feedback.js";
-
-const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+import { BACKEND_BASE_URL } from "./backend.js";
 
 const errorResponse = {
   value: "Sorry, I couldn't reach the server. Please try again later.",
@@ -8,7 +7,7 @@ const errorResponse = {
 };
 
 export async function sendChatMessage(chatId = "1", message) {
-  const url = `${BASE_URL}/chats/${chatId}/messages`;
+  const url = `${BACKEND_BASE_URL}/chats/${chatId}/messages`;
 
   try {
     const response = await fetch(url, {
@@ -41,7 +40,7 @@ export async function sendChatMessage(chatId = "1", message) {
 }
 
 export async function sendNodeSelection(nodeId) {
-  const url = `${BASE_URL}/nodes/${nodeId}/context`;
+  const url = `${BACKEND_BASE_URL}/nodes/${nodeId}/context`;
 
   try {
     const response = await fetch(url, {
@@ -62,7 +61,7 @@ export async function sendNodeSelection(nodeId) {
 }
 
 export async function logResponseFeedback(key, feedback) {
-  const url = `${BASE_URL}/log_event`;
+  const url = `${BACKEND_BASE_URL}/log_event`;
 
   try {
     const response = await fetch(url, {
@@ -90,7 +89,7 @@ export async function logResponseFeedback(key, feedback) {
 }
 
 export async function logSelectedNode(node) {
-  const url = `${BASE_URL}/log_event`;
+  const url = backendUrl("/log_event");
   try {
     const response = await fetch(url, {
       method: "POST",
@@ -113,7 +112,7 @@ export async function logSelectedNode(node) {
 }
 export async function logEvent(name, metadata) {
   try {
-    const response = await fetch("/log_event", {
+    const response = await fetch(backendUrl("/log_event"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, metadata }),
@@ -127,5 +126,5 @@ export async function logEvent(name, metadata) {
 }
 
 export function logOut() {
-  window.location.href = `${BASE_URL}/auth/logout`;
+  window.location.href = backendUrl("/auth/logout");
 }

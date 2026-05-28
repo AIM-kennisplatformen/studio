@@ -2,12 +2,11 @@
 
 Steps:
 1. npm install
-2. Build the frontend
-3. Start docker compose (app + authentik)
-4. Setup Authentik OAuth2
-5. Wait for services
-6. Run qavajs tests
-7. Tear down containers
+2. Start docker compose (application + authentik)
+3. Setup Authentik OAuth2
+4. Wait for services
+5. Run qavajs tests
+6. Tear down containers
 """
 
 import subprocess
@@ -58,37 +57,34 @@ def main() -> int:
     run(["npx", "playwright", "install", "chromium"], cwd=tests_dir)
     run(["npx", "playwright", "install-deps", "chromium"], cwd=tests_dir)
 
-    # 2. Build frontend
-    run([sys.executable, "scripts/build_frontend.py"])
-
-    # 3. Start containers
-    run(compose_cmd("up", "-d"))
+    # 2. Start containers. The application container builds the frontend.
+    run(compose_cmd("up", "-d", "--build"))
 
     try:
-        # 4. Setup Authentik
+        # 3. Setup Authentik
         run([sys.executable, "scripts/setup_authentik.py"])
 
-        # 5. Wait for services
+        # 4. Wait for services
         run(["npx", "wait-on", "tcp:10090", "tcp:9000"], cwd=tests_dir)
 
-        # 5b. Debug: verify backend is reachable
+        # 4b. Debug: verify application is reachable
         run("curl -v http://127.0.0.1:10090/ 2>&1 || true", check=False)
-        run(compose_cmd("logs", "--tail=30", "backend"), check=False)
+        run(compose_cmd("logs", "--tail=30", "application"), check=False)
 
-        # 6. Run tests
+        # 5. Run tests
         exit_code = run(
             ["npx", "qavajs", "run", "--config", "config.mjs"],
             check=False,
             cwd=tests_dir,
         )
 
-        # 6b. Dump backend logs for debugging test failures
+        # 5b. Dump application logs for debugging test failures
         if exit_code != 0:
-            print("\n===== BACKEND LOGS (last 80 lines) =====")
-            run(compose_cmd("logs", "--tail=80", "backend"), check=False)
-            print("===== END BACKEND LOGS =====\n")
+            print("\n===== APPLICATION LOGS (last 80 lines) =====")
+            run(compose_cmd("logs", "--tail=80", "application"), check=False)
+            print("===== END APPLICATION LOGS =====\n")
     finally:
-        # 7. Tear down
+        # 6. Tear down
         run(compose_cmd("stop"), check=False)
 
     return exit_code
