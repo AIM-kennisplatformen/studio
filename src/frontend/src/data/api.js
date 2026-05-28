@@ -89,7 +89,8 @@ export async function logResponseFeedback(key, feedback) {
 }
 
 export async function logSelectedNode(node) {
-  const url = backendUrl("/log_event");
+  const url = `${BACKEND_BASE_URL}/log_event`;
+
   try {
     const response = await fetch(url, {
       method: "POST",
@@ -111,8 +112,10 @@ export async function logSelectedNode(node) {
   }
 }
 export async function logEvent(name, metadata) {
+  const url = `${BACKEND_BASE_URL}/log_event`;
+
   try {
-    const response = await fetch(backendUrl("/log_event"), {
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, metadata }),
@@ -126,5 +129,5 @@ export async function logEvent(name, metadata) {
 }
 
 export function logOut() {
-  window.location.href = backendUrl("/auth/logout");
+  window.location.href = `${BACKEND_BASE_URL}"/auth/logout`;
 }
