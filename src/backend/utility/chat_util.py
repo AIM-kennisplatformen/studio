@@ -201,7 +201,7 @@ async def push_chat_message(
         return
 
     payload = {
-        "role": "chatbot",
+        "role": "ai",
         "content": message,
         "mode": "replace",   
         "subnode": subnode,
@@ -244,7 +244,7 @@ async def push_chat_message_stream(
         return
 
     payload = {
-        "role": "chatbot",
+        "role": "ai",
         "content": message,
         "mode": "replace", 
         "subnode": subnode,
@@ -262,7 +262,7 @@ async def push_chat_message_stream(
             await sio.emit(
                 "message",
                 {
-                    "role": "chatbot",
+                    "role": "ai",
                     "content": message,
                 },
                 to=sid,

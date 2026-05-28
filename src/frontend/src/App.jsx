@@ -13,8 +13,8 @@ export default function App() {
   const containerRef = useRef(null);
   const [data, setData] = useState(null);
   const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom);
-  //const [refetchTrigger, setRefetchTrigger] = useAtom(graphRefetchTriggerAtom); //Read/write if we want to trigger refetch from here, but currently only chatbot triggers refetch, so read only is enough
-  const refetchTrigger = useAtomValue(graphRefetchTriggerAtom); //Read only to trigger refetch when chatbot signals done
+  //const [refetchTrigger, setRefetchTrigger] = useAtom(graphRefetchTriggerAtom); //Read/write if we want to trigger refetch from here, but currently only ai triggers refetch, so read only is enough
+  const refetchTrigger = useAtomValue(graphRefetchTriggerAtom); //Read only to trigger refetch when ai signals done
 
   // Load graph once on mount or when center node changes for the first time
   useEffect(() => {

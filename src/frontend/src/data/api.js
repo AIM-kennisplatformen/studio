@@ -4,7 +4,7 @@ const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
 const errorResponse = {
   value: "Sorry, I couldn't reach the server. Please try again later.",
-  name: "chatbot",
+  name: "ai",
 };
 
 export async function sendChatMessage(chatId = "1", message) {
@@ -19,14 +19,14 @@ export async function sendChatMessage(chatId = "1", message) {
     });
 
     if (!response.ok) {
-      console.error("Failed to fetch chatbot response:", response.status);
+      console.error("Failed to fetch ai response:", response.status);
       return errorResponse;
     }
 
     const data = await response.json();
     const chatResponse = {
       value: data?.message || "",
-      name: "chatbot",
+      name: "ai",
     };
 
     if (!chatResponse.value) {
@@ -35,7 +35,7 @@ export async function sendChatMessage(chatId = "1", message) {
 
     return chatResponse;
   } catch (err) {
-    console.error("Failed to fetch chatbot response:", err);
+    console.error("Failed to fetch ai response:", err);
     return errorResponse;
   }
 }
@@ -130,10 +130,10 @@ export function logOut() {
   window.location.href = `${BASE_URL}/auth/logout`;
 }
 
-export function getChatSessions() {
+export async function getChatSessions() {
   const url = `${BASE_URL}/sessions`;
   try {
-    const response = fetch(url, {
+    const response = await fetch(url, {
       method: "GET",
       credentials: "include", // Required for cookie-based Auth
     });
@@ -145,10 +145,10 @@ export function getChatSessions() {
   }
 }
 
-export function getChatSessionDetails(sessionId) {
+export async function getChatSessionDetails(sessionId) {
   const url = `${BASE_URL}/sessions/${sessionId}`;
   try {
-    const response = fetch(url, {
+    const response = await fetch(url, {
       method: "GET",
       credentials: "include", // Required for cookie-based Auth
     });
@@ -160,10 +160,10 @@ export function getChatSessionDetails(sessionId) {
   }
 }
 
-export function setActiveChatSession(sessionId) {
+export async function setActiveChatSession(sessionId) {
   const url = `${BASE_URL}/sessions/${sessionId}`;
   try {
-    fetch(url, {
+    await fetch(url, {
       method: "POST",
       credentials: "include", // Required for cookie-based Auth
     });
@@ -174,10 +174,10 @@ export function setActiveChatSession(sessionId) {
   }
 }
 
-export function newSession() {
+export async function newSession() {
   const url = `${BASE_URL}/sessions`; //POST
   try {
-    return fetch(url, {
+    return await fetch(url, {
       method: "POST",
       credentials: "include", // Required for cookie-based Auth
     });

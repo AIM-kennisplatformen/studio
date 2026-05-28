@@ -19,6 +19,7 @@ import {
 
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
+  initialMessages,
   messagesAtom,
   textAtom,
   textStatusAtom,
@@ -37,6 +38,8 @@ import {
   logResponseFeedback,
   logEvent,
   getChatSessionDetails,
+  newSession,
+  setActiveChatSession,
 } from "../../data/api";
 
 async function handleFeedback(
@@ -56,18 +59,78 @@ async function handleFeedback(
   setFeedbackText(response);
 }
 
-export default function Chat(setChatActive, currentChat) {
+function mapRestoredMessages(sessionMessages) {
+  const restoredMessages = sessionMessages.map((message, index) => ({
+    key: index + 1,
+    value: message.content,
+    name: message.role,
+  }));
+
+  return restoredMessages.length > 0
+    ? restoredMessages.reverse()
+    : [...initialMessages];
+}
+
+export default function Chat({ currentChat }) {
   const [feedbackText, setFeedbackText] = useState("");
   const [showFeedback, setShowFeedback] = useState(true);
   const shouldLog = useRef(false);
+  const setMessages = useSetAtom(messagesAtom);
+  const setText = useSetAtom(textAtom);
+  const setStatus = useSetAtom(textStatusAtom);
+  const setLastDoneMessageKey = useSetAtom(lastDoneMessageKeyAtom);
 
-  // useEffect(() => {
-  //   if (currentChat === null) return;
-  //   getChatSessionDetails(currentChat).then((details) => {
-  //     // You can use the details to set up your chat session, e.g. load messages
-  //     console.log("Chat session details:", details);
-  //   });
-  // }, [currentChat]);
+  useEffect(() => {
+    let isCurrent = true;
+
+    async function restoreChat() {
+      setText("");
+      setStatus("ready");
+      setLastDoneMessageKey(null);
+      setFeedbackText("");
+      setShowFeedback(true);
+      shouldLog.current = false;
+
+      if (currentChat === null) {
+        setMessages([...initialMessages]);
+        try {
+          await newSession();
+        } catch (err) {
+          console.error("Error creating new chat session:", err);
+        }
+        return;
+      }
+
+      const sessionId = currentChat?.session_id;
+      if (!sessionId) return;
+
+      setMessages([]);
+
+      try {
+        await setActiveChatSession(sessionId);
+        const details = await getChatSessionDetails(sessionId);
+        if (!isCurrent) return;
+
+        setMessages(
+          details?.messages ? mapRestoredMessages(details.messages) : [],
+        );
+      } catch (err) {
+        console.error("Error restoring chat session:", err);
+      }
+    }
+
+    restoreChat();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [
+    currentChat,
+    setLastDoneMessageKey,
+    setMessages,
+    setStatus,
+    setText,
+  ]);
 
   return (
     <div className="flex flex-col h-full bg-white relative z-10">
@@ -204,7 +267,7 @@ function Messages({
             );
           }
 
-          if (name === "chatbot") {
+          if (name === "ai") {
             return (
               <div
                 key={key}
@@ -216,7 +279,7 @@ function Messages({
                   </Response>
                   {key === lastDoneKey &&
                     status === "ready" &&
-                    lastDoneMessage?.name === "chatbot" && (
+                    lastDoneMessage?.name === "ai" && (
                       <div
                         onClick={(e) => e.stopPropagation()}
                         onSubmit={(e) => e.preventDefault()}

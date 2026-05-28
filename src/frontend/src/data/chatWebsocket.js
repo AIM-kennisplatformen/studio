@@ -36,7 +36,7 @@ export function useChatWebSocket(setStatus) {
     });
 
     socket.on("message", (data) => {
-      if (data.role !== "chatbot") return;
+      if (data.role !== "ai") return;
 
       if (data.subnode === "system_prompt") {
         const content = data.content || "";
@@ -63,7 +63,7 @@ export function useChatWebSocket(setStatus) {
         const newKey = (prev[0]?.key || 0) + 1;
         streamingKeyRef.current = newKey;
         return [
-          { key: newKey, name: "chatbot", value: token, reasoning: null },
+          { key: newKey, name: "ai", value: token, reasoning: null },
           ...prev,
         ];
       });

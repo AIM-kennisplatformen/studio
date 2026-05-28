@@ -30,7 +30,7 @@ export default {
             // Default is 10s — increased to 30s for slow Authentik page loads
             action: 30000,
             // Page-level timeout for element condition waits (e.g. to be visible)
-            // Set to 30s to allow time for LLM chatbot responses
+            // Set to 30s to allow time for LLM ai responses
             page: 30000,
             // Timeout for value/text validation polling
             value: 30000,

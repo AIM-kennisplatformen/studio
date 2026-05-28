@@ -159,7 +159,7 @@ Services must be reachable at:
 ### Run a single feature
 
 ```bash
-npx qavajs run --config config.mjs -- features/chatbot.feature
+npx qavajs run --config config.mjs -- features/ai.feature
 ```
 
 ---

@@ -56,7 +56,7 @@ Make sure the following services are reachable before running:
 ### Run a single feature file
 
 ```bash
-npx qavajs run --config config.mjs -- features/chatbot.feature
+npx qavajs run --config config.mjs -- features/ai.feature
 ```
 
 ## Test Data
