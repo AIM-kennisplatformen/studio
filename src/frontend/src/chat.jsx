@@ -24,6 +24,7 @@ import {
   textStatusAtom,
   lastDoneMessageKeyAtom,
   selectedNodeAtom,
+  pdfViewerAtom,
 } from "./data/atoms";
 
 import { useChatWebSocket } from "./data/chatWebsocket";
@@ -35,6 +36,8 @@ import { Action, Actions } from "@/components/shadcn-io/ai/actions";
 import { ThumbsUpIcon, ThumbsDownIcon } from "lucide-react";
 import { logResponseFeedback, logEvent } from "./data/api";
 import LogOutButton from "@/components/LogOutButton.jsx";
+import PdfViewer from "@/components/PdfViewer.jsx";
+import { cn } from "@repo/shadcn-ui/lib/utils";
 
 async function handleFeedback(
   messageKey,
@@ -51,6 +54,34 @@ async function handleFeedback(
     return;
   }
   setFeedbackText(response);
+}
+
+function usePdfLinkComponents() {
+  const setPdfUrl = useSetAtom(pdfViewerAtom);
+
+  return {
+    a: ({ node: _node, children, className, href, ...props }) => {
+      if (href?.includes("/api/pdf/zotero/")) {
+        return (
+          <button
+            onClick={() => setPdfUrl(href)}
+            className="text-primary cursor-pointer font-medium underline">
+            {children}
+          </button>
+        );
+      }
+      return (
+        <a
+          className={cn("text-primary font-medium underline", className)}
+          rel="noreferrer"
+          target="_blank"
+          href={href}
+          {...props}>
+          {children}
+        </a>
+      );
+    },
+  };
 }
 
 export default function Chat() {
@@ -80,6 +111,9 @@ export default function Chat() {
       <div className="shrink-0 border-t border-gray-200 bg-white">
         <InputArea setShowFeedback={setShowFeedback} shouldLog={shouldLog} />
       </div>
+
+      {/* PDF viewer dialog — overlays everything */}
+      <PdfViewer />
     </div>
   );
 }
@@ -141,6 +175,7 @@ function Messages({
   const lastDoneKey = useAtomValue(lastDoneMessageKeyAtom);
   const selectedNode = useAtomValue(selectedNodeAtom);
   const prevStatusRef = useRef(null);
+  const pdfLinkComponents = usePdfLinkComponents();
 
   // Log response_generated event
   useEffect(() => {
@@ -190,7 +225,9 @@ function Messages({
                 key={key}
                 className="flex w-full items-start justify-start gap-2 pr-[5%]">
                 <div className="flex w-full flex-col items-start">
-                  <Response className="w-full rounded-lg border border-gray-200 bg-gray-50 p-2 text-sm break-words">
+                  <Response
+                    className="w-full rounded-lg border border-gray-200 bg-gray-50 p-2 text-sm break-words [&_h2]:mt-4 [&_h2]:border-b [&_h2]:border-gray-300 [&_h2]:pb-1 [&_h2]:text-sm [&_h2]:font-bold"
+                    options={{ components: pdfLinkComponents }}>
                     {value}
                   </Response>
                 </div>
@@ -204,7 +241,9 @@ function Messages({
                 key={key}
                 className="flex w-full items-start justify-start gap-2 pr-[5%]">
                 <div className="flex w-full flex-col items-start">
-                  <Response className="w-full rounded-lg border border-gray-200 bg-gray-50 p-2 text-sm break-words">
+                  <Response
+                    className="w-full rounded-lg border border-gray-200 bg-gray-50 p-2 text-sm break-words [&_h2]:mt-4 [&_h2]:border-b [&_h2]:border-gray-300 [&_h2]:pb-1 [&_h2]:text-sm [&_h2]:font-bold"
+                    options={{ components: pdfLinkComponents }}>
                     {value}
                   </Response>
                   {key === lastDoneKey &&

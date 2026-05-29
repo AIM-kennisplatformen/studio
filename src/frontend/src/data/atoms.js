@@ -44,3 +44,4 @@ export const layoutNodesAtom = atom([]);
 
 export const graphRefetchTriggerAtom = atom(0);
 export const selectNodeEmitAtom = atom(null);
+export const pdfViewerAtom = atom(null);

@@ -19,7 +19,7 @@ import {
   layoutNodesAtom,
   selectNodeEmitAtom,
 } from "./data/atoms";
-
+import { FeedbackButton } from "@/components/FeedbackButton.jsx";
 function getSubgraph(data, nodeId) {
   const id = String(nodeId);
   const connectedEdges = data.edges.filter(
@@ -243,20 +243,29 @@ export default function Graph({ data, width }) {
   }, [fitView]);
 
   return (
-    <div ref={containerRef} style={{ height: "100vh", width: `${width}vw` }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={{ custom: CustomNode }}
-        edgeTypes={{ solid: SolidEdge }}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeClick={onNodeClick}
-        selectNodesOnDrag={false}
-        fitView
-        attributionPosition="bottom-left"
-        proOptions={{ hideAttribution: true }}
-      />
-    </div>
+    <>
+      <div
+        ref={containerRef}
+        style={{ height: "100vh", width: `${width}vw` }}
+        className="relative">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={{ custom: CustomNode }}
+          edgeTypes={{ solid: SolidEdge }}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodeClick={onNodeClick}
+          selectNodesOnDrag={false}
+          fitView
+          attributionPosition="bottom-left"
+          proOptions={{ hideAttribution: true }}
+        />
+        {/* Feedback button - positioned inside the graph container */}
+        <div className="absolute -right-15 bottom-30">
+          <FeedbackButton />
+        </div>
+      </div>
+    </>
   );
 }
