@@ -102,7 +102,7 @@ async def send_message(sid, data):
         root_span.update(input={"message": user_msg})
 
         limit = config.get("chat_history_limit")
-        history_items = await redis_store.get_history(sid, limit)
+        history_items = await redis_store.get_history(sid, limit or 0)
             
         history_text = "\n".join([f"{item.role.capitalize()}: {item.message}" for item in history_items])
 
@@ -142,6 +142,9 @@ async def send_message(sid, data):
                     ctx["latest_question"] = user_msg
                     ctx["prefetched"] = {}
                     question = ctx["latest_question"]
+
+                if question is None:
+                    return
 
                 await fetch_subnode_stream(
                     user_id, question, selected_subnode,

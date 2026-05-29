@@ -1,7 +1,7 @@
 {
 "mcpServers": {
         "paper": {
-                "url": "https://kp.mads-han.src.surf-hosted.nl/mcp"
+                "url": "http://host.docker.internal:8001/mcp"
         }
 }
 }

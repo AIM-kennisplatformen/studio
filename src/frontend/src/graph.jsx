@@ -19,7 +19,7 @@ import {
   layoutNodesAtom,
   selectNodeEmitAtom,
 } from "./data/atoms";
-
+import { FeedbackButton } from "@/components/FeedbackButton.jsx";
 function getSubgraph(data, nodeId) {
   const id = String(nodeId);
   const connectedEdges = data.edges.filter(
@@ -242,8 +242,9 @@ export default function Graph({ data, width }) {
     return () => ro.disconnect();
   }, [fitView]);
 
-  return (
-    <div ref={containerRef} style={{ height: "100vh", width: `${width}vw` }}>
+return (
+  <>
+    <div ref={containerRef} style={{ height: "100vh", width: `${width}vw` }} className="relative">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -257,6 +258,11 @@ export default function Graph({ data, width }) {
         attributionPosition="bottom-left"
         proOptions={{ hideAttribution: true }}
       />
+      {/* Feedback button - positioned inside the graph container */}
+      <div className="absolute bottom-30 -right-15">
+        <FeedbackButton />
+      </div>
     </div>
-  );
+  </>
+);
 }

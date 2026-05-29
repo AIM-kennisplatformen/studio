@@ -6,7 +6,6 @@ import { ReactFlowProvider } from "@xyflow/react";
 import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
 import { useAtomValue } from "jotai";
 import { graphRefetchTriggerAtom } from "./data/atoms";
-import { FeedbackButton } from "./components/FeedbackButton.jsx";
 
 export default function App() {
   const [leftWidth, setLeftWidth] = useState(66.6);
@@ -66,14 +65,6 @@ export default function App() {
         </ReactFlowProvider>
       </div>
 
-      <div
-        className="pointer-events-auto absolute z-50"
-        style={{
-          left: `calc(${leftWidth}% - 86px)`,
-          bottom: "120px",
-        }}>
-        <FeedbackButton />
-      </div>
 
       <div
         className="w-1 cursor-col-resize bg-gray-400 hover:bg-gray-600"
