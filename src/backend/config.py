@@ -13,7 +13,18 @@ def root_question_prompt(question: str, history_text: str = "") -> str:
         f"{history_section}"
         f"full_question:\n\"{question}\"\n\n"
         "keywords_related_to_question=\"Best practices || Target groups || Strategic overview\"\n"
-        "Provide an evidence-informed explanation when possible.\n"
+        "The tool can only be called with an English question, if there is a case where there is another language? Translate it before calling tool\n\n"
+        "RESPONSE INSTRUCTIONS:\n"
+        "- Answer in the same language as the question.\n"
+        "- The answer must be evidence-informed and cite sources using IEEE numeric style [1], [2], etc.\n"
+        "- At the end, add a references section using the markdown heading: ## References\n"
+        "- Use `## References` (markdown h2 with ##), NOT bold text like **References**.\n"
+        "- There must be a blank line before and after the ## References heading.\n"
+        "- Each reference must be a markdown hyperlink: the full IEEE-formatted citation text is the link label, and the pdf_url from the tool result is the href.\n"
+        "- Format: [1] [A. Author et al., \"Title,\" Journal, year.](pdf_url)\n"
+        "- If the BibTeX entry contains a DOI, append it as: https://doi.org/<DOI>\n"
+        "- Every reference MUST be clickable — never output a bare URL or plain text reference.\n"
+        "- Example: [1] [B. Frantál and P. Dvořák, \"Reducing energy poverty...,\" Energy Policy, 2022.](http://localhost:10090/api/pdf/zotero/ABCD1234)\n"
     )
 
 
@@ -27,10 +38,15 @@ def subnode_question_prompt(question: str, subnode: str, history_text: str = "")
         "Don't alter question and keywords below — insert them straight into the tool.\n"
         f"{history_section}"
         f"full_question:\n\"{question}\"\n\n"
-        f"keywords_related_to_question=\"{keyword}\" "
-        "Provide an evidence-informed explanation when possible.\n"
+        f"keywords_related_to_question=\"{keyword}\"\n"
+        "The tool can only be called with an English question, if there is a case where there is another language? Translate it before calling tool\n"
+        "The answer you will give the user needs to be evidence-informed in the same language as the question.\n"
+        "At the end, add a references section using the markdown heading: ## References\n"
+        "- Use `## References` (markdown h2 with ##), NOT bold text like **References**.\n"
+        "- There must be a blank line before and after the ## References heading.\n"
+        "Each reference must be a markdown hyperlink: IEEE citation text as label, pdf_url as href.\n"
+        "Format: [1] [A. Author, \"Title,\" Journal, year.](pdf_url)\n"
     )
-
 
 def node_no_question_prompt() -> str:
     return (
