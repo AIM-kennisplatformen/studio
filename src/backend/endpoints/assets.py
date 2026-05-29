@@ -5,7 +5,7 @@ from urllib.request import Request as UrlRequest
 from urllib.request import urlopen
 
 from fastapi import HTTPException, Depends, APIRouter, Request
-from fastapi.responses import RedirectResponse, FileResponse, Response
+from fastapi.responses import RedirectResponse, FileResponse, Response, HTMLResponse
 
 from backend.config import config
 from backend.endpoints.auth import get_current_user
@@ -47,7 +47,7 @@ def vite_proxy_response(request: Request, path: str = ""):
             for key, value in exc.headers.items()
             if key.lower() in {"content-type", "cache-control", "etag"}
         }
-        return Response(exc.read(), status_code=exc.status, headers=headers)
+        return Response(exc.read(), status_code=exc.status or 500, headers=headers)
     except URLError as exc:
         raise HTTPException(502, f"Vite dev server unavailable: {exc}") from exc
 
@@ -149,6 +149,26 @@ async def app_root(request: Request, user=Depends(get_current_user)):
 
     return RedirectResponse("/app/")
 
+
+@frontend.get("/pdfjs/web/viewer.html")
+async def serve_pdf_viewer(file: str = "", user=Depends(get_current_user)):
+    viewer_path = os.path.join(detect_frontend_dir(), "pdfjs", "web", "viewer.html")
+    content = open(viewer_path).read()
+    # Inject custom CSS before </head>
+    custom_css = "<style>#downloadButton, #printButton, #secondaryPrint { display: none !important; }</style>"
+    content = content.replace("</head>", f"{custom_css}</head>")
+    return HTMLResponse(content=content)
+
+
+@frontend.get("/pdfjs/{path:path}")
+async def serve_pdfjs(path: str, user=Depends(get_current_user)):
+    d = detect_frontend_dir()
+    if not d:
+        raise HTTPException(500, "Frontend build not found")
+    requested = os.path.join(d, "pdfjs", path)
+    if not os.path.exists(requested):
+        raise HTTPException(404)
+    return FileResponse(requested)
 
 @frontend.get("/assets/{path:path}")
 async def serve_assets(path: str, user=Depends(get_current_user)):

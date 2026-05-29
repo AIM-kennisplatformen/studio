@@ -42,6 +42,8 @@ dependencies = [
   "typing-extensions",
   "mcp-use>=1.5.0,<2",
   "redis>=5.0.0",
+  "unzip",
+  "ty"
 ]
 
 # ====================================
@@ -50,7 +52,7 @@ dependencies = [
 [dependency-groups]
 dev = [
   "isort>=7.0.0",
-  "mypy>=1.18.2",
+  "ty",
   "nest-asyncio",
   "ruff>=0.14.5",
   "toml-sort>=0.24.3"
@@ -104,7 +106,7 @@ python-dotenv = ">=1.1.0"
 application = "docker compose up -d && bash scripts/application.sh"
 frontend_hmr = "docker compose exec application bash scripts/frontend_hmr.sh"
 lint = "ruff check"
-typecheck = "mypy ."
+typecheck = "ty check ."
 test = "pytest -q"
 qava_test = "python scripts/run_qava_test.py"
 

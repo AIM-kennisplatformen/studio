@@ -17,9 +17,9 @@ class RedisStore(AbstractStore):
         super()._ensure_connected()
         assert self.redis is not None
 
-    async def _connect_impl(self, config_dict: dict) -> None:
-        url = config_dict["redis_url"]
-        self.expiration_time = config_dict["redis_expiration_time"]
+    async def _connect_impl(self, config: dict) -> None:
+        url = config["redis_url"]
+        self.expiration_time = config["redis_expiration_time"]
         self.redis = Redis.from_url(url, decode_responses=True)
         logger.info(f"✓ Connected to Redis at {url}")
 

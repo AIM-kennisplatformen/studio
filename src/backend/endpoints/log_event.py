@@ -22,15 +22,11 @@ async def log_event(payload: LogEventPayload, user=Depends(get_current_user)):
     session_id = user_connections[user_id]
 
     trace_id = active_trace_ids.get(session_id, None)
-
+    
     langfuse.create_event(
-        trace_context={
-            "trace_id": trace_id,
-            "user_id": user_id,
-            "session_id": session_id,
-        },
+        trace_context={"trace_id": trace_id} if trace_id else None,
         name=payload.name,
-        metadata=payload.metadata,
+        metadata={"user_id": user_id, "session_id": session_id},
     )
 
     langfuse.flush()

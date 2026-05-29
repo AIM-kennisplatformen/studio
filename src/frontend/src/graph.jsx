@@ -20,6 +20,7 @@ import {
   selectNodeEmitAtom,
 } from "./data/atoms";
 import { FeedbackButton } from "@/components/FeedbackButton.jsx";
+import { FeedbackButton } from "@/components/FeedbackButton.jsx";
 function getSubgraph(data, nodeId) {
   const id = String(nodeId);
   const connectedEdges = data.edges.filter(

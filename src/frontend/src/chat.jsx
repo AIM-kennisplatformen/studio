@@ -25,6 +25,7 @@ import {
   lastDoneMessageKeyAtom,
   selectedNodeAtom,
   pdfViewerAtom,
+  pdfViewerAtom,
 } from "./data/atoms";
 
 import { useChatWebSocket } from "./data/chatWebsocket";
@@ -36,6 +37,8 @@ import { Action, Actions } from "@/components/shadcn-io/ai/actions";
 import { ThumbsUpIcon, ThumbsDownIcon } from "lucide-react";
 import { logResponseFeedback, logEvent } from "./data/api";
 import LogOutButton from "@/components/LogOutButton.jsx";
+import PdfViewer from "@/components/PdfViewer.jsx";
+import { cn } from "@repo/shadcn-ui/lib/utils";
 import PdfViewer from "@/components/PdfViewer.jsx";
 import { cn } from "@repo/shadcn-ui/lib/utils";
 
@@ -107,10 +110,14 @@ export default function Chat() {
         />
       </div>
 
+
       {/* Input - sticky at bottom */}
       <div className="shrink-0 border-t border-gray-200 bg-white">
         <InputArea setShowFeedback={setShowFeedback} shouldLog={shouldLog} />
       </div>
+
+      {/* PDF viewer dialog — overlays everything */}
+      <PdfViewer />
 
       {/* PDF viewer dialog — overlays everything */}
       <PdfViewer />
@@ -175,6 +182,7 @@ function Messages({
   const lastDoneKey = useAtomValue(lastDoneMessageKeyAtom);
   const selectedNode = useAtomValue(selectedNodeAtom);
   const prevStatusRef = useRef(null);
+  const pdfLinkComponents = usePdfLinkComponents();
   const pdfLinkComponents = usePdfLinkComponents();
 
   // Log response_generated event
