@@ -1,33 +1,29 @@
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
 import { cva } from "class-variance-authority";
 
-import { cn } from "@/lib/utils"
-import { Separator } from "@/components/ui/separator"
+import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
-function ItemGroup({
-  className,
-  ...props
-}) {
+function ItemGroup({ className, ...props }) {
   return (
     <div
       role="list"
       data-slot="item-group"
       className={cn("group/item-group flex flex-col", className)}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function ItemSeparator({
-  className,
-  ...props
-}) {
+function ItemSeparator({ className, ...props }) {
   return (
     <Separator
       data-slot="item-separator"
       orientation="horizontal"
       className={cn("my-0", className)}
-      {...props} />
+      {...props}
+    />
   );
 }
 
@@ -50,7 +46,7 @@ const itemVariants = cva(
       size: "default",
     },
   }
-)
+);
 
 function Item({
   className,
@@ -59,14 +55,15 @@ function Item({
   asChild = false,
   ...props
 }) {
-  const Comp = asChild ? Slot : "div"
+  const Comp = asChild ? Slot : "div";
   return (
     <Comp
       data-slot="item"
       data-variant={variant}
       data-size={size}
       className={cn(itemVariants({ variant, size, className }))}
-      {...props} />
+      {...props}
+    />
   );
 }
 
@@ -85,26 +82,20 @@ const itemMediaVariants = cva(
       variant: "default",
     },
   }
-)
+);
 
-function ItemMedia({
-  className,
-  variant = "default",
-  ...props
-}) {
+function ItemMedia({ className, variant = "default", ...props }) {
   return (
     <div
       data-slot="item-media"
       data-variant={variant}
       className={cn(itemMediaVariants({ variant, className }))}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function ItemContent({
-  className,
-  ...props
-}) {
+function ItemContent({ className, ...props }) {
   return (
     <div
       data-slot="item-content"
@@ -112,14 +103,12 @@ function ItemContent({
         "flex flex-1 flex-col gap-1 [&+[data-slot=item-content]]:flex-none",
         className
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function ItemTitle({
-  className,
-  ...props
-}) {
+function ItemTitle({ className, ...props }) {
   return (
     <div
       data-slot="item-title"
@@ -127,14 +116,12 @@ function ItemTitle({
         "flex w-fit items-center gap-2 text-sm leading-snug font-medium",
         className
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function ItemDescription({
-  className,
-  ...props
-}) {
+function ItemDescription({ className, ...props }) {
   return (
     <p
       data-slot="item-description"
@@ -143,43 +130,44 @@ function ItemDescription({
         "[&>a:hover]:text-primary [&>a]:underline [&>a]:underline-offset-4",
         className
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function ItemActions({
-  className,
-  ...props
-}) {
+function ItemActions({ className, ...props }) {
   return (
     <div
       data-slot="item-actions"
       className={cn("flex items-center gap-2", className)}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function ItemHeader({
-  className,
-  ...props
-}) {
+function ItemHeader({ className, ...props }) {
   return (
     <div
       data-slot="item-header"
-      className={cn("flex basis-full items-center justify-between gap-2", className)}
-      {...props} />
+      className={cn(
+        "flex basis-full items-center justify-between gap-2",
+        className
+      )}
+      {...props}
+    />
   );
 }
 
-function ItemFooter({
-  className,
-  ...props
-}) {
+function ItemFooter({ className, ...props }) {
   return (
     <div
       data-slot="item-footer"
-      className={cn("flex basis-full items-center justify-between gap-2", className)}
-      {...props} />
+      className={cn(
+        "flex basis-full items-center justify-between gap-2",
+        className
+      )}
+      {...props}
+    />
   );
 }
 
@@ -194,4 +182,4 @@ export {
   ItemDescription,
   ItemHeader,
   ItemFooter,
-}
+};

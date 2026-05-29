@@ -133,37 +133,35 @@ export default function Graph({ data }) {
     selectedNodeRef.current = selectedNode;
   }, [selectedNode]);
 
-  const prepareGraphData = useCallback(
-    (graphData) => {
-      if (!graphData?.nodes || !graphData?.edges) return;
+  const prepareGraphData = useCallback((graphData) => {
+    if (!graphData?.nodes || !graphData?.edges) return;
 
       const previousPositions = allPositionsRef.current;
       const nodeMap = new Map();
 
-      // Create nodes
-      const newNodes = graphData.nodes.map((node) => {
-        const isCenter = node.id === 1;
-        const reactFlowNode = {
-          id: String(node.id),
-          type: "custom",
-          position: previousPositions.get(String(node.id)) || { x: 0, y: 0 },
-          data: {
-            label: node.title,
-            background: isCenter ? "#038061" : "#ffffff",
-            color: isCenter ? "#ffffff" : "#038061",
-            border: "2px solid #038061",
-            borderRadius: "8px",
-            padding: "8px",
-            fontSize: "12px",
-            width: 160,
-            whiteSpace: "pre-wrap",
-            boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-          },
-        };
-
-        nodeMap.set(reactFlowNode.id, reactFlowNode);
-        return reactFlowNode;
-      });
+    // Create nodes
+    const newNodes = graphData.nodes.map((node) => {
+      const isCenter = node.id === 1;
+      const reactFlowNode = {
+        id: String(node.id),
+        type: "custom",
+        position: previousPositions.get(String(node.id)) || { x: 0, y: 0 },
+        data: {
+          label: node.title,
+          background: isCenter ? "#038061" : "#ffffff",
+          color: isCenter ? "#ffffff" : "#038061",
+          border: "2px solid #038061",
+          borderRadius: "8px",
+          padding: "8px",
+          fontSize: "12px",
+          width: 160,
+          whiteSpace: "pre-wrap",
+          boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+        },
+      };
+      nodeMap.set(reactFlowNode.id, reactFlowNode);
+      return reactFlowNode;
+    });
 
       // Create edges
       const newEdges = graphData.edges
@@ -175,6 +173,12 @@ export default function Graph({ data }) {
             return null;
           }
 
+          const { sourceHandle, targetHandle } = getEdgeHandles(
+            sourceNode.position.x,
+            sourceNode.position.y,
+            targetNode.position.x,
+            targetNode.position.y
+          );
           const { sourceHandle, targetHandle } = getEdgeHandles(
             sourceNode.position.x,
             sourceNode.position.y,
@@ -195,7 +199,21 @@ export default function Graph({ data }) {
           };
         })
         .filter(Boolean);
+          return {
+            id: String(edge.id),
+            source: String(edge.source_id),
+            target: String(edge.target_id),
+            label: edge.labelToTarget,
+            type: "solid",
+            sourceHandle,
+            targetHandle,
+            labelStyle: { fill: "#666", fontSize: 10 },
+            labelBgStyle: { fill: "white", fillOpacity: 0.8 },
+          };
+        })
+        .filter(Boolean);
 
+      const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
       const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
 
       // Apply dagre layout to new nodes, keeping fixed nodes in place
@@ -235,34 +253,15 @@ export default function Graph({ data }) {
       setNodes(mergedNodes);
       setEdges(newEdges);
 
-      // Center node 1 on first load only
-      if (!selectedNodeRef.current) {
-        const nodeToCenter = mergedNodes.find((n) => n.id === "1");
-        if (nodeToCenter && containerRef.current) {
-          centerNodeInView(nodeToCenter);
-          setSelectedNode(nodeToCenter);
-          setBreadcrumbs(() => {
-            const entry = {
-              historyId: `bc-${breadcrumbsCounter.current}`,
-              originNodeId: nodeToCenter.id,
-              label: nodeToCenter.data.label,
-            };
-
-            breadcrumbsCounter.current += 1;
-            return [entry];
-          });
-        }
+    // Center node 1 on first load only
+    if (!selectedNodeRef.current) {
+      const nodeToCenter = mergedNodes.find((n) => n.id === "1");
+      if (nodeToCenter && containerRef.current) {
+        centerNodeInView(nodeToCenter);
+        setSelectedNode(nodeToCenter);
       }
-    },
-    [
-      setLayoutNodes,
-      setNodes,
-      setEdges,
-      centerNodeInView,
-      setSelectedNode,
-      setBreadcrumbs,
-    ]
-  );
+    }
+  }, []);
 
   // On first load show node 1's neighbourhood; on refetch just update fullDataRef
   useEffect(() => {

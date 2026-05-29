@@ -54,36 +54,35 @@ export function CustomNode({ data, isConnectable, selected }) {
         position: "relative",
         transition: "width 300ms ease-out, height 300ms ease-out",
         zIndex,
-      }}
-    >
+      }}>
       {/* Handles on all four sides - attached to wrapper */}
       <Handle
         type="source"
         position={Position.Top}
         id="top"
         isConnectable={isConnectable}
-        className="opacity-0 pointer-events-none"
+        className="pointer-events-none opacity-0"
       />
       <Handle
         type="source"
         position={Position.Right}
         id="right"
         isConnectable={isConnectable}
-        className="opacity-0 pointer-events-none"
+        className="pointer-events-none opacity-0"
       />
       <Handle
         type="source"
         position={Position.Bottom}
         id="bottom"
         isConnectable={isConnectable}
-        className="opacity-0 pointer-events-none"
+        className="pointer-events-none opacity-0"
       />
       <Handle
         type="source"
         position={Position.Left}
         id="left"
         isConnectable={isConnectable}
-        className="opacity-0 pointer-events-none"
+        className="pointer-events-none opacity-0"
       />
 
       {/* Target handles on all sides */}
@@ -92,28 +91,28 @@ export function CustomNode({ data, isConnectable, selected }) {
         position={Position.Top}
         id="target-top"
         isConnectable={isConnectable}
-        className="opacity-0 pointer-events-none"
+        className="pointer-events-none opacity-0"
       />
       <Handle
         type="target"
         position={Position.Right}
         id="target-right"
         isConnectable={isConnectable}
-        className="opacity-0 pointer-events-none"
+        className="pointer-events-none opacity-0"
       />
       <Handle
         type="target"
         position={Position.Bottom}
         id="target-bottom"
         isConnectable={isConnectable}
-        className="opacity-0 pointer-events-none"
+        className="pointer-events-none opacity-0"
       />
       <Handle
         type="target"
         position={Position.Left}
         id="target-left"
         isConnectable={isConnectable}
-        className="opacity-0 pointer-events-none"
+        className="pointer-events-none opacity-0"
       />
 
       {/* Single rendered node body — contentRef measures actual height */}

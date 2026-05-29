@@ -5,11 +5,7 @@ import Graph from "./graph.jsx";
 import { ReactFlowProvider } from "@xyflow/react";
 import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
 import { useAtom, useAtomValue } from "jotai";
-import {
-  selectedNodeScreenPositionAtom,
-  graphRefetchTriggerAtom,
-  selectedNodeVerticalPositionAtom,
-} from "./data/atoms";
+import { graphRefetchTriggerAtom, selectedNodeVerticalPositionAtom } from "./data/atoms";
 import BreadcrumbOverlay from "./components/BreadcrumbsOverlay";
 import { FeedbackButton } from "./components/FeedbackButton.jsx";
 
@@ -68,30 +64,28 @@ export default function App() {
   return (
     <div ref={containerRef} className="flex h-screen w-screen">
       <div
-        className="h-full bg-gray-100 overflow-hidden"
-        style={{ width: `${leftWidth}%` }}
-      >
+        className="h-full overflow-hidden bg-gray-100"
+        style={{ width: `${leftWidth}%` }}>
         <ReactFlowProvider>
           <Graph data={data} />
         </ReactFlowProvider>
       </div>
 
       <div
-        className="absolute z-50 pointer-events-auto"
+        className="pointer-events-auto absolute z-50"
         style={{
           left: `calc(${leftWidth}% - 86px)`,
           bottom: "120px",
-        }}
-      >
+        }}>
         <FeedbackButton />
       </div>
 
       <div
-        className="w-1 bg-gray-400 cursor-col-resize hover:bg-gray-600"
+        className="w-1 cursor-col-resize bg-gray-400 hover:bg-gray-600"
         onMouseDown={handleMouseDown}
       />
 
-      <div className="flex-1 h-full bg-gray-50 flex flex-col overflow-hidden">
+      <div className="flex h-full flex-1 flex-col overflow-hidden bg-gray-50">
         <Chat />
       </div>
 
