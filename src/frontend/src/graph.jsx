@@ -20,6 +20,7 @@ import {
   selectedNodeScreenPositionAtom,
   breadcrumbsAtom,
   selectNodeEmitAtom,
+  selectedNodeVerticalPositionAtom,
 } from "./data/atoms";
 import { sendNodeSelection } from "./data/api";
 
@@ -37,7 +38,7 @@ function getSubgraph(data, nodeId) {
   };
 }
 
-export default function Graph({ data, width }) {
+export default function Graph({ data }) {
   const [nodes, setNodes] = useAtom(nodesAtom);
   const [edges, setEdges] = useAtom(edgesAtom);
   const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom);
@@ -48,13 +49,12 @@ export default function Graph({ data, width }) {
 
   const { getViewport, setViewport, fitView } = useReactFlow();
   const containerRef = useRef(null);
-  const graphNodesRef = useRef([]);
   const edgesRef = useRef([]);
   const breadcrumbsCounter = useRef(0);
 
   const { flowToScreenPosition } = useReactFlow();
-  const [, setSelectedNodeScreenPosition] = useAtom(
-    selectedNodeScreenPositionAtom
+  const [, setSelectedNodeVerticalPosition] = useAtom(
+    selectedNodeVerticalPositionAtom
   );
   const fullDataRef = useRef(null);
   const layoutNodesRef = useRef(layoutNodes);
@@ -67,8 +67,14 @@ export default function Graph({ data, width }) {
     (node) => {
       if (!containerRef.current) return;
 
-      const { width: nodeWidth = 160, height: nodeHeight = 80 } =
-        node.data || {};
+      const baseWidth = node.data?.width || 160;
+      const baseHeight = 80;
+      // Account for the scale applied to selected/center nodes
+      const scale = 1.3;
+      const nodeWidth = baseWidth * scale;
+      const nodeHeight = baseHeight * scale;
+
+      // node.position is the top-left of the wrapper; center of the visual node
       const nodeCenterX = node.position.x + nodeWidth / 2;
       const nodeCenterY = node.position.y + nodeHeight / 2;
       const viewport = getViewport();
@@ -285,11 +291,6 @@ export default function Graph({ data, width }) {
       sendNodeSelection(node.id);
       appendBreadcrumb(node);
 
-      // const screenPositionSelectedNode = flowToScreenPosition(node.position);
-      // console.log(screenPositionSelectedNode);
-      // console.log(node.position);
-      // setSelectedNodeScreenPosition(screenPositionSelectedNode);
-
       emitSelectNode?.(Number(node.id));
       if (fullDataRef.current) {
         prepareGraphData(getSubgraph(fullDataRef.current, node.id));
@@ -301,13 +302,13 @@ export default function Graph({ data, width }) {
       centerNodeInView,
       appendBreadcrumb,
       flowToScreenPosition,
-      setSelectedNodeScreenPosition,
+      setSelectedNodeVerticalPosition,
       emitSelectNode,
       prepareGraphData,
     ]
   );
 
-  /** Fit view on container resize */
+  /** Fit view on container resize — only when no node is selected (initial state) */
   useEffect(() => {
     const container = containerRef.current;
 
@@ -315,18 +316,30 @@ export default function Graph({ data, width }) {
       return;
     }
 
+    let resizeTimer;
     const ro = new ResizeObserver(() => {
-      fitView({
-        padding: 0.1,
-        duration: 150,
-        nodes: graphNodesRef.current.map((n) => ({ id: n.id })),
-      });
+      // Debounce to avoid fighting with centerNodeInView animations
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (selectedNodeRef.current) {
+          // Re-center the selected node after resize
+          centerNodeInView(selectedNodeRef.current);
+        } else {
+          fitView({
+            padding: 0.2,
+            duration: 150,
+          });
+        }
+      }, 200);
     });
 
     ro.observe(container);
 
-    return () => ro.disconnect();
-  }, [fitView]);
+    return () => {
+      clearTimeout(resizeTimer);
+      ro.disconnect();
+    };
+  }, [fitView, centerNodeInView]);
 
   useEffect(() => {
     const nodeIdStr = String(centerNodeId);
@@ -348,7 +361,7 @@ export default function Graph({ data, width }) {
   return (
     <div
       ref={containerRef}
-      style={{ height: "100vh", width: `${width}vw`, position: "relative" }}
+      style={{ height: "100%", width: "100%", position: "relative" }}
     >
       <ReactFlow
         nodes={nodes}
@@ -360,15 +373,22 @@ export default function Graph({ data, width }) {
         onNodeClick={onNodeClick}
         fitView
         fitViewOptions={{
-          padding: 0.5,
+          padding: 0.2,
           duration: 150,
-          nodes: graphNodesRef.current.map((n) => ({ id: n.id })),
         }}
         attributionPosition="bottom-left"
         proOptions={{ hideAttribution: true }}
-        // onMove={(e, viewport) => {
-        //   console.log("moving", viewport);
-        // }}
+        onMove={() => {
+          if (!selectedNode) return;
+          // Calculate the vertical center of the selected node in screen coordinates
+          // Center node: scale=1.3, base height≈80 → wrapperHeight=104, half=52
+          const nodeHalfHeight = (80 * 1.3) / 2;
+          const screenPositionCenter = flowToScreenPosition({
+            x: selectedNode.position.x,
+            y: selectedNode.position.y + nodeHalfHeight,
+          });
+          setSelectedNodeVerticalPosition(screenPositionCenter.y);
+        }}
       />
     </div>
   );

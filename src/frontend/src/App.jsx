@@ -5,7 +5,11 @@ import Graph from "./graph.jsx";
 import { ReactFlowProvider } from "@xyflow/react";
 import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
 import { useAtom, useAtomValue } from "jotai";
-import { selectedNodeScreenPositionAtom, graphRefetchTriggerAtom } from "./data/atoms";
+import {
+  selectedNodeScreenPositionAtom,
+  graphRefetchTriggerAtom,
+  selectedNodeVerticalPositionAtom,
+} from "./data/atoms";
 import BreadcrumbOverlay from "./components/BreadcrumbsOverlay";
 import { FeedbackButton } from "./components/FeedbackButton.jsx";
 
@@ -13,11 +17,10 @@ export default function App() {
   const [leftWidth, setLeftWidth] = useState(66.6);
   const containerRef = useRef(null);
   const [data, setData] = useState(null);
-  const [selectedNodePostition] = useAtom(selectedNodeScreenPositionAtom);
+  const [selectedNodeVerticalPosition] = useAtom(
+    selectedNodeVerticalPositionAtom
+  );
 
-  const verticalNodeHeight = selectedNodePostition.y;
-
-  console.log(verticalNodeHeight);
   //const [refetchTrigger, setRefetchTrigger] = useAtom(graphRefetchTriggerAtom); //Read/write if we want to trigger refetch from here, but currently only chatbot triggers refetch, so read only is enough
   const refetchTrigger = useAtomValue(graphRefetchTriggerAtom); //Read only to trigger refetch when chatbot signals done
 
@@ -69,7 +72,7 @@ export default function App() {
         style={{ width: `${leftWidth}%` }}
       >
         <ReactFlowProvider>
-          <Graph data={data} width={leftWidth} />
+          <Graph data={data} />
         </ReactFlowProvider>
       </div>
 
@@ -93,15 +96,20 @@ export default function App() {
       </div>
 
       <div
+        className="flex flex-col justify-end"
         style={{
           position: "absolute",
-          bottom: "50%", //`${verticalNodeHeight}px`,
+          top: 0,
+          height: selectedNodeVerticalPosition,
           left: 0,
-          paddingLeft: "10px",
           zIndex: 5000,
+          paddingLeft: "10px",
+          width: "auto",
         }}
       >
-        <BreadcrumbOverlay />
+        <div>
+          <BreadcrumbOverlay />
+        </div>
       </div>
     </div>
   );

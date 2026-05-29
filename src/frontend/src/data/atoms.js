@@ -56,6 +56,6 @@ export const breadcrumbsAtom = atom([]);
 
 */
 
-export const selectedNodeScreenPositionAtom = atom({ x: 0, y: 0 });
-export const graphRefetchTriggerAtom = atom(0);       
-export const selectNodeEmitAtom = atom(null);     
+export const selectedNodeVerticalPositionAtom = atom(0);
+export const graphRefetchTriggerAtom = atom(0);
+export const selectNodeEmitAtom = atom(null);
