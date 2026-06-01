@@ -10,7 +10,7 @@ export default function BreadcrumbOverlay({}) {
   return (
     <div className="flex flex-col items-center opacity-60 hover:opacity-100">
       {withoutMostRecentBreadcrumb.length != 0 ? (
-        <div className="-mb-[2px] flex w-50 items-center justify-center">
+        <div className="-mb-0.5 flex w-50 items-center justify-center">
           <svg
             viewBox="8 30 84 175"
             xmlns="http://www.w3.org/2000/svg"
@@ -22,12 +22,34 @@ export default function BreadcrumbOverlay({}) {
         </div>
       ) : null}
       {withoutMostRecentBreadcrumb.map((breadcrumb, index) => {
+        const isLast = index === withoutMostRecentBreadcrumb.length - 1;
         return (
           <div
             key={breadcrumb.historyId}
-            className={`max-w-50 min-w-50 cursor-default rounded-lg border-2 border-green-700 bg-white p-3 text-green-800 last:cursor-pointer ${index < withoutMostRecentBreadcrumb.length - 1 ? "mb-2" : ""}`}
-            onClick={() => setCenterNodeId(breadcrumb.originNodeId)}>
-            {breadcrumb.label}
+            className="flex flex-col items-center">
+            <div
+              className="max-w-50 min-w-50 cursor-default rounded-lg border-2 border-green-700 bg-white p-3 text-green-800 last:cursor-pointer"
+              onClick={() => setCenterNodeId(breadcrumb.originNodeId)}>
+              {breadcrumb.label}
+            </div>
+            {!isLast && (
+              <svg
+                width="4"
+                height="16"
+                xmlns="http://www.w3.org/2000/svg"
+                className="block"
+                style={{ display: "block" }}>
+                <line
+                  x1="2"
+                  y1="0"
+                  x2="2"
+                  y2="16"
+                  stroke="#016630"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
+              </svg>
+            )}
           </div>
         );
       })}
