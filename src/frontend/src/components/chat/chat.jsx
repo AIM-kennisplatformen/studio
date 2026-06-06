@@ -71,9 +71,13 @@ function mapRestoredMessages(sessionMessages) {
     : [...initialMessages];
 }
 
-export default function Chat({ currentChat }) {
+export default function Chat({ currentChat, pendingMessage, setPendingMessage }) {
   const [feedbackText, setFeedbackText] = useState("");
   const [showFeedback, setShowFeedback] = useState(true);
+  // Becomes true once the chat session has actually been established
+  // (new session created, or an existing one restored). Only then is it safe
+  // to auto-send a message that was typed on the overview screen.
+  const [sessionReady, setSessionReady] = useState(false);
   const shouldLog = useRef(false);
   const setMessages = useSetAtom(messagesAtom);
   const setText = useSetAtom(textAtom);
@@ -89,6 +93,7 @@ export default function Chat({ currentChat }) {
       setLastDoneMessageKey(null);
       setFeedbackText("");
       setShowFeedback(true);
+      setSessionReady(false);
       shouldLog.current = false;
 
       if (currentChat === null) {
@@ -98,6 +103,7 @@ export default function Chat({ currentChat }) {
         } catch (err) {
           console.error("Error creating new chat session:", err);
         }
+        if (isCurrent) setSessionReady(true);
         return;
       }
 
@@ -114,6 +120,7 @@ export default function Chat({ currentChat }) {
         setMessages(
           details?.messages ? mapRestoredMessages(details.messages) : [],
         );
+        setSessionReady(true);
       } catch (err) {
         console.error("Error restoring chat session:", err);
       }
@@ -141,41 +148,61 @@ export default function Chat({ currentChat }) {
 
       {/* Input - sticky at bottom */}
       <div className="border-t border-gray-200 bg-white shrink-0">
-        <InputArea setShowFeedback={setShowFeedback} shouldLog={shouldLog} />
+        <InputArea
+          setShowFeedback={setShowFeedback}
+          shouldLog={shouldLog}
+          initialText={pendingMessage}
+          setPendingMessage={setPendingMessage}
+          sessionReady={sessionReady}
+        />
       </div>
     </div>
   );
 }
 
-function InputArea({ setShowFeedback, shouldLog, initialText }) {
+function InputArea({
+  setShowFeedback,
+  shouldLog,
+  initialText,
+  setPendingMessage,
+  sessionReady,
+}) {
   const [text, setText] = useAtom(textAtom);
   const [status, setStatus] = useAtom(textStatusAtom);
   const setMessages = useSetAtom(messagesAtom);
 
   const { send } = useChatWebSocket(setStatus);
 
+  const sendMessage = (message) => {
+    shouldLog.current = true;
+
+    setMessages((prev) => [
+      { key: prev.length + 1, value: message, name: "user" },
+      ...prev,
+    ]);
+
+    setStatus("thinking");
+    send(message);
+    setText("");
+    setShowFeedback(true);
+  };
+
+  // Auto-send a message typed on the overview screen, but only once the
+  // session has actually started and the websocket is ready.
   useEffect(() => {
-    if (initialText) {
-      if (status !== "ready") return;
-      setText(initialText);
-    }
-  }, [initialText, setText, status]);
+    if (!initialText) return;
+    if (!sessionReady || status !== "ready") return;
+
+    sendMessage(initialText);
+    setPendingMessage?.(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialText, sessionReady, status]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!text || status !== "ready") return;
 
-    shouldLog.current = true;
-
-    setMessages((prev) => [
-      { key: prev.length + 1, value: text, name: "user" },
-      ...prev,
-    ]);
-
-    setStatus("thinking");
-    send(text);
-    setText("");
-    setShowFeedback(true);
+    sendMessage(text);
   };
 
   return (

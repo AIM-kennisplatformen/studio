@@ -7,6 +7,9 @@ import ChatSessionOverview from "@/components/chat/ChatSessionOverview.jsx";
 export default function ChatWindow() {
   const [currentChat, setCurrentChat] = useState(null);
   const [chatActive, setChatActive] = useState(false);
+  // Message typed in the overview input before a chat session exists.
+  // It's handed to <Chat /> and sent to the backend once the session starts.
+  const [pendingMessage, setPendingMessage] = useState(null);
 
   return (
     <div className="flex flex-col h-full bg-white relative z-10">
@@ -24,11 +27,17 @@ export default function ChatWindow() {
       {/* Body */}
       <div className="flex-1 min-h-0">
         {chatActive ? (
-          <Chat currentChat={currentChat} setChatActive={setChatActive} />
+          <Chat
+            currentChat={currentChat}
+            setChatActive={setChatActive}
+            pendingMessage={pendingMessage}
+            setPendingMessage={setPendingMessage}
+          />
         ) : (
           <ChatSessionOverview
             setChatActive={setChatActive}
             setCurrentChat={setCurrentChat}
+            setPendingMessage={setPendingMessage}
           />
         )}
       </div>

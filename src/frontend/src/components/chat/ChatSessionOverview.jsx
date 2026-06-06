@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
 import { getChatSessions } from "../../data/api";
-import { useAtom, useSetAtom } from "jotai";
-import { messagesAtom, textAtom, textStatusAtom } from "@/data/atoms";
-import { useChatWebSocket } from "../../data/chatWebsocket";
 import {
   PromptInput,
   PromptInputSubmit,
@@ -10,7 +7,11 @@ import {
   PromptInputToolbar,
 } from "@/components/shadcn-io/ai/prompt-input";
 
-export default function ChatSessionOverview({ setChatActive, setCurrentChat }) {
+export default function ChatSessionOverview({
+  setChatActive,
+  setCurrentChat,
+  setPendingMessage,
+}) {
   const [chats, setChats] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   async function fetchChatSessions() {
@@ -18,7 +19,7 @@ export default function ChatSessionOverview({ setChatActive, setCurrentChat }) {
     try {
       const sessions = await getChatSessions();
       setChats(sessions);
-    } catch (err) {
+    } catch {
       setChats([]);
     }
     setIsLoading(false);
@@ -84,35 +85,32 @@ export default function ChatSessionOverview({ setChatActive, setCurrentChat }) {
           <h3 className="text-sm font-semibold mb-2 text-black/50">
             Or start a new conversation
           </h3>
-          <InputArea />
+          <InputArea
+            setChatActive={setChatActive}
+            setCurrentChat={setCurrentChat}
+            setPendingMessage={setPendingMessage}
+          />
         </div>
       </div>
     </>
   );
 }
 
-function InputArea({}) {
-  const [text, setText] = useAtom(textAtom);
-  const [status, setStatus] = useAtom(textStatusAtom);
-  const setMessages = useSetAtom(messagesAtom);
-
-  const { send } = useChatWebSocket(setStatus);
+function InputArea({ setChatActive, setCurrentChat, setPendingMessage }) {
+  // This input is static: no chat session exists yet on the overview screen.
+  // We keep the text in local state and, on submit, hand it off to <Chat />
+  // (via pendingMessage) which sends it to the backend once the session starts.
+  const [text, setText] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!text || status !== "ready") return;
+    const message = text.trim();
+    if (!message) return;
 
-    shouldLog.current = true;
-
-    setMessages((prev) => [
-      { key: prev.length + 1, value: text, name: "user" },
-      ...prev,
-    ]);
-
-    setStatus("thinking");
-    send(text);
+    setPendingMessage(message);
+    setCurrentChat(null); // start a fresh session
+    setChatActive(true); // switch to <Chat />, which starts the session
     setText("");
-    //setShowFeedback(true);
   };
 
   return (
@@ -126,8 +124,8 @@ function InputArea({}) {
         />
         <PromptInputToolbar className="ml-2">
           <PromptInputSubmit
-            disabled={!text || status !== "ready"}
-            status={status === "thinking" ? "submitted" : status}
+            disabled={!text.trim()}
+            status="ready"
             style={{ backgroundColor: "#038061", color: "white" }}
           />
         </PromptInputToolbar>
