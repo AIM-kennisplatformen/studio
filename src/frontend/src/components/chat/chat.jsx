@@ -147,12 +147,19 @@ export default function Chat({ currentChat }) {
   );
 }
 
-function InputArea({ setShowFeedback, shouldLog }) {
+function InputArea({ setShowFeedback, shouldLog, initialText }) {
   const [text, setText] = useAtom(textAtom);
   const [status, setStatus] = useAtom(textStatusAtom);
   const setMessages = useSetAtom(messagesAtom);
 
   const { send } = useChatWebSocket(setStatus);
+
+  useEffect(() => {
+    if (initialText) {
+      if (status !== "ready") return;
+      setText(initialText);
+    }
+  }, [initialText, setText, status]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

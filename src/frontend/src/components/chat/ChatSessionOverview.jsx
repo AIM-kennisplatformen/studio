@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
 import { getChatSessions } from "../../data/api";
+import { useAtom, useSetAtom } from "jotai";
+import { messagesAtom, textAtom, textStatusAtom } from "@/data/atoms";
+import { useChatWebSocket } from "../../data/chatWebsocket";
+import {
+  PromptInput,
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputToolbar,
+} from "@/components/shadcn-io/ai/prompt-input";
 
 export default function ChatSessionOverview({ setChatActive, setCurrentChat }) {
   const [chats, setChats] = useState([]);
@@ -39,12 +48,14 @@ export default function ChatSessionOverview({ setChatActive, setCurrentChat }) {
               />
             </svg>
           ) : chats.length === 0 ? (
-            <p className="text-gray-500">No previous chats available.</p>
+            <p className="text-gray-500 font-semibold">
+              No previous chats available.
+            </p>
           ) : (
             <>
-              <h2 className="text-sm font-semibold mb-2 text-black/70">
+              <h3 className="text-sm font-semibold mb-2 text-black/70">
                 CONTINUE A PREVIOUS CHAT
-              </h2>
+              </h3>
 
               <ul className="space-y-2">
                 {chats.map((chat, index) => (
@@ -70,31 +81,57 @@ export default function ChatSessionOverview({ setChatActive, setCurrentChat }) {
           )}
         </div>
         <div className="border-t border-gray-200 bg-white shrink-0 pt-4">
-          <button
-            onClick={() => {
-              setCurrentChat(null);
-              setChatActive(true);
-            }}
-            className="flex w-full items-center justify-center p-3 !bg-[#038061] text-white rounded-md hover:!bg-[#02664a] transition duration-150"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className="size-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
-              />
-            </svg>
-            <p className="ml-2">New Chat</p>
-          </button>
+          <h3 className="text-sm font-semibold mb-2 text-black/50">
+            Or start a new conversation
+          </h3>
+          <InputArea />
         </div>
       </div>
     </>
+  );
+}
+
+function InputArea({}) {
+  const [text, setText] = useAtom(textAtom);
+  const [status, setStatus] = useAtom(textStatusAtom);
+  const setMessages = useSetAtom(messagesAtom);
+
+  const { send } = useChatWebSocket(setStatus);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!text || status !== "ready") return;
+
+    shouldLog.current = true;
+
+    setMessages((prev) => [
+      { key: prev.length + 1, value: text, name: "user" },
+      ...prev,
+    ]);
+
+    setStatus("thinking");
+    send(text);
+    setText("");
+    //setShowFeedback(true);
+  };
+
+  return (
+    <div className="p-4 w-full">
+      <PromptInput onSubmit={handleSubmit} className="flex items-center">
+        <PromptInputTextarea
+          onChange={(e) => setText(e.target.value)}
+          value={text}
+          placeholder="Type your message..."
+          className="flex-1"
+        />
+        <PromptInputToolbar className="ml-2">
+          <PromptInputSubmit
+            disabled={!text || status !== "ready"}
+            status={status === "thinking" ? "submitted" : status}
+            style={{ backgroundColor: "#038061", color: "white" }}
+          />
+        </PromptInputToolbar>
+      </PromptInput>
+    </div>
   );
 }
