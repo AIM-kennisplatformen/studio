@@ -20,6 +20,7 @@ import {
   breadcrumbsAtom,
   selectNodeEmitAtom,
   selectedNodeVerticalPositionAtom,
+  selectedNodeScreenCenterAtom,
 } from "./data/atoms";
 import { sendNodeSelection } from "./data/api";
 
@@ -55,6 +56,7 @@ export default function Graph({ data }) {
   const [, setSelectedNodeVerticalPosition] = useAtom(
     selectedNodeVerticalPositionAtom
   );
+  const [, setSelectedNodeScreenCenter] = useAtom(selectedNodeScreenCenterAtom);
   const fullDataRef = useRef(null);
   const layoutNodesRef = useRef(layoutNodes);
   const selectedNodeRef = useRef(null);
@@ -90,6 +92,31 @@ export default function Graph({ data }) {
     },
     [getViewport, setViewport]
   );
+
+  // Read the selected node's on-screen center directly from its rendered DOM
+  // element. getBoundingClientRect() returns viewport/screen coordinates and
+  // already reflects pan, zoom and the 1.3× selected-node scale — no flow math.
+  const syncSelectedNodeScreenCenter = useCallback(() => {
+    const node = selectedNodeRef.current;
+    if (!node || !containerRef.current) {
+      setSelectedNodeScreenCenter(null);
+      return;
+    }
+    const el = containerRef.current.querySelector(
+      `.react-flow__node[data-id="${node.id}"]`
+    );
+    if (!el) {
+      setSelectedNodeScreenCenter(null);
+      return;
+    }
+    const r = el.getBoundingClientRect();
+    setSelectedNodeScreenCenter({
+      x: r.left + r.width / 2,
+      y: r.top + r.height / 2,
+      hw: r.width / 2,
+      hh: r.height / 2,
+    });
+  }, [setSelectedNodeScreenCenter]);
 
   const appendBreadcrumb = useCallback(
     (node) => {
@@ -131,6 +158,20 @@ export default function Graph({ data }) {
   useEffect(() => {
     selectedNodeRef.current = selectedNode;
   }, [selectedNode]);
+
+  // Debug: resync the node's screen center when the selection changes. onMove
+  // covers pan/zoom, but a selection that doesn't move the viewport (or whose
+  // DOM element mounts a frame later) needs this. rAF waits for the node to
+  // render; the 520ms timer catches the end of centerNodeInView's animation.
+  useEffect(() => {
+    if (!selectedNode) return;
+    const raf = requestAnimationFrame(syncSelectedNodeScreenCenter);
+    const timer = setTimeout(syncSelectedNodeScreenCenter, 520);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
+  }, [selectedNode, syncSelectedNodeScreenCenter]);
 
   const prepareGraphData = useCallback(
     (graphData) => {
@@ -386,6 +427,9 @@ export default function Graph({ data }) {
             y: selectedNode.position.y + nodeHalfHeight,
           });
           setSelectedNodeVerticalPosition(screenPositionCenter.y);
+
+          // Debug: read the node's true screen center from its DOM rect.
+          syncSelectedNodeScreenCenter();
         }}
       />
     </div>

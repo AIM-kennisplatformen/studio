@@ -57,5 +57,13 @@ export const breadcrumbsAtom = atom([]);
 */
 
 export const selectedNodeVerticalPositionAtom = atom(0);
+
+// Screen-space (viewport) center of the selected node, read from
+// getBoundingClientRect. { x, y, hw, hh } in page/screen coords where hw/hh are
+// the node's half-width/half-height (used to clip the connector at the node's
+// edge), or null when not available.
+export const selectedNodeScreenCenterAtom = atom(null);
+export const lastCrumbScreenCenterAtom = atom(null);
+
 export const graphRefetchTriggerAtom = atom(0);
 export const selectNodeEmitAtom = atom(null);
