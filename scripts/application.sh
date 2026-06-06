@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euxo pipefail
 
-docker compose exec -T application rm -rf \
+rm -rf \
   /tmp/studio_frontend_hmr \
   /tmp/studio_frontend_hmr.pid \
   /tmp/studio_frontend_hmr.log >/dev/null 2>&1 || true
 
-npm run build --prefix src/frontend
+pixi run npm install --prefix src/frontend
+pixi run npm run build --prefix src/frontend

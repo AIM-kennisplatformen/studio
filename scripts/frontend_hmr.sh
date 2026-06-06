@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euxo pipefail
 
 hmr_dir="${FRONTEND_HMR_MARKER:-/tmp/studio_frontend_hmr}"
 pid_file="/tmp/studio_frontend_hmr.pid"

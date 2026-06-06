@@ -101,7 +101,7 @@ python-dotenv = ">=1.1.0"
 # Pixi tasks
 # ====================================
 [tool.pixi.tasks]
-application = "docker compose up -d && bash scripts/application.sh"
+application = "docker compose up -d && docker compose exec application bash scripts/application.sh"
 frontend_hmr = "docker compose exec application bash scripts/frontend_hmr.sh"
 lint = "ruff check"
 typecheck = "mypy ."
