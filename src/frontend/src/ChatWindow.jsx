@@ -7,8 +7,6 @@ import ChatSessionOverview from "@/components/chat/ChatSessionOverview.jsx";
 export default function ChatWindow() {
   const [currentChat, setCurrentChat] = useState(null);
   const [chatActive, setChatActive] = useState(false);
-  // Message typed in the overview input before a chat session exists.
-  // It's handed to <Chat /> and sent to the backend once the session starts.
   const [pendingMessage, setPendingMessage] = useState(null);
 
   return (

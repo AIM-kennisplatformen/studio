@@ -97,9 +97,6 @@ export default function ChatSessionOverview({
 }
 
 function InputArea({ setChatActive, setCurrentChat, setPendingMessage }) {
-  // This input is static: no chat session exists yet on the overview screen.
-  // We keep the text in local state and, on submit, hand it off to <Chat />
-  // (via pendingMessage) which sends it to the backend once the session starts.
   const [text, setText] = useState("");
 
   const handleSubmit = (e) => {
@@ -108,8 +105,8 @@ function InputArea({ setChatActive, setCurrentChat, setPendingMessage }) {
     if (!message) return;
 
     setPendingMessage(message);
-    setCurrentChat(null); // start a fresh session
-    setChatActive(true); // switch to <Chat />, which starts the session
+    setCurrentChat(null);
+    setChatActive(true);
     setText("");
   };
 

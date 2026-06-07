@@ -71,12 +71,13 @@ function mapRestoredMessages(sessionMessages) {
     : [...initialMessages];
 }
 
-export default function Chat({ currentChat, pendingMessage, setPendingMessage }) {
+export default function Chat({
+  currentChat,
+  pendingMessage,
+  setPendingMessage,
+}) {
   const [feedbackText, setFeedbackText] = useState("");
   const [showFeedback, setShowFeedback] = useState(true);
-  // Becomes true once the chat session has actually been established
-  // (new session created, or an existing one restored). Only then is it safe
-  // to auto-send a message that was typed on the overview screen.
   const [sessionReady, setSessionReady] = useState(false);
   const shouldLog = useRef(false);
   const setMessages = useSetAtom(messagesAtom);
@@ -187,15 +188,12 @@ function InputArea({
     setShowFeedback(true);
   };
 
-  // Auto-send a message typed on the overview screen, but only once the
-  // session has actually started and the websocket is ready.
   useEffect(() => {
     if (!initialText) return;
     if (!sessionReady || status !== "ready") return;
 
     sendMessage(initialText);
     setPendingMessage?.(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialText, sessionReady, status]);
 
   const handleSubmit = (e) => {
