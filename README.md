@@ -17,7 +17,7 @@ src/
     main.py         # app entry point
   frontend/         # React + Vite app
     src/
-scripts/            # build_frontend.py, setup_authentik.py, run_qava_test.py
+scripts/            # setup_authentik.py, run_qava_test.py
 tests/
   bdd/              # qavajs end-to-end tests
 docker-compose.yml
@@ -69,40 +69,36 @@ Key variables:
 
 ---
 
-## Development (without Docker)
+## Running With Docker
 
-Install all dependencies (Python + Node) via Pixi:
-
-```bash
-pixi install
-```
-
-### 1. Build the frontend
+Start the application through Docker Compose:
 
 ```bash
-pixi run frontend_build
+pixi run application
 ```
 
-This reads `BACKEND_BASE_URL` from `.env`, writes a Vite production env file, runs `npm install` + `npm run build` inside `src/frontend/`, and moves the output to `kg/`.
+This starts:
+- `application` — builds the Vite frontend into `kg/` and runs the FastAPI app on port `10090`
+- `redis` — runs Redis on port `6379`
 
-### 2. Start the backend
+The application serves the built frontend from `kg/` and exposes the API at `http://localhost:10090`.
+
+### Frontend HMR
+
+To start the Vite dev server and switch `/app` to it while it is running:
 
 ```bash
-pixi run backend_no_docker
+pixi run frontend_hmr
 ```
 
-Starts the FastAPI app with uvicorn on port `10090` with hot-reload enabled.
+This starts Vite at `http://localhost:5173`. While it is running, `http://localhost:10090/app` stays on the backend URL and proxies frontend files from Vite; when it stops, the application serves the built frontend from `kg/` again.
 
-The backend serves the frontend build from `kg/` and exposes the API at `http://localhost:10090`.
-
----
-
-## Deployment (Docker)
+### Direct Docker Commands
 
 Build the image once:
 
 ```bash
-docker build -t studio-base -f dockerfiles/Dockerfile .
+docker build -t studio_application -f dockerfiles/Dockerfile .
 ```
 
 Then start all services:
@@ -110,10 +106,6 @@ Then start all services:
 ```bash
 docker compose up
 ```
-
-This starts:
-- `backend` — builds the frontend and runs the FastAPI app on port `10090`
-- `mcp_server` — runs the MCP paper_search server on port `8000`
 
 ---
 
@@ -136,7 +128,7 @@ End-to-end tests are written with [qavajs](https://qavajs.github.io/) (Cucumber 
 ### Run all tests (spins up containers automatically)
 
 ```bash
-pixi run qava_test
+python scripts/run_qava_test.py
 ```
 
 ### Run tests against already-running services
@@ -167,6 +159,6 @@ npx qavajs run --config config.mjs -- features/chatbot.feature
 ## Code Quality
 
 ```bash
-pixi run lint        # ruff check
-pixi run typecheck   # mypy
+pixi run ruff check
+pixi run mypy .
 ```

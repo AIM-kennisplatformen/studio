@@ -1,7 +1,7 @@
-const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+import { BACKEND_BASE_URL } from "./backend.js";
 
 export async function fetchGraphAnswer() {
-  const url = `${BASE_URL}/graph`;
+  const url = `${BACKEND_BASE_URL}/graph`;
 
   const FALLBACK_GRAPH = { nodes: [], edges: [] };
   try {
@@ -13,6 +13,13 @@ export async function fetchGraphAnswer() {
     if (!response.ok) {
       // Backend returned error status → fallback
       return FALLBACK_GRAPH;
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      throw new Error(
+        `Expected JSON from ${url}, got ${contentType || "unknown content type"}`
+      );
     }
 
     const data = await response.json();
