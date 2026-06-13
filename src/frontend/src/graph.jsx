@@ -418,6 +418,7 @@ export default function Graph({ data }) {
         attributionPosition="bottom-left"
         proOptions={{ hideAttribution: true }}
         onMove={() => {
+        requestAnimationFrame(() => {
           if (!selectedNode) return;
           // Calculate the vertical center of the selected node in screen coordinates
           // Center node: scale=1.3, base height≈80 → wrapperHeight=104, half=52
@@ -430,6 +431,7 @@ export default function Graph({ data }) {
 
           // Debug: read the node's true screen center from its DOM rect.
           syncSelectedNodeScreenCenter();
+          });
         }}
       />
     </div>

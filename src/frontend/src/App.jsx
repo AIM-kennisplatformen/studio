@@ -162,38 +162,6 @@ export default function App() {
           })()}
         </svg>
       )}
-
-      {/* Debug markers: red dots at the computed screen centers. */}
-      {nodeCenter && (
-        <div
-          style={{
-            position: "fixed",
-            left: nodeCenter.x - 6,
-            top: nodeCenter.y - 6,
-            width: 12,
-            height: 12,
-            borderRadius: "50%",
-            background: "red",
-            pointerEvents: "none",
-            zIndex: 9999,
-          }}
-        />
-      )}
-      {crumbCenter && (
-        <div
-          style={{
-            position: "fixed",
-            left: crumbCenter.x - 6,
-            top: crumbCenter.y - 6,
-            width: 12,
-            height: 12,
-            borderRadius: "50%",
-            background: "red",
-            pointerEvents: "none",
-            zIndex: 9999,
-          }}
-        />
-      )}
     </div>
   );
 }
