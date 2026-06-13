@@ -16,7 +16,7 @@ from backend.stores.postgres import postgres_store
 from backend.stores.redis import redis_store
 
 # Build list of allowed CORS origins
-cors_origins = [config["base_url"]]
+cors_origins = [config["base_url"], config["vite_dev_server_url"].rstrip("/")]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
