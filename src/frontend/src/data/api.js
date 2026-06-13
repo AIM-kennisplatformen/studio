@@ -177,10 +177,11 @@ export async function setActiveChatSession(sessionId) {
 export async function newSession() {
   const url = `${BASE_URL}/sessions`; //POST
   try {
-    return await fetch(url, {
+    const response = await fetch(url, {
       method: "POST",
       credentials: "include", // Required for cookie-based Auth
     });
+    return response.json();
   } catch (err) {
     console.error("Error creating new chat session:", err);
     return null;

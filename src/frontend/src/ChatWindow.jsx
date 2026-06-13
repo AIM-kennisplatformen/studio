@@ -6,7 +6,7 @@ import ChatSessionOverview from "@/components/chat/ChatSessionOverview.jsx";
 
 export default function ChatWindow() {
   const [currentChat, setCurrentChat] = useState(null);
-  const [chatActive, setChatActive] = useState(false);
+  const [chatActive, setChatActive] = useState(true);
   const [pendingMessage, setPendingMessage] = useState(null);
 
   return (
@@ -27,6 +27,7 @@ export default function ChatWindow() {
         {chatActive ? (
           <Chat
             currentChat={currentChat}
+            setCurrentChat={setCurrentChat}
             setChatActive={setChatActive}
             pendingMessage={pendingMessage}
             setPendingMessage={setPendingMessage}
@@ -36,6 +37,7 @@ export default function ChatWindow() {
             setChatActive={setChatActive}
             setCurrentChat={setCurrentChat}
             setPendingMessage={setPendingMessage}
+            currentChat={currentChat}
           />
         )}
       </div>

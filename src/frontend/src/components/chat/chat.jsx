@@ -73,6 +73,8 @@ function mapRestoredMessages(sessionMessages) {
 
 export default function Chat({
   currentChat,
+  setCurrentChat,
+  setChatActive,
   pendingMessage,
   setPendingMessage,
 }) {
@@ -100,7 +102,8 @@ export default function Chat({
       if (currentChat === null) {
         setMessages([...initialMessages]);
         try {
-          await newSession();
+          const session = await newSession();
+          setCurrentChat(session);
         } catch (err) {
           console.error("Error creating new chat session:", err);
         }
@@ -155,6 +158,7 @@ export default function Chat({
           initialText={pendingMessage}
           setPendingMessage={setPendingMessage}
           sessionReady={sessionReady}
+          currentSession={currentChat}
         />
       </div>
     </div>
@@ -167,6 +171,7 @@ function InputArea({
   initialText,
   setPendingMessage,
   sessionReady,
+  currentSession,
 }) {
   const [text, setText] = useAtom(textAtom);
   const [status, setStatus] = useAtom(textStatusAtom);
@@ -175,6 +180,7 @@ function InputArea({
   const { send } = useChatWebSocket(setStatus);
 
   const sendMessage = (message) => {
+    console.log(currentSession);
     shouldLog.current = true;
 
     setMessages((prev) => [

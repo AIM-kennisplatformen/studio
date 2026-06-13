@@ -10,6 +10,7 @@ import {
 export default function ChatSessionOverview({
   setChatActive,
   setCurrentChat,
+  currentChat,
   setPendingMessage,
 }) {
   const [chats, setChats] = useState([]);
@@ -68,12 +69,31 @@ export default function ChatSessionOverview({
                         setCurrentChat(chat);
                         setChatActive(true);
                       }}
-                      className="flex w-full items-center justify-between p-2 !bg-gray-100 !border !border-gray-300 hover:!bg-gray-200 transition duration-150 cursor-pointer rounded text-left"
+                      className={
+                        "flex w-full items-center justify-between p-2 transition duration-150 cursor-pointer rounded text-left " +
+                        (currentChat?.session_id === chat.session_id
+                          ? "!bg-[#038061]/70 !border !border-[#038061] hover:!bg-[#038061]/80"
+                          : "!bg-gray-100 !border !border-gray-300 hover:!bg-gray-200")
+                      }
                     >
-                      <span className="font-semibold text-black">
+                      <span
+                        className={
+                          "font-semibold" + currentChat?.session_id ===
+                          chat.session_id
+                            ? " text-white"
+                            : " text-black"
+                        }
+                      >
                         {chat.name}
                       </span>
-                      <span className="text-sm font-semibold text-gray-500">
+                      <span
+                        className={
+                          "text-sm font-semibold" + currentChat?.session_id ===
+                          chat.session_id
+                            ? " text-white/80"
+                            : " text-gray-500"
+                        }
+                      >
                         {chat.updated_at
                           .split("T")[0]
                           .split("-")
