@@ -133,7 +133,7 @@ export function logOut() {
 }
 
 export async function getChatSessions() {
-  const url = `${BASE_URL}/sessions`;
+  const url = `${BACKEND_BASE_URL}/sessions`;
   try {
     const response = await fetch(url, {
       method: "GET",
@@ -148,7 +148,7 @@ export async function getChatSessions() {
 }
 
 export async function getChatSessionDetails(sessionId) {
-  const url = `${BASE_URL}/sessions/${sessionId}`;
+  const url = `${BACKEND_BASE_URL}/sessions/${sessionId}`;
   try {
     const response = await fetch(url, {
       method: "GET",
@@ -163,7 +163,7 @@ export async function getChatSessionDetails(sessionId) {
 }
 
 export async function setActiveChatSession(sessionId) {
-  const url = `${BASE_URL}/sessions/${sessionId}`;
+  const url = `${BACKEND_BASE_URL}/sessions/${sessionId}`;
   try {
     await fetch(url, {
       method: "POST",
@@ -177,7 +177,7 @@ export async function setActiveChatSession(sessionId) {
 }
 
 export async function newSession() {
-  const url = `${BASE_URL}/sessions`; //POST
+  const url = `${BACKEND_BASE_URL}/sessions`; //POST
   try {
     return await fetch(url, {
       method: "POST",
