@@ -94,4 +94,5 @@ config: dict = {
     "redis_url": require_env("REDIS_URL", "redis://localhost:6379/0"),
     "redis_expiration_time": int(os.getenv("REDIS_EXPIRATION_TIME", "86400")),
     "chat_history_limit": int(os.getenv("CHAT_HISTORY_LIMIT", "10")),
+    "vite_dev_server_url": require_env("VITE_DEV_SERVER_URL", "http://localhost:5173"),
 }
