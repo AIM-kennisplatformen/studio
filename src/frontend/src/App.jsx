@@ -4,22 +4,19 @@ import ChatWindow from "./ChatWindow.jsx";
 import Graph from "./graph.jsx";
 import { ReactFlowProvider } from "@xyflow/react";
 import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
-import { useAtom, useAtomValue } from "jotai";
-import { centerNodeAtom, graphRefetchTriggerAtom } from "./data/atoms";
+import { useAtomValue } from "jotai";
+import { graphRefetchTriggerAtom } from "./data/atoms";
 import { FeedbackButton } from "./components/FeedbackButton.jsx";
 
 export default function App() {
   const [leftWidth, setLeftWidth] = useState(66.6);
   const containerRef = useRef(null);
   const [data, setData] = useState(null);
-  const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom);
-  //const [refetchTrigger, setRefetchTrigger] = useAtom(graphRefetchTriggerAtom); //Read/write if we want to trigger refetch from here, but currently only ai triggers refetch, so read only is enough
   const refetchTrigger = useAtomValue(graphRefetchTriggerAtom); //Read only to trigger refetch when ai signals done
 
   // Load graph once on mount or when center node changes for the first time
   useEffect(() => {
     let mounted = true;
-    //if (!centerNodeId) setCenterNodeId(1);
 
     (async () => {
       try {
@@ -60,26 +57,24 @@ export default function App() {
   return (
     <div ref={containerRef} className="flex h-screen w-screen">
       <div
-        className="h-full bg-gray-100 overflow-hidden"
-        style={{ width: `${leftWidth}%` }}
-      >
+        className="h-full overflow-hidden bg-gray-100"
+        style={{ width: `${leftWidth}%` }}>
         <ReactFlowProvider>
           <Graph data={data} width={leftWidth} />
         </ReactFlowProvider>
       </div>
 
       <div
-        className="absolute z-50 pointer-events-auto"
+        className="pointer-events-auto absolute z-50"
         style={{
           left: `calc(${leftWidth}% - 86px)`,
           bottom: "120px",
-        }}
-      >
+        }}>
         <FeedbackButton />
       </div>
 
       <div
-        className="w-1 bg-gray-400 cursor-col-resize hover:bg-gray-600"
+        className="w-1 cursor-col-resize bg-gray-400 hover:bg-gray-600"
         onMouseDown={handleMouseDown}
       />
 

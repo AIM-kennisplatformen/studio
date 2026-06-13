@@ -48,16 +48,14 @@ export const SolidEdge = ({
               fontSize: "12px",
               pointerEvents: "all",
               ...labelStyle,
-            }}
-          >
+            }}>
             <div
               style={{
                 background: "white",
                 padding: "2px 4px",
                 borderRadius: "3px",
                 ...labelBgStyle,
-              }}
-            >
+              }}>
               {label}
             </div>
           </div>

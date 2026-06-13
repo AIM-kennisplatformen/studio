@@ -51,36 +51,35 @@ export function CustomNode({ data, isConnectable, selected }) {
         position: "relative",
         transition: "width 300ms ease-out, height 300ms ease-out",
         zIndex,
-      }}
-    >
+      }}>
       {/* Handles on all four sides - attached to wrapper */}
       <Handle
         type="source"
         position={Position.Top}
         id="top"
         isConnectable={isConnectable}
-        className="opacity-0 pointer-events-none"
+        className="pointer-events-none opacity-0"
       />
       <Handle
         type="source"
         position={Position.Right}
         id="right"
         isConnectable={isConnectable}
-        className="opacity-0 pointer-events-none"
+        className="pointer-events-none opacity-0"
       />
       <Handle
         type="source"
         position={Position.Bottom}
         id="bottom"
         isConnectable={isConnectable}
-        className="opacity-0 pointer-events-none"
+        className="pointer-events-none opacity-0"
       />
       <Handle
         type="source"
         position={Position.Left}
         id="left"
         isConnectable={isConnectable}
-        className="opacity-0 pointer-events-none"
+        className="pointer-events-none opacity-0"
       />
 
       {/* Target handles on all sides */}
@@ -89,28 +88,28 @@ export function CustomNode({ data, isConnectable, selected }) {
         position={Position.Top}
         id="target-top"
         isConnectable={isConnectable}
-        className="opacity-0 pointer-events-none"
+        className="pointer-events-none opacity-0"
       />
       <Handle
         type="target"
         position={Position.Right}
         id="target-right"
         isConnectable={isConnectable}
-        className="opacity-0 pointer-events-none"
+        className="pointer-events-none opacity-0"
       />
       <Handle
         type="target"
         position={Position.Bottom}
         id="target-bottom"
         isConnectable={isConnectable}
-        className="opacity-0 pointer-events-none"
+        className="pointer-events-none opacity-0"
       />
       <Handle
         type="target"
         position={Position.Left}
         id="target-left"
         isConnectable={isConnectable}
-        className="opacity-0 pointer-events-none"
+        className="pointer-events-none opacity-0"
       />
 
       {/* Inner content div - centered and scaled */}
@@ -138,17 +137,15 @@ export function CustomNode({ data, isConnectable, selected }) {
           transition:
             "color 300ms ease-out, font-weight 300ms ease-out, transform 300ms ease-out",
           cursor: "default",
-        }}
-      >
+        }}>
         {/* Flexbox container with content */}
         <div
-          className="nodrag text-left flex-1 cursor-default"
+          className="nodrag flex-1 cursor-default text-left"
           style={{
             padding: data.padding || "10px",
             background,
             borderRadius: data.borderRadius || "3px",
-          }}
-        >
+          }}>
           {data.label}
         </div>
       </div>

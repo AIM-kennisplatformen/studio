@@ -98,4 +98,5 @@ config: dict = {
         "POSTGRES_URL",
         "postgresql://studio:studio@studio_postgres:5432/studio",
     ),
+    "vite_dev_server_url": require_env("VITE_DEV_SERVER_URL", "http://localhost:5173"),
 }
