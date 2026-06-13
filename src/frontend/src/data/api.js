@@ -129,7 +129,7 @@ export async function logEvent(name, metadata) {
 }
 
 export function logOut() {
-  window.location.href = `${BACKEND_BASE_URL}"/auth/logout`;
+  window.location.href = `${BACKEND_BASE_URL}/auth/logout`;
 }
 
 export async function getChatSessions() {
