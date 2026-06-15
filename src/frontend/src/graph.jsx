@@ -83,7 +83,7 @@ export default function Graph({ data, width }) {
   );
 
   const prepareGraphData = useCallback(
-    (graphData) => {
+    (graphData, centerId = 1) => {
       if (!graphData?.nodes || !graphData?.edges) return;
 
       const previousPositions = allPositionsRef.current;
@@ -91,7 +91,7 @@ export default function Graph({ data, width }) {
 
       // Create nodes
       const newNodes = graphData.nodes.map((node) => {
-        const isCenter = node.id === 1;
+        const isCenter = node.id === centerId;
         const reactFlowNode = {
           id: String(node.id),
           type: "custom",
@@ -218,7 +218,7 @@ export default function Graph({ data, width }) {
       centerNodeInView(node);
       emitSelectNode?.(Number(node.id));
       if (fullDataRef.current) {
-        prepareGraphData(getSubgraph(fullDataRef.current, node.id));
+        prepareGraphData(getSubgraph(fullDataRef.current, node.id), Number(node.id));
       }
     },
     [
