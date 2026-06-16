@@ -190,7 +190,7 @@ function Messages({
                 key={key}
                 className="flex w-full items-start justify-start gap-2 pr-[5%]">
                 <div className="flex w-full flex-col items-start">
-                  <Response className="w-full rounded-lg border border-gray-200 bg-gray-50 p-2 text-sm break-words">
+                  <Response className="w-full rounded-lg border border-gray-200 bg-gray-50 p-2 text-sm wrap-break-word">
                     {value}
                   </Response>
                 </div>
@@ -204,7 +204,7 @@ function Messages({
                 key={key}
                 className="flex w-full items-start justify-start gap-2 pr-[5%]">
                 <div className="flex w-full flex-col items-start">
-                  <Response className="w-full rounded-lg border border-gray-200 bg-gray-50 p-2 text-sm break-words">
+                  <Response className="w-full rounded-lg border border-gray-200 bg-gray-50 p-2 text-sm wrap-break-word">
                     {value}
                   </Response>
                   {key === lastDoneKey &&
@@ -291,7 +291,7 @@ function Messages({
           return (
             <Message from="user" key={key} className="flex justify-end pl-[5%]">
               <MessageContent
-                className="max-w-prose break-words"
+                className="max-w-prose wrap-break-word"
                 style={{ backgroundColor: "#038061", color: "#ffffff" }}>
                 {value}
               </MessageContent>
