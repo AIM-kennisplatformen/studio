@@ -24,6 +24,7 @@ import {
   textStatusAtom,
   lastDoneMessageKeyAtom,
   selectedNodeAtom,
+  centerNodeAtom,
 } from "./data/atoms";
 
 import { useChatWebSocket } from "./data/chatWebsocket";
@@ -57,7 +58,10 @@ export default function Chat() {
   const [feedbackText, setFeedbackText] = useState("");
   const [showFeedback, setShowFeedback] = useState(true);
   const shouldLog = useRef(false);
-
+  const [selectedNode] = useAtom(selectedNodeAtom);
+  const focusNode = selectedNode?.data
+    ? selectedNode?.data.label
+    : "No node in focus";
   return (
     <div className="relative z-10 flex h-full flex-col bg-white">
       {/* Header with logout */}
@@ -78,6 +82,9 @@ export default function Chat() {
 
       {/* Input - sticky at bottom */}
       <div className="shrink-0 border-t border-gray-200 bg-white">
+        <div className="ms-5 w-min truncate pt-1 text-xs text-[#038061] hover:cursor-default">
+          <p className="italic">Focus: {focusNode}</p>
+        </div>
         <InputArea setShowFeedback={setShowFeedback} shouldLog={shouldLog} />
       </div>
     </div>
