@@ -48,7 +48,7 @@ export default function ChatWindow() {
 function ChatName({ currentChat }) {
   return (
     <h2
-      className="inline-block text-[#038061] rounded-[8px] border border-transparent px-[1.2em] py-[0.6em] text-[1em] font-medium font-inherit transition-colors duration-250 hover:text-[#016048]"
+      className="inline-block text-[#038061] rounded-[8px] border border-transparent px-[1.2em] py-[0.6em] text-[1em] font-medium font-inherit transition-colors duration-250 hover:text-[#016048] hover:cursor-default"
       aria-label="Chat Name"
     >
       {!currentChat ? "New Chat" : currentChat.name}

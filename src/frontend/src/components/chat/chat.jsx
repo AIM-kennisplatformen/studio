@@ -74,7 +74,6 @@ function mapRestoredMessages(sessionMessages) {
 export default function Chat({
   currentChat,
   setCurrentChat,
-  setChatActive,
   pendingMessage,
   setPendingMessage,
 }) {
@@ -98,18 +97,6 @@ export default function Chat({
       setShowFeedback(true);
       setSessionReady(false);
       shouldLog.current = false;
-
-      if (currentChat === null) {
-        setMessages([...initialMessages]);
-        try {
-          const session = await newSession();
-          setCurrentChat(session);
-        } catch (err) {
-          console.error("Error creating new chat session:", err);
-        }
-        if (isCurrent) setSessionReady(true);
-        return;
-      }
 
       const sessionId = currentChat?.session_id;
       if (!sessionId) return;
@@ -159,6 +146,8 @@ export default function Chat({
           setPendingMessage={setPendingMessage}
           sessionReady={sessionReady}
           currentSession={currentChat}
+          currentChat={currentChat}
+          setCurrentChat={setCurrentChat}
         />
       </div>
     </div>
@@ -172,6 +161,9 @@ function InputArea({
   setPendingMessage,
   sessionReady,
   currentSession,
+  currentChat,
+  setCurrentChat,
+  
 }) {
   const [text, setText] = useAtom(textAtom);
   const [status, setStatus] = useAtom(textStatusAtom);
@@ -179,7 +171,17 @@ function InputArea({
 
   const { send } = useChatWebSocket(setStatus);
 
-  const sendMessage = (message) => {
+  const sendMessage = async (message) => {
+    if (currentChat === null) {
+        setMessages([...initialMessages]);
+        try {
+          const session = await newSession();
+          setCurrentChat(session);
+        } catch (err) {
+          console.error("Error creating new chat session:", err);
+        }
+      }
+
     console.log(currentSession);
     shouldLog.current = true;
 
@@ -200,6 +202,7 @@ function InputArea({
 
     sendMessage(initialText);
     setPendingMessage?.(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialText, sessionReady, status]);
 
   const handleSubmit = (e) => {

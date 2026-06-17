@@ -1,9 +1,3 @@
-const ExampleSessions = [
-  { title: "Chat Session 1" },
-  { title: "Chat Session 2" },
-  { title: "Chat Session 3" },
-];
-
 export default function ChatSelection({ setChatActive, chatActive }) {
   return (
     <>

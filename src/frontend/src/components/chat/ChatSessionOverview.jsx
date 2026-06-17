@@ -78,20 +78,20 @@ export default function ChatSessionOverview({
                     >
                       <span
                         className={
-                          "font-semibold" + currentChat?.session_id ===
-                          chat.session_id
-                            ? " text-white"
-                            : " text-black"
+                          "font-semibold " +
+                          (currentChat?.session_id === chat.session_id
+                            ? "text-white"
+                            : "text-black")
                         }
                       >
                         {chat.name}
                       </span>
                       <span
                         className={
-                          "text-sm font-semibold" + currentChat?.session_id ===
-                          chat.session_id
-                            ? " text-white/80"
-                            : " text-gray-500"
+                          "text-sm font-semibold " +
+                          (currentChat?.session_id === chat.session_id
+                            ? "text-white/80"
+                            : "text-gray-500")
                         }
                       >
                         {chat.updated_at
