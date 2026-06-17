@@ -98,15 +98,7 @@ export default function Graph({ data, width }) {
           position: previousPositions.get(String(node.id)) || { x: 0, y: 0 },
           data: {
             label: node.title,
-            background: isCenter ? "#038061" : "#ffffff",
-            color: isCenter ? "#ffffff" : "#038061",
-            border: "2px solid #038061",
-            borderRadius: "8px",
-            padding: "8px",
-            fontSize: "12px",
-            width: 160,
-            whiteSpace: "pre-wrap",
-            boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+            isFocused: isCenter,
           },
         };
         nodeMap.set(reactFlowNode.id, reactFlowNode);
@@ -218,7 +210,10 @@ export default function Graph({ data, width }) {
       centerNodeInView(node);
       emitSelectNode?.(Number(node.id));
       if (fullDataRef.current) {
-        prepareGraphData(getSubgraph(fullDataRef.current, node.id), Number(node.id));
+        prepareGraphData(
+          getSubgraph(fullDataRef.current, node.id),
+          Number(node.id)
+        );
       }
     },
     [
