@@ -98,6 +98,18 @@ export default function Chat({
       setSessionReady(false);
       shouldLog.current = false;
 
+      if (currentChat === null) {
+        setMessages([...initialMessages]);
+        try {
+          const session = await newSession();
+          setCurrentChat(session);
+        } catch (err) {
+          console.error("Error creating new chat session:", err);
+        }
+        if (isCurrent) setSessionReady(true);
+        return;
+      }
+
       const sessionId = currentChat?.session_id;
       if (!sessionId) return;
 
@@ -163,7 +175,6 @@ function InputArea({
   currentSession,
   currentChat,
   setCurrentChat,
-  
 }) {
   const [text, setText] = useAtom(textAtom);
   const [status, setStatus] = useAtom(textStatusAtom);
@@ -172,15 +183,6 @@ function InputArea({
   const { send } = useChatWebSocket(setStatus);
 
   const sendMessage = async (message) => {
-    if (currentChat === null) {
-        setMessages([...initialMessages]);
-        try {
-          const session = await newSession();
-          setCurrentChat(session);
-        } catch (err) {
-          console.error("Error creating new chat session:", err);
-        }
-      }
 
     console.log(currentSession);
     shouldLog.current = true;
