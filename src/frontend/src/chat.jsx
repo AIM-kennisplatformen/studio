@@ -59,7 +59,7 @@ export default function Chat() {
   const [showFeedback, setShowFeedback] = useState(true);
   const shouldLog = useRef(false);
   const [selectedNode] = useAtom(selectedNodeAtom);
-  const focusNode = selectedNode?.data
+  const focusNodeLabel = selectedNode?.data
     ? selectedNode?.data.label
     : "No node in focus";
   return (
@@ -84,7 +84,7 @@ export default function Chat() {
       {/* Input - sticky at bottom */}
       <div className="shrink-0 border-t border-gray-200 bg-white">
         <div className="ms-5 w-min truncate pt-1 text-xs text-[#038061] hover:cursor-default">
-          <p className="italic">Focus: {focusNode}</p>
+          <p className="italic">Focus: {focusNodeLabel}</p>
         </div>
         <InputArea setShowFeedback={setShowFeedback} shouldLog={shouldLog} />
       </div>
