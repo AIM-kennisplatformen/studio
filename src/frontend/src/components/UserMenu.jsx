@@ -8,10 +8,9 @@ export default function UserMenu() {
       <div className="relative inline-block text-left">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="!bg-[#038061]/20 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-500"
+          className="rounded-md !bg-[#038061]/20 p-2 focus:ring-2 focus:ring-green-500 focus:outline-none focus:ring-inset"
           aria-expanded={isOpen}
-          aria-label="Toggle settings menu"
-        >
+          aria-label="Toggle settings menu">
           <span className="sr-only">Settings</span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -19,8 +18,7 @@ export default function UserMenu() {
             viewBox="0 0 24 24"
             strokeWidth={2}
             stroke="#038061"
-            className="size-6"
-          >
+            className="size-6">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -29,7 +27,7 @@ export default function UserMenu() {
           </svg>
         </button>
         {isOpen && (
-          <div className="absolute right-0 mt-2 z-10 w-48 origin-top-right">
+          <div className="absolute right-0 z-10 mt-2 w-48 origin-top-right">
             <Menu />
           </div>
         )}
@@ -48,8 +46,7 @@ const menuOptions = [
         viewBox="0 0 24 24"
         strokeWidth="2"
         stroke="currentColor"
-        className="size-6"
-      >
+        className="size-6">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -74,8 +71,7 @@ const menuOptions = [
         viewBox="0 0 24 24"
         strokeWidth="2"
         stroke="currentColor"
-        className="size-6"
-      >
+        className="size-6">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -90,7 +86,7 @@ const menuOptions = [
 
 function Menu() {
   return (
-    <div className="absolute left-0 mt-4 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-20">
+    <div className="absolute left-0 z-20 mt-4 w-48 rounded-md border border-gray-200 bg-white shadow-lg">
       {menuOptions.map((option, index) => (
         <MenuButton key={index} option={option} />
       ))}
@@ -102,8 +98,7 @@ function MenuButton({ option }) {
   return (
     <button
       onClick={option.action}
-      className={`flex rounded items-center px-4 py-2 text-sm w-full !bg-white ${option.textColor} transition duration-150`}
-    >
+      className={`flex w-full items-center rounded !bg-white px-4 py-2 text-sm ${option.textColor} transition duration-150`}>
       <div className="mr-3">{option.icon}</div>
       {option.label}
     </button>

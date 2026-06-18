@@ -10,9 +10,9 @@ export default function ChatWindow() {
   const [pendingMessage, setPendingMessage] = useState(null);
 
   return (
-    <div className="flex flex-col h-full bg-white relative z-10">
+    <div className="relative z-10 flex h-full flex-col bg-white">
       {/* Header */}
-      <div className="flex justify-between px-4 py-2 border-b border-gray-200 bg-white shrink-0 z-20">
+      <div className="z-20 flex shrink-0 justify-between border-b border-gray-200 bg-white px-4 py-2">
         <ChatSelectionToggle
           setCurrentChat={setCurrentChat}
           setChatActive={setChatActive}
@@ -23,7 +23,7 @@ export default function ChatWindow() {
       </div>
 
       {/* Body */}
-      <div className="flex-1 min-h-0">
+      <div className="min-h-0 flex-1">
         {chatActive ? (
           <Chat
             currentChat={currentChat}
@@ -48,9 +48,8 @@ export default function ChatWindow() {
 function ChatName({ currentChat }) {
   return (
     <h2
-      className="inline-block text-[#038061] rounded-[8px] border border-transparent px-[1.2em] py-[0.6em] text-[1em] font-medium font-inherit transition-colors duration-250 hover:text-[#016048] hover:cursor-default"
-      aria-label="Chat Name"
-    >
+      className="font-inherit inline-block rounded-[8px] border border-transparent px-[1.2em] py-[0.6em] text-[1em] font-medium text-[#038061] transition-colors duration-250 hover:cursor-default hover:text-[#016048]"
+      aria-label="Chat Name">
       {!currentChat ? "New Chat" : currentChat.name}
     </h2>
   );

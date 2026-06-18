@@ -32,18 +32,17 @@ export default function ChatSessionOverview({
 
   return (
     <>
-      <div className="flex flex-col h-full p-4">
-        <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex h-full flex-col p-4">
+        <div className="min-h-0 flex-1 overflow-hidden">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500">
+            <div className="flex h-full flex-col items-center justify-center text-gray-500">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth="1.5"
                 stroke="currentColor"
-                className="size-6"
-              >
+                className="size-6">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -52,12 +51,12 @@ export default function ChatSessionOverview({
               </svg>
             </div>
           ) : chats.length === 0 ? (
-            <p className="text-gray-500 font-semibold">
+            <p className="font-semibold text-gray-500">
               No previous chats available.
             </p>
           ) : (
             <>
-              <h3 className="text-sm font-semibold mb-2 text-black/70">
+              <h3 className="mb-2 text-sm font-semibold text-black/70">
                 CONTINUE A PREVIOUS CHAT
               </h3>
 
@@ -70,20 +69,18 @@ export default function ChatSessionOverview({
                         setChatActive(true);
                       }}
                       className={
-                        "flex w-full items-center justify-between p-2 transition duration-150 cursor-pointer rounded text-left " +
+                        "flex w-full cursor-pointer items-center justify-between rounded p-2 text-left transition duration-150 " +
                         (currentChat?.session_id === chat.session_id
-                          ? "!bg-[#038061]/70 !border !border-[#038061] hover:!bg-[#038061]/80"
-                          : "!bg-gray-100 !border !border-gray-300 hover:!bg-gray-200")
-                      }
-                    >
+                          ? "!border !border-[#038061] !bg-[#038061]/70 hover:!bg-[#038061]/80"
+                          : "!border !border-gray-300 !bg-gray-100 hover:!bg-gray-200")
+                      }>
                       <span
                         className={
                           "font-semibold " +
                           (currentChat?.session_id === chat.session_id
                             ? "text-white"
                             : "text-black")
-                        }
-                      >
+                        }>
                         {chat.name}
                       </span>
                       <span
@@ -92,8 +89,7 @@ export default function ChatSessionOverview({
                           (currentChat?.session_id === chat.session_id
                             ? "text-white/80"
                             : "text-gray-500")
-                        }
-                      >
+                        }>
                         {chat.updated_at
                           .split("T")[0]
                           .split("-")
@@ -107,8 +103,8 @@ export default function ChatSessionOverview({
             </>
           )}
         </div>
-        <div className="border-t border-gray-200 bg-white shrink-0 pt-4">
-          <h3 className="text-sm font-semibold mb-2 text-black/50">
+        <div className="shrink-0 border-t border-gray-200 bg-white pt-4">
+          <h3 className="mb-2 text-sm font-semibold text-black/50">
             Or start a new conversation
           </h3>
           <InputArea
@@ -137,7 +133,7 @@ function InputArea({ setChatActive, setCurrentChat, setPendingMessage }) {
   };
 
   return (
-    <div className="p-4 w-full">
+    <div className="w-full p-4">
       <PromptInput onSubmit={handleSubmit} className="flex items-center">
         <PromptInputTextarea
           onChange={(e) => setText(e.target.value)}

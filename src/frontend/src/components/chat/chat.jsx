@@ -96,7 +96,6 @@ export default function Chat({
         return;
       }
 
-
       setText("");
       setStatus("ready");
       setLastDoneMessageKey(null);
@@ -107,7 +106,7 @@ export default function Chat({
 
       if (currentChat === null) {
         setMessages([...initialMessages]);
-        
+
         if (isCurrent) setSessionReady(true);
         return;
       }
@@ -123,7 +122,7 @@ export default function Chat({
         if (!isCurrent) return;
 
         setMessages(
-          details?.messages ? mapRestoredMessages(details.messages) : [],
+          details?.messages ? mapRestoredMessages(details.messages) : []
         );
         setSessionReady(true);
       } catch (err) {
@@ -139,7 +138,7 @@ export default function Chat({
   }, [currentChat, setLastDoneMessageKey, setMessages, setStatus, setText]);
 
   return (
-    <div className="flex flex-col h-full bg-white relative z-10">
+    <div className="relative z-10 flex h-full flex-col bg-white">
       {/* Messages - scrollable */}
       <div className="min-h-0 flex-1 overflow-hidden">
         <Messages
@@ -152,7 +151,7 @@ export default function Chat({
       </div>
 
       {/* Input - sticky at bottom */}
-      <div className="border-t border-gray-200 bg-white shrink-0">
+      <div className="shrink-0 border-t border-gray-200 bg-white">
         <InputArea
           setShowFeedback={setShowFeedback}
           shouldLog={shouldLog}
@@ -185,7 +184,6 @@ function InputArea({
   const { send } = useChatWebSocket(setStatus);
 
   const sendMessage = async (message) => {
-
     shouldLog.current = true;
 
     setMessages((prev) => [
@@ -207,9 +205,13 @@ function InputArea({
       } catch (err) {
         console.error("Error creating new chat session:", err);
         setMessages((prev) => [
-      { key: prev.length + 1, value: "Something went wrong. Please try again.", name: "ai" },
-      ...prev,
-    ]);
+          {
+            key: prev.length + 1,
+            value: "Something went wrong. Please try again.",
+            name: "ai",
+          },
+          ...prev,
+        ]);
       }
     }
 
@@ -221,7 +223,7 @@ function InputArea({
 
   useEffect(() => {
     if (!initialText) return;
-    
+
     sendMessage(initialText);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialText, sessionReady, status]);
@@ -396,12 +398,11 @@ function Messages({
                               <button
                                 type="button"
                                 onClick={() => setShowFeedback(true)}
-                                className="text-sm cursor-pointer hover:underline border-0 p-0"
+                                className="cursor-pointer border-0 p-0 text-sm hover:underline"
                                 style={{
                                   color: "white",
                                   backgroundColor: "#038061",
-                                }}
-                              >
+                                }}>
                                 Edit Feedback
                               </button>
                             </>

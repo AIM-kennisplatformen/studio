@@ -4,10 +4,9 @@ export default function ChatSelection({ setChatActive, chatActive }) {
       <div className="relative inline-block text-left">
         <button
           onClick={() => setChatActive(!chatActive)}
-          className="flex items-center gap-1 text-white !bg-[#038061] p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-500"
+          className="flex items-center gap-1 rounded-md !bg-[#038061] p-2 text-white focus:ring-2 focus:ring-green-500 focus:outline-none focus:ring-inset"
           aria-expanded={chatActive}
-          aria-label="Toggle chat history menu"
-        >
+          aria-label="Toggle chat history menu">
           Chats
           <span className="sr-only">Chat History</span>
           <svg
@@ -18,8 +17,7 @@ export default function ChatSelection({ setChatActive, chatActive }) {
             stroke="currentColor"
             className={`size-6 transition-transform duration-300 ${
               chatActive ? "rotate-180" : "rotate-0"
-            }`}
-          >
+            }`}>
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
