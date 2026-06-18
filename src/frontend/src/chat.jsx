@@ -24,7 +24,6 @@ import {
   textStatusAtom,
   lastDoneMessageKeyAtom,
   selectedNodeAtom,
-  centerNodeAtom,
 } from "./data/atoms";
 
 import { useChatWebSocket } from "./data/chatWebsocket";
