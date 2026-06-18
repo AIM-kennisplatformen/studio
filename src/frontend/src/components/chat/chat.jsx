@@ -81,6 +81,7 @@ export default function Chat({
   const [showFeedback, setShowFeedback] = useState(true);
   const [sessionReady, setSessionReady] = useState(false);
   const shouldLog = useRef(false);
+  const isNewSessionRef = useRef(false);
   const setMessages = useSetAtom(messagesAtom);
   const setText = useSetAtom(textAtom);
   const setStatus = useSetAtom(textStatusAtom);
@@ -90,6 +91,12 @@ export default function Chat({
     let isCurrent = true;
 
     async function restoreChat() {
+      if (isNewSessionRef.current) {
+        isNewSessionRef.current = false;
+        return;
+      }
+
+
       setText("");
       setStatus("ready");
       setLastDoneMessageKey(null);
@@ -100,12 +107,7 @@ export default function Chat({
 
       if (currentChat === null) {
         setMessages([...initialMessages]);
-        try {
-          const session = await newSession();
-          setCurrentChat(session);
-        } catch (err) {
-          console.error("Error creating new chat session:", err);
-        }
+        
         if (isCurrent) setSessionReady(true);
         return;
       }
@@ -157,9 +159,9 @@ export default function Chat({
           initialText={pendingMessage}
           setPendingMessage={setPendingMessage}
           sessionReady={sessionReady}
-          currentSession={currentChat}
-          currentChat={currentChat}
+          isNewSessionRef={isNewSessionRef}
           setCurrentChat={setCurrentChat}
+          currentChat={currentChat}
         />
       </div>
     </div>
@@ -172,9 +174,9 @@ function InputArea({
   initialText,
   setPendingMessage,
   sessionReady,
-  currentSession,
-  currentChat,
+  isNewSessionRef,
   setCurrentChat,
+  currentChat,
 }) {
   const [text, setText] = useAtom(textAtom);
   const [status, setStatus] = useAtom(textStatusAtom);
@@ -184,7 +186,6 @@ function InputArea({
 
   const sendMessage = async (message) => {
 
-    console.log(currentSession);
     shouldLog.current = true;
 
     setMessages((prev) => [
@@ -192,18 +193,36 @@ function InputArea({
       ...prev,
     ]);
 
+    if (!sessionReady || status !== "ready") return;
+
     setStatus("thinking");
+
+    let activeSession = currentChat;
+    if (activeSession === null) {
+      try {
+        isNewSessionRef.current = true;
+        activeSession = await newSession();
+        await setActiveChatSession(activeSession.session_id);
+        setCurrentChat(activeSession);
+      } catch (err) {
+        console.error("Error creating new chat session:", err);
+        setMessages((prev) => [
+      { key: prev.length + 1, value: "Something went wrong. Please try again.", name: "ai" },
+      ...prev,
+    ]);
+      }
+    }
+
     send(message);
+    setPendingMessage?.(null);
     setText("");
     setShowFeedback(true);
   };
 
   useEffect(() => {
     if (!initialText) return;
-    if (!sessionReady || status !== "ready") return;
-
+    
     sendMessage(initialText);
-    setPendingMessage?.(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialText, sessionReady, status]);
 
