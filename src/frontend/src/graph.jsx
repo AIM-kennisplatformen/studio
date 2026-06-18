@@ -396,7 +396,14 @@ export default function Graph({ data }) {
         prepareGraphData(getSubgraph(fullDataRef.current, centerNodeId));
       }
     }
-  }, [centerNodeId]);
+  }, [
+    centerNodeId,
+    appendBreadcrumb,
+    centerNodeInView,
+    emitSelectNode,
+    prepareGraphData,
+    setSelectedNode,
+  ]);
 
   return (
     <div
@@ -418,19 +425,19 @@ export default function Graph({ data }) {
         attributionPosition="bottom-left"
         proOptions={{ hideAttribution: true }}
         onMove={() => {
-        requestAnimationFrame(() => {
-          if (!selectedNode) return;
-          // Calculate the vertical center of the selected node in screen coordinates
-          // Center node: scale=1.3, base height≈80 → wrapperHeight=104, half=52
-          const nodeHalfHeight = (80 * 1.3) / 2;
-          const screenPositionCenter = flowToScreenPosition({
-            x: selectedNode.position.x,
-            y: selectedNode.position.y + nodeHalfHeight,
-          });
-          setSelectedNodeVerticalPosition(screenPositionCenter.y);
+          requestAnimationFrame(() => {
+            if (!selectedNode) return;
+            // Calculate the vertical center of the selected node in screen coordinates
+            // Center node: scale=1.3, base height≈80 → wrapperHeight=104, half=52
+            const nodeHalfHeight = (80 * 1.3) / 2;
+            const screenPositionCenter = flowToScreenPosition({
+              x: selectedNode.position.x,
+              y: selectedNode.position.y + nodeHalfHeight,
+            });
+            setSelectedNodeVerticalPosition(screenPositionCenter.y);
 
-          // Debug: read the node's true screen center from its DOM rect.
-          syncSelectedNodeScreenCenter();
+            // Debug: read the node's true screen center from its DOM rect.
+            syncSelectedNodeScreenCenter();
           });
         }}
       />
