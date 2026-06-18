@@ -2,7 +2,7 @@
 import { Handle, Position } from "@xyflow/react";
 import { useRef, useLayoutEffect, useState } from "react";
 
-export function CustomNode({ data, isConnectable, selected }) {
+export function CustomNode({ data, isConnectable }) {
   const nodeBackground = data.background || "#fff";
   const distance = data.distance ?? null;
   const contentRef = useRef(null);
@@ -33,14 +33,6 @@ export function CustomNode({ data, isConnectable, selected }) {
   // Calculate styling
   const fontWeight = isSelected ? "bold" : data.fontWeight || "normal";
   const zIndex = isSelected ? 1000 : "auto";
-
-  // Distant node styling - using CSS variables
-  const textColor = isDistant
-    ? "var(--distant-node-text-color)"
-    : data.color || "#000";
-  const background = isDistant
-    ? "var(--distant-node-background-color)"
-    : nodeBackground;
 
   return (
     <div
