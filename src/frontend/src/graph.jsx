@@ -10,7 +10,7 @@ import { CustomNode } from "./components/CustomNode";
 import { SolidEdge } from "./components/CustomEdge";
 import { getEdgeHandles } from "./lib/graphUtils";
 import { applyDagreLayout } from "./lib/ctrytoscapeLayout";
-import { useAtom, useAtomValue} from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import {
   nodesAtom,
   edgesAtom,
@@ -59,166 +59,6 @@ export default function Graph({ data, width }) {
     selectedNodeRef.current = selectedNode;
   }, [selectedNode]);
 
-  const prepareGraphData = useCallback((graphData) => {
-    if (!graphData?.nodes || !graphData?.edges) return;
-
-    const previousPositions = allPositionsRef.current;
-    const nodeMap = new Map();
-
-    // Create nodes
-    const newNodes = graphData.nodes.map((node) => {
-      const isCenter = node.id === 1;
-      const reactFlowNode = {
-        id: String(node.id),
-        type: "custom",
-        position: previousPositions.get(String(node.id)) || { x: 0, y: 0 },
-        data: {
-          label: node.title,
-          background: isCenter ? "#038061" : "#ffffff",
-          color: isCenter ? "#ffffff" : "#038061",
-          border: "2px solid #038061",
-          borderRadius: "8px",
-          padding: "8px",
-          fontSize: "12px",
-          width: 160,
-          whiteSpace: "pre-wrap",
-          boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-        },
-      };
-      nodeMap.set(reactFlowNode.id, reactFlowNode);
-      return reactFlowNode;
-    });
-
-    // Create edges
-    const newEdges = graphData.edges
-      .map((edge) => {
-        const sourceNode = nodeMap.get(String(edge.source_id));
-        const targetNode = nodeMap.get(String(edge.target_id));
-        if (!sourceNode || !targetNode) return null;
-
-        const { sourceHandle, targetHandle } = getEdgeHandles(
-          sourceNode.position.x,
-          sourceNode.position.y,
-          targetNode.position.x,
-          targetNode.position.y,
-        );
-
-        return {
-          id: String(edge.id),
-          source: String(edge.source_id),
-          target: String(edge.target_id),
-          label: edge.labelToTarget,
-          type: "solid",
-          sourceHandle,
-          targetHandle,
-          labelStyle: { fill: "#666", fontSize: 10 },
-          labelBgStyle: { fill: "white", fillOpacity: 0.8 },
-        };
-      })
-      .filter(Boolean);
-
-    const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
-
-    // Apply dagre layout to new nodes, keeping fixed nodes in place
-    const layoutPositions = applyDagreLayout(newNodes, newEdges, {
-      quality: "proof",
-      nodeSeparation: 200,
-      idealEdgeLength: 300,
-      nodeRepulsion: 50000,
-      maxIterations: 2000,
-      animationDuration: 1000,
-      gravity: 0.05,
-      numIter: 5000,
-      tile: true,
-      tilingPaddingVertical: 20,
-      tilingPaddingHorizontal: 20,
-      incremental: true,
-      nodeDimensionsIncludeLabels: true,
-      fixedNodeConstraint: fixedNodes.map((n) => ({
-        nodeId: n.id,
-        position: n.position,
-      })),
-    });
-
-    // Merge positions: keep old positions, use layout positions for new nodes
-    const mergedNodes = newNodes.map((n) => ({
-      ...n,
-      position:
-        previousPositions.get(n.id) || layoutPositions[n.id] || n.position,
-    }));
-
-    // Persist positions for all seen nodes across subgraph changes
-    mergedNodes.forEach((n) => allPositionsRef.current.set(n.id, n.position));
-
-    setLayoutNodes(mergedNodes);
-    nodesRef.current = mergedNodes;
-    edgesRef.current = newEdges;
-    setNodes(mergedNodes);
-    setEdges(newEdges);
-
-    // Center node 1 on first load only
-    if (!selectedNodeRef.current) {
-      const nodeToCenter = mergedNodes.find((n) => n.id === "1");
-      if (nodeToCenter && containerRef.current) {
-        centerNodeInView(nodeToCenter);
-        setSelectedNode(nodeToCenter);
-      }
-    }
-  }, []);
-
-  // On first load show node 1's neighbourhood; on refetch just update fullDataRef
-  useEffect(() => {
-    if (!data) return;
-    const isFirstLoad = fullDataRef.current === null;
-    fullDataRef.current = data;
-    if (isFirstLoad) prepareGraphData(getSubgraph(data, 1));
-  }, [data]);
-
-  /** Update edge handles when nodes move */
-  const updateEdges = useCallback((nodes, edges) => {
-    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
-    return edges.map((edge) => {
-      const sourceNode = nodeMap.get(edge.source);
-      const targetNode = nodeMap.get(edge.target);
-      if (!sourceNode || !targetNode) return edge;
-
-      const { sourceHandle, targetHandle } = getEdgeHandles(
-        sourceNode.position.x,
-        sourceNode.position.y,
-        targetNode.position.x,
-        targetNode.position.y,
-        160,
-        80,
-      );
-
-      return { ...edge, sourceHandle, targetHandle };
-    });
-  }, []);
-
-  const onEdgesChange = useCallback(
-    (changes) =>
-      setEdges((currentEdges) => applyEdgeChanges(changes, currentEdges)),
-    [setEdges],
-  );
-
-  const onConnect = useCallback(
-    (params) => setEdges((es) => addEdge(params, es)),
-    [setEdges],
-  );
-
-  const onNodeClick = useCallback(
-    (_, node) => {
-      setCenterNodeId(Number(node.id));
-      setSelectedNode(node);
-      centerNodeInView(node);
-      emitSelectNode?.(Number(node.id));
-      if (fullDataRef.current) {
-        prepareGraphData(getSubgraph(fullDataRef.current, node.id));
-      }
-    },
-    [setCenterNodeId, setSelectedNode, emitSelectNode, prepareGraphData],
-  );
-
   /** Center a node in the viewport */
   const centerNodeInView = useCallback(
     (node) => {
@@ -236,12 +76,159 @@ export default function Graph({ data, width }) {
             containerRef.current.clientHeight / 2 - nodeCenterY * viewport.zoom,
           zoom: viewport.zoom,
         },
-        { duration: 500, easing: (t) => t * (2 - t) },
+        { duration: 500, easing: (t) => t * (2 - t) }
       );
     },
-    [getViewport, setViewport],
+    [getViewport, setViewport]
   );
 
+  const prepareGraphData = useCallback(
+    (graphData) => {
+      if (!graphData?.nodes || !graphData?.edges) return;
+
+      const previousPositions = allPositionsRef.current;
+      const nodeMap = new Map();
+
+      // Create nodes
+      const newNodes = graphData.nodes.map((node) => {
+        const isCenter = node.id === 1;
+        const reactFlowNode = {
+          id: String(node.id),
+          type: "custom",
+          position: previousPositions.get(String(node.id)) || { x: 0, y: 0 },
+          data: {
+            label: node.title,
+            background: isCenter ? "#038061" : "#ffffff",
+            color: isCenter ? "#ffffff" : "#038061",
+            border: "2px solid #038061",
+            borderRadius: "8px",
+            padding: "8px",
+            fontSize: "12px",
+            width: 160,
+            whiteSpace: "pre-wrap",
+            boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+          },
+        };
+        nodeMap.set(reactFlowNode.id, reactFlowNode);
+        return reactFlowNode;
+      });
+
+      // Create edges
+      const newEdges = graphData.edges
+        .map((edge) => {
+          const sourceNode = nodeMap.get(String(edge.source_id));
+          const targetNode = nodeMap.get(String(edge.target_id));
+          if (!sourceNode || !targetNode) return null;
+
+          const { sourceHandle, targetHandle } = getEdgeHandles(
+            sourceNode.position.x,
+            sourceNode.position.y,
+            targetNode.position.x,
+            targetNode.position.y
+          );
+
+          return {
+            id: String(edge.id),
+            source: String(edge.source_id),
+            target: String(edge.target_id),
+            label: edge.labelToTarget,
+            type: "solid",
+            sourceHandle,
+            targetHandle,
+            labelStyle: { fill: "#666", fontSize: 10 },
+            labelBgStyle: { fill: "white", fillOpacity: 0.8 },
+          };
+        })
+        .filter(Boolean);
+
+      const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
+
+      // Apply dagre layout to new nodes, keeping fixed nodes in place
+      const layoutPositions = applyDagreLayout(newNodes, newEdges, {
+        quality: "proof",
+        nodeSeparation: 200,
+        idealEdgeLength: 300,
+        nodeRepulsion: 50000,
+        maxIterations: 2000,
+        animationDuration: 1000,
+        gravity: 0.05,
+        numIter: 5000,
+        tile: true,
+        tilingPaddingVertical: 20,
+        tilingPaddingHorizontal: 20,
+        incremental: true,
+        nodeDimensionsIncludeLabels: true,
+        fixedNodeConstraint: fixedNodes.map((n) => ({
+          nodeId: n.id,
+          position: n.position,
+        })),
+      });
+
+      // Merge positions: keep old positions, use layout positions for new nodes
+      const mergedNodes = newNodes.map((n) => ({
+        ...n,
+        position:
+          previousPositions.get(n.id) || layoutPositions[n.id] || n.position,
+      }));
+
+      // Persist positions for all seen nodes across subgraph changes
+      mergedNodes.forEach((n) => allPositionsRef.current.set(n.id, n.position));
+
+      setLayoutNodes(mergedNodes);
+      nodesRef.current = mergedNodes;
+      edgesRef.current = newEdges;
+      setNodes(mergedNodes);
+      setEdges(newEdges);
+
+      // Center node 1 on first load only
+      if (!selectedNodeRef.current) {
+        const nodeToCenter = mergedNodes.find((n) => n.id === "1");
+        if (nodeToCenter && containerRef.current) {
+          centerNodeInView(nodeToCenter);
+          setSelectedNode(nodeToCenter);
+        }
+      }
+    },
+    [centerNodeInView, setEdges, setLayoutNodes, setNodes, setSelectedNode]
+  );
+
+  // On first load show node 1's neighbourhood; on refetch just update fullDataRef
+  useEffect(() => {
+    if (!data) return;
+    const isFirstLoad = fullDataRef.current === null;
+    fullDataRef.current = data;
+    if (isFirstLoad) prepareGraphData(getSubgraph(data, 1));
+  }, [data, prepareGraphData]);
+
+  const onEdgesChange = useCallback(
+    (changes) =>
+      setEdges((currentEdges) => applyEdgeChanges(changes, currentEdges)),
+    [setEdges]
+  );
+
+  const onConnect = useCallback(
+    (params) => setEdges((es) => addEdge(params, es)),
+    [setEdges]
+  );
+
+  const onNodeClick = useCallback(
+    (_, node) => {
+      setCenterNodeId(Number(node.id));
+      setSelectedNode(node);
+      centerNodeInView(node);
+      emitSelectNode?.(Number(node.id));
+      if (fullDataRef.current) {
+        prepareGraphData(getSubgraph(fullDataRef.current, node.id));
+      }
+    },
+    [
+      setCenterNodeId,
+      setSelectedNode,
+      centerNodeInView,
+      emitSelectNode,
+      prepareGraphData,
+    ]
+  );
 
   /** Fit view on container resize */
   useEffect(() => {
@@ -249,7 +236,7 @@ export default function Graph({ data, width }) {
     if (!container) return;
 
     const ro = new ResizeObserver(() =>
-      fitView({ padding: 0.1, duration: 150 }),
+      fitView({ padding: 0.1, duration: 150 })
     );
     ro.observe(container);
     return () => ro.disconnect();

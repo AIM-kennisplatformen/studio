@@ -72,7 +72,7 @@ channels = [
   "https://repo.prefix.dev/pypdfium2-public",
   "https://repo.prefix.dev/pytorch",
 ]
-platforms = ["linux-64", "osx-arm64", "win-64"]
+platforms = ["linux-64", "linux-aarch64", "osx-arm64", "win-64"]
 
 
 # ====================================
@@ -98,56 +98,15 @@ cpuonly = "*"
 loguru = ">=0.7.3,<0.8"
 python-dotenv = ">=1.1.0"
 # ====================================
-# Shared Pixi tasks (placeholders unless overridden)
+# Pixi tasks
 # ====================================
 [tool.pixi.tasks]
-backend = "docker compose up"
-vscode = "code ."
+application = "docker compose up -d && docker compose exec application bash scripts/application.sh"
+frontend_hmr = "docker compose exec application bash scripts/frontend_hmr.sh"
 lint = "ruff check"
 typecheck = "mypy ."
 test = "pytest -q"
-
-frontend_build = ""
-backend_no_docker = ""
-mcp_server = ""
 qava_test = "python scripts/run_qava_test.py"
-
-
-# ====================================
-# Linux tasks (POSIX, Bash-only where needed)
-# ====================================
-[tool.pixi.target.linux-64.tasks]
-frontend_build = "python scripts/build_frontend.py"
-
-backend_no_docker = """
-BASE_URL=http://localhost:10090 PYTHONPATH=src \
-python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
-"""
-
-mcp_server = 'PYTHONPATH=src python -m src.mcp_servers.main'
-
-# ====================================
-# macOS ARM tasks
-# ====================================
-[tool.pixi.target.osx-arm64.tasks]
-frontend_build = "python scripts/build_frontend.py"
-backend_no_docker = """
-BASE_URL=http://localhost:10090 PYTHONPATH=src \
-python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
-"""
-
-mcp_server = 'PYTHONPATH=src python -m src.mcp_servers.main'
-
-# ====================================
-# Windows (cmd.exe)
-# =====================================
-[tool.pixi.target.win-64.tasks]
-frontend_build = "python scripts/build_frontend.py"
-backend_no_docker = '''
-PYTHONPATH=src python -m uvicorn src.backend.main:app --host 0.0.0.0 --port 10090 --reload
-'''
-
-mcp_server = 'PYTHONPATH=src python -m src.mcp_servers.main'
 
 # ====================================
 # Pixi activation environment
