@@ -6,19 +6,23 @@ import {
   useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { CustomNode } from "./components/CustomNode";
+import { useAtom, useAtomValue } from "jotai";
 import { SolidEdge } from "./components/CustomEdge";
+import { CustomNode } from "./components/CustomNode";
 import { getEdgeHandles } from "./lib/graphUtils";
 import { applyDagreLayout } from "./lib/ctrytoscapeLayout";
-import { useAtom, useAtomValue } from "jotai";
 import {
   nodesAtom,
   edgesAtom,
   selectedNodeAtom,
   centerNodeAtom,
   layoutNodesAtom,
+  breadcrumbsAtom,
   selectNodeEmitAtom,
+  selectedNodeVerticalPositionAtom,
+  selectedNodeScreenCenterAtom,
 } from "./data/atoms";
+import { sendNodeSelection } from "./data/api";
 
 function getSubgraph(data, nodeId) {
   const id = String(nodeId);
@@ -34,41 +38,48 @@ function getSubgraph(data, nodeId) {
   };
 }
 
-export default function Graph({ data, width }) {
+export default function Graph({ data }) {
   const [nodes, setNodes] = useAtom(nodesAtom);
   const [edges, setEdges] = useAtom(edgesAtom);
   const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom);
-  const [, setCenterNodeId] = useAtom(centerNodeAtom);
+  const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom);
   const [layoutNodes, setLayoutNodes] = useAtom(layoutNodesAtom);
+  const [, setBreadcrumbs] = useAtom(breadcrumbsAtom);
   const emitSelectNode = useAtomValue(selectNodeEmitAtom);
 
   const { getViewport, setViewport, fitView } = useReactFlow();
   const containerRef = useRef(null);
-  const nodesRef = useRef([]);
   const edgesRef = useRef([]);
+  const breadcrumbsCounter = useRef(0);
+
+  const { flowToScreenPosition } = useReactFlow();
+  const [, setSelectedNodeVerticalPosition] = useAtom(
+    selectedNodeVerticalPositionAtom
+  );
+  const [, setSelectedNodeScreenCenter] = useAtom(selectedNodeScreenCenterAtom);
   const fullDataRef = useRef(null);
   const layoutNodesRef = useRef(layoutNodes);
   const selectedNodeRef = useRef(null);
   const allPositionsRef = useRef(new Map());
 
-  useEffect(() => {
-    layoutNodesRef.current = layoutNodes;
-  }, [layoutNodes]);
+  const nodesRef = useRef([]);
 
-  useEffect(() => {
-    selectedNodeRef.current = selectedNode;
-  }, [selectedNode]);
-
-  /** Center a node in the viewport */
   const centerNodeInView = useCallback(
     (node) => {
       if (!containerRef.current) return;
-      const { width: nodeWidth = 160, height: nodeHeight = 80 } =
-        node.data || {};
+
+      const baseWidth = node.data?.width || 160;
+      const baseHeight = 80;
+      // Account for the scale applied to selected/center nodes
+      const scale = 1.3;
+      const nodeWidth = baseWidth * scale;
+      const nodeHeight = baseHeight * scale;
+
+      // node.position is the top-left of the wrapper; center of the visual node
       const nodeCenterX = node.position.x + nodeWidth / 2;
       const nodeCenterY = node.position.y + nodeHeight / 2;
-
       const viewport = getViewport();
+
       setViewport(
         {
           x: containerRef.current.clientWidth / 2 - nodeCenterX * viewport.zoom,
@@ -81,6 +92,86 @@ export default function Graph({ data, width }) {
     },
     [getViewport, setViewport]
   );
+
+  // Read the selected node's on-screen center directly from its rendered DOM
+  // element. getBoundingClientRect() returns viewport/screen coordinates and
+  // already reflects pan, zoom and the 1.3× selected-node scale — no flow math.
+  const syncSelectedNodeScreenCenter = useCallback(() => {
+    const node = selectedNodeRef.current;
+    if (!node || !containerRef.current) {
+      setSelectedNodeScreenCenter(null);
+      return;
+    }
+    const el = containerRef.current.querySelector(
+      `.react-flow__node[data-id="${node.id}"]`
+    );
+    if (!el) {
+      setSelectedNodeScreenCenter(null);
+      return;
+    }
+    const r = el.getBoundingClientRect();
+    setSelectedNodeScreenCenter({
+      x: r.left + r.width / 2,
+      y: r.top + r.height / 2,
+      hw: r.width / 2,
+      hh: r.height / 2,
+    });
+  }, [setSelectedNodeScreenCenter]);
+
+  const appendBreadcrumb = useCallback(
+    (node) => {
+      setBreadcrumbs((prev) => {
+        const lastEntry = prev[prev.length - 1];
+
+        if (
+          lastEntry?.originNodeId === node.id &&
+          lastEntry?.label === node.data.label
+        ) {
+          return prev;
+        }
+
+        const existingIndex = prev.findIndex(
+          (entry) => entry.originNodeId === node.id
+        );
+
+        if (existingIndex >= 0) {
+          return prev.slice(0, existingIndex + 1);
+        }
+
+        const entry = {
+          historyId: `bc-${breadcrumbsCounter.current}`,
+          originNodeId: node.id,
+          label: node.data.label,
+        };
+
+        breadcrumbsCounter.current += 1;
+        return [...prev, entry];
+      });
+    },
+    [setBreadcrumbs]
+  );
+
+  useEffect(() => {
+    layoutNodesRef.current = layoutNodes;
+  }, [layoutNodes]);
+
+  useEffect(() => {
+    selectedNodeRef.current = selectedNode;
+  }, [selectedNode]);
+
+  // Debug: resync the node's screen center when the selection changes. onMove
+  // covers pan/zoom, but a selection that doesn't move the viewport (or whose
+  // DOM element mounts a frame later) needs this. rAF waits for the node to
+  // render; the 520ms timer catches the end of centerNodeInView's animation.
+  useEffect(() => {
+    if (!selectedNode) return;
+    const raf = requestAnimationFrame(syncSelectedNodeScreenCenter);
+    const timer = setTimeout(syncSelectedNodeScreenCenter, 520);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
+  }, [selectedNode, syncSelectedNodeScreenCenter]);
 
   const prepareGraphData = useCallback(
     (graphData) => {
@@ -118,7 +209,10 @@ export default function Graph({ data, width }) {
         .map((edge) => {
           const sourceNode = nodeMap.get(String(edge.source_id));
           const targetNode = nodeMap.get(String(edge.target_id));
-          if (!sourceNode || !targetNode) return null;
+
+          if (!sourceNode || !targetNode) {
+            return null;
+          }
 
           const { sourceHandle, targetHandle } = getEdgeHandles(
             sourceNode.position.x,
@@ -186,10 +280,27 @@ export default function Graph({ data, width }) {
         if (nodeToCenter && containerRef.current) {
           centerNodeInView(nodeToCenter);
           setSelectedNode(nodeToCenter);
+          setBreadcrumbs(() => {
+            const entry = {
+              historyId: `bc-${breadcrumbsCounter.current}`,
+              originNodeId: nodeToCenter.id,
+              label: nodeToCenter.data.label,
+            };
+
+            breadcrumbsCounter.current += 1;
+            return [entry];
+          });
         }
       }
     },
-    [centerNodeInView, setEdges, setLayoutNodes, setNodes, setSelectedNode]
+    [
+      setLayoutNodes,
+      setNodes,
+      setEdges,
+      centerNodeInView,
+      setSelectedNode,
+      setBreadcrumbs,
+    ]
   );
 
   // On first load show node 1's neighbourhood; on refetch just update fullDataRef
@@ -216,6 +327,9 @@ export default function Graph({ data, width }) {
       setCenterNodeId(Number(node.id));
       setSelectedNode(node);
       centerNodeInView(node);
+      sendNodeSelection(node.id);
+      appendBreadcrumb(node);
+
       emitSelectNode?.(Number(node.id));
       if (fullDataRef.current) {
         prepareGraphData(getSubgraph(fullDataRef.current, node.id));
@@ -225,25 +339,76 @@ export default function Graph({ data, width }) {
       setCenterNodeId,
       setSelectedNode,
       centerNodeInView,
+      appendBreadcrumb,
+      flowToScreenPosition,
+      setSelectedNodeVerticalPosition,
       emitSelectNode,
       prepareGraphData,
     ]
   );
 
-  /** Fit view on container resize */
+  /** Fit view on container resize — only when no node is selected (initial state) */
+
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
 
-    const ro = new ResizeObserver(() =>
-      fitView({ padding: 0.1, duration: 150 })
-    );
+    if (!container) {
+      return;
+    }
+
+    let resizeTimer;
+    const ro = new ResizeObserver(() => {
+      // Debounce to avoid fighting with centerNodeInView animations
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (selectedNodeRef.current) {
+          // Re-center the selected node after resize
+          centerNodeInView(selectedNodeRef.current);
+        } else {
+          fitView({
+            padding: 0.2,
+            duration: 150,
+          });
+        }
+      }, 200);
+    });
+
     ro.observe(container);
-    return () => ro.disconnect();
-  }, [fitView]);
+
+    return () => {
+      clearTimeout(resizeTimer);
+      ro.disconnect();
+    };
+  }, [fitView, centerNodeInView]);
+
+  useEffect(() => {
+    const nodeIdStr = String(centerNodeId);
+    const nodeToBeCentered = nodes.find((node) => node.id === nodeIdStr);
+
+    if (nodeToBeCentered) {
+      setSelectedNode(nodeToBeCentered);
+      centerNodeInView(nodeToBeCentered);
+      appendBreadcrumb(nodeToBeCentered);
+      sendNodeSelection(nodeIdStr);
+      emitSelectNode?.(Number(centerNodeId));
+
+      if (fullDataRef.current) {
+        prepareGraphData(getSubgraph(fullDataRef.current, centerNodeId));
+      }
+    }
+  }, [
+    centerNodeId,
+    appendBreadcrumb,
+    centerNodeInView,
+    emitSelectNode,
+    prepareGraphData,
+    setSelectedNode,
+  ]);
 
   return (
-    <div ref={containerRef} style={{ height: "100vh", width: `${width}vw` }}>
+    <div
+      ref={containerRef}
+      style={{ height: "100%", width: "100%", position: "relative" }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -252,10 +417,29 @@ export default function Graph({ data, width }) {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeClick={onNodeClick}
-        selectNodesOnDrag={false}
         fitView
+        fitViewOptions={{
+          padding: 0.2,
+          duration: 150,
+        }}
         attributionPosition="bottom-left"
         proOptions={{ hideAttribution: true }}
+        onMove={() => {
+          requestAnimationFrame(() => {
+            if (!selectedNode) return;
+            // Calculate the vertical center of the selected node in screen coordinates
+            // Center node: scale=1.3, base height≈80 → wrapperHeight=104, half=52
+            const nodeHalfHeight = (80 * 1.3) / 2;
+            const screenPositionCenter = flowToScreenPosition({
+              x: selectedNode.position.x,
+              y: selectedNode.position.y + nodeHalfHeight,
+            });
+            setSelectedNodeVerticalPosition(screenPositionCenter.y);
+
+            // Debug: read the node's true screen center from its DOM rect.
+            syncSelectedNodeScreenCenter();
+          });
+        }}
       />
     </div>
   );

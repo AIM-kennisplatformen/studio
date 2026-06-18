@@ -8,7 +8,10 @@ const nanoid = customAlphabet(alphabet, 20);
 
 function generateChatId() {
   const id = nanoid();
-  return `${id.slice(0, 5)}-${id.slice(5, 10)}-${id.slice(10, 15)}-${id.slice(15, 20)}`;
+  return `${id.slice(0, 5)}-${id.slice(5, 10)}-${id.slice(10, 15)}-${id.slice(
+    15,
+    20
+  )}`;
 }
 
 // Atom for the chat ID - initialized once on app load
@@ -41,6 +44,26 @@ export const selectedNodeAtom = atom(null);
 export const centerNodeAtom = atom(1);
 export const dataAtom = atom(null);
 export const layoutNodesAtom = atom([]);
+
+export const breadcrumbsAtom = atom([]);
+
+/* Structure of a breadcrumbNode
+  {
+    historyId: null,
+    originalNodeId: null,
+    label: null,
+  }
+
+*/
+
+export const selectedNodeVerticalPositionAtom = atom(0);
+
+// Screen-space (viewport) center of the selected node, read from
+// getBoundingClientRect. { x, y, hw, hh } in page/screen coords where hw/hh are
+// the node's half-width/half-height (used to clip the connector at the node's
+// edge), or null when not available.
+export const selectedNodeScreenCenterAtom = atom(null);
+export const lastCrumbScreenCenterAtom = atom(null);
 
 export const graphRefetchTriggerAtom = atom(0);
 export const selectNodeEmitAtom = atom(null);
