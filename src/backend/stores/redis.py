@@ -8,7 +8,7 @@ from backend.models.chat_message import ChatMessage
 from backend.stores.abstract_store import AbstractStore
 
 class RedisStore(AbstractStore):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.redis: Redis | None = None
         self.expiration_time: int | None = None

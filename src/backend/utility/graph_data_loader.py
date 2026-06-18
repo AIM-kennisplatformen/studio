@@ -9,12 +9,12 @@ from backend.utility.graph_api_models import Node, Edge
 class KnowledgeGraphData:
     """Container for loaded knowledge graph data."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.entities: Dict[int, Node] = {}
         self.relations: Dict[int, Edge] = {}
         self.questions: List[Dict[str, Any]] = []
     
-    def load_from_files(self, data_path: str):
+    def load_from_files(self, data_path: str) -> None:
         """Load data from JSON files."""
         # Load example data
         with open(data_path, 'r', encoding='utf-8') as f:
