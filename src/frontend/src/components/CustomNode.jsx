@@ -3,7 +3,6 @@ import { Handle, Position } from "@xyflow/react";
 import { useRef, useLayoutEffect, useState } from "react";
 
 export function CustomNode({ data, isConnectable }) {
-  const nodeBackground = data.background || "#fff";
   const distance = data.distance ?? null;
   const contentRef = useRef(null);
   const [contentHeight, setContentHeight] = useState(80); // Default height
@@ -18,7 +17,6 @@ export function CustomNode({ data, isConnectable }) {
 
   // Determine visual state based on distance
   const isSelected = distance === 0;
-  const isDistant = distance !== null && distance > 1;
 
   // Calculate scaling - 130% for selected nodes
   const scale = isSelected ? 1.3 : 1.0;
