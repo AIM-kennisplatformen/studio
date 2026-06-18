@@ -4,15 +4,14 @@ import Chat from "./chat.jsx";
 import Graph from "./graph.jsx";
 import { ReactFlowProvider } from "@xyflow/react";
 import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
-import { useAtom, useAtomValue } from "jotai";
-import { centerNodeAtom, graphRefetchTriggerAtom } from "./data/atoms";
+import { useAtomValue } from "jotai";
+import { graphRefetchTriggerAtom } from "./data/atoms";
 import { FeedbackButton } from "./components/FeedbackButton.jsx";
 
 export default function App() {
   const [leftWidth, setLeftWidth] = useState(66.6);
   const containerRef = useRef(null);
   const [data, setData] = useState(null);
-  const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom);
   //const [refetchTrigger, setRefetchTrigger] = useAtom(graphRefetchTriggerAtom); //Read/write if we want to trigger refetch from here, but currently only chatbot triggers refetch, so read only is enough
   const refetchTrigger = useAtomValue(graphRefetchTriggerAtom); //Read only to trigger refetch when chatbot signals done
 
@@ -60,30 +59,28 @@ export default function App() {
   return (
     <div ref={containerRef} className="flex h-screen w-screen">
       <div
-        className="h-full bg-gray-100 overflow-hidden"
-        style={{ width: `${leftWidth}%` }}
-      >
+        className="h-full overflow-hidden bg-gray-100"
+        style={{ width: `${leftWidth}%` }}>
         <ReactFlowProvider>
           <Graph data={data} width={leftWidth} />
         </ReactFlowProvider>
       </div>
 
       <div
-        className="absolute z-50 pointer-events-auto"
+        className="pointer-events-auto absolute z-50"
         style={{
           left: `calc(${leftWidth}% - 86px)`,
           bottom: "120px",
-        }}
-      >
+        }}>
         <FeedbackButton />
       </div>
 
       <div
-        className="w-1 bg-gray-400 cursor-col-resize hover:bg-gray-600"
+        className="w-1 cursor-col-resize bg-gray-400 hover:bg-gray-600"
         onMouseDown={handleMouseDown}
       />
 
-      <div className="flex-1 h-full bg-gray-50 flex flex-col overflow-hidden">
+      <div className="flex h-full flex-1 flex-col overflow-hidden bg-gray-50">
         <Chat />
       </div>
     </div>

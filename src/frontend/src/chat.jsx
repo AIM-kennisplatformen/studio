@@ -40,13 +40,13 @@ async function handleFeedback(
   messageKey,
   feedback,
   setShowFeedback,
-  setFeedbackText,
+  setFeedbackText
 ) {
   setShowFeedback(false);
   const response = await logResponseFeedback(messageKey, feedback);
   if (response === null) {
     setFeedbackText(
-      "An error occurred while sending your feedback. Please try again.",
+      "An error occurred while sending your feedback. Please try again."
     );
     return;
   }
@@ -59,14 +59,14 @@ export default function Chat() {
   const shouldLog = useRef(false);
 
   return (
-    <div className="flex flex-col h-full bg-white relative z-10">
+    <div className="relative z-10 flex h-full flex-col bg-white">
       {/* Header with logout */}
-      <div className="flex justify-end px-4 py-2 border-b border-gray-200 bg-white shrink-0">
+      <div className="flex shrink-0 justify-end border-b border-gray-200 bg-white px-4 py-2">
         <LogOutButton />
       </div>
 
       {/* Messages - scrollable */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-hidden">
         <Messages
           feedbackText={feedbackText}
           showFeedback={showFeedback}
@@ -77,7 +77,7 @@ export default function Chat() {
       </div>
 
       {/* Input - sticky at bottom */}
-      <div className="border-t border-gray-200 bg-white shrink-0">
+      <div className="shrink-0 border-t border-gray-200 bg-white">
         <InputArea setShowFeedback={setShowFeedback} shouldLog={shouldLog} />
       </div>
     </div>
@@ -109,7 +109,7 @@ function InputArea({ setShowFeedback, shouldLog }) {
   };
 
   return (
-    <div className="p-4 w-full">
+    <div className="w-full p-4">
       <PromptInput onSubmit={handleSubmit} className="flex items-center">
         <PromptInputTextarea
           onChange={(e) => setText(e.target.value)}
@@ -164,13 +164,16 @@ function Messages({
       selectedNodeLabel: selectedNode?.data?.label ?? null,
       timestamp: new Date().toISOString(),
     });
-  }, [status, lastDoneKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, lastDoneKey, messages]);
 
   const reversedMessages = [...messages].reverse();
   const lastDoneIndex = reversedMessages.findIndex(
-    ({ key }) => key === lastDoneKey,
+    ({ key }) => key === lastDoneKey
   );
-  const lastDoneMessage = reversedMessages.find(({ key }) => key === lastDoneKey);
+  const lastDoneMessage = reversedMessages.find(
+    ({ key }) => key === lastDoneKey
+  );
   const questionForFeedback =
     lastDoneIndex !== -1 && lastDoneIndex + 1 < reversedMessages.length
       ? reversedMessages[lastDoneIndex + 1]?.value
@@ -178,17 +181,16 @@ function Messages({
 
   return (
     <Conversation className="h-full">
-      <ConversationContent className="flex flex-col gap-4 p-4 min-h-full">
+      <ConversationContent className="flex min-h-full flex-col gap-4 p-4">
         <div className="flex-1" />
         {reversedMessages.map(({ key, value, name }) => {
           if (name === "system_prompt") {
             return (
               <div
                 key={key}
-                className="flex items-start gap-2 justify-start w-full pr-[5%]"
-              >
-                <div className="flex flex-col items-start w-full">
-                  <Response className="w-full text-sm border border-gray-200 rounded-lg p-2 bg-gray-50 break-words">
+                className="flex w-full items-start justify-start gap-2 pr-[5%]">
+                <div className="flex w-full flex-col items-start">
+                  <Response className="w-full rounded-lg border border-gray-200 bg-gray-50 p-2 text-sm break-words">
                     {value}
                   </Response>
                 </div>
@@ -200,10 +202,9 @@ function Messages({
             return (
               <div
                 key={key}
-                className="flex items-start gap-2 justify-start w-full pr-[5%]"
-              >
-                <div className="flex flex-col items-start w-full">
-                  <Response className="w-full text-sm border border-gray-200 rounded-lg p-2 bg-gray-50 break-words">
+                className="flex w-full items-start justify-start gap-2 pr-[5%]">
+                <div className="flex w-full flex-col items-start">
+                  <Response className="w-full rounded-lg border border-gray-200 bg-gray-50 p-2 text-sm break-words">
                     {value}
                   </Response>
                   {key === lastDoneKey &&
@@ -212,10 +213,9 @@ function Messages({
                       <div
                         onClick={(e) => e.stopPropagation()}
                         onSubmit={(e) => e.preventDefault()}
-                        className="ml-7 mt-1"
-                      >
+                        className="mt-1 ml-7">
                         {questionForFeedback && (
-                          <p className="text-xs text-gray-400 mb-1 italic">
+                          <p className="mb-1 text-xs text-gray-400 italic">
                             Feedback for: "
                             {questionForFeedback.length > 80
                               ? questionForFeedback.slice(0, 80) + "…"
@@ -239,10 +239,9 @@ function Messages({
                                     key,
                                     "positive",
                                     setShowFeedback,
-                                    setFeedbackText,
+                                    setFeedbackText
                                   );
-                                }}
-                              >
+                                }}>
                                 <ThumbsUpIcon className="size-4" />
                               </Action>
                               <Action
@@ -258,10 +257,9 @@ function Messages({
                                     key,
                                     "negative",
                                     setShowFeedback,
-                                    setFeedbackText,
+                                    setFeedbackText
                                   );
-                                }}
-                              >
+                                }}>
                                 <ThumbsDownIcon className="size-4" />
                               </Action>
                             </>
@@ -273,9 +271,11 @@ function Messages({
                               <button
                                 type="button"
                                 onClick={() => setShowFeedback(true)}
-                                className="text-sm cursor-pointer hover:underline border-0 p-0"
-                                style={{ color: "white", backgroundColor: "#038061" }}
-                              >
+                                className="cursor-pointer border-0 p-0 text-sm hover:underline"
+                                style={{
+                                  color: "white",
+                                  backgroundColor: "#038061",
+                                }}>
                                 Edit Feedback
                               </button>
                             </>
@@ -292,8 +292,7 @@ function Messages({
             <Message from="user" key={key} className="flex justify-end pl-[5%]">
               <MessageContent
                 className="max-w-prose break-words"
-                style={{ backgroundColor: "#038061", color: "#ffffff" }}
-              >
+                style={{ backgroundColor: "#038061", color: "#ffffff" }}>
                 {value}
               </MessageContent>
             </Message>
@@ -310,8 +309,7 @@ function Messages({
                   padding: "0",
                   outline: "none",
                   cursor: "text",
-                }}
-              >
+                }}>
                 🧠 Thinking...
               </ReasoningTrigger>
             </Reasoning>

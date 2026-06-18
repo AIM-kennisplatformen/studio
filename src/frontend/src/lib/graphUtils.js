@@ -1,7 +1,6 @@
 /* Copied from PoC-Robert-React-Flow */
 // Helper function to calculate which handles to connect to based on shortest distance
-export function getEdgeHandles(
-) {
+export function getEdgeHandles() {
   // Always use bottom for source and top for target
   return { sourceHandle: "bottom", targetHandle: "target-top" };
 }
@@ -16,8 +15,8 @@ export const getEntityStyle = (type) => {
 
 export function calculateNodeDistances(selectedNodeId, nodes, edges) {
   if (!Array.isArray(nodes) || !Array.isArray(edges)) {
-        return new Map(); // Return an empty Map if data is missing
-    }
+    return new Map(); // Return an empty Map if data is missing
+  }
   // Create adjacency list for the graph
   const adjacencyList = new Map();
 
@@ -88,8 +87,8 @@ export function updateEdgePositions(currentEdges, currentNodes) {
     //Hardcode handles for dagre layout.
     return {
       ...edge,
-      sourceHandle: 'bottom',
-      targetHandle: 'target-top',
+      sourceHandle: "bottom",
+      targetHandle: "target-top",
     };
   });
 }
