@@ -60,7 +60,7 @@ export default function Chat() {
   const [selectedNode] = useAtom(selectedNodeAtom);
   const focusNodeLabel = selectedNode?.data
     ? selectedNode?.data.label
-    : "No node in focus";
+    : "No nodes available";
   return (
     <div className="relative z-10 flex h-full flex-col bg-white">
       {/* Header with logout */}
