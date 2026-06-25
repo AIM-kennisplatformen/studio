@@ -182,3 +182,19 @@ button:focus-visible {
     @apply bg-background text-foreground;
   }
 }
+
+.custom-node {
+  background: #ffffff;
+  color: #038061;
+  border: 2px solid #038061;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 12px;
+  white-space: pre-wrap;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.custom-node.focussed-node {
+  background: #038061;
+  color: #ffffff;
+}
