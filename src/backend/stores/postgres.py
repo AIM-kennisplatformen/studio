@@ -12,10 +12,80 @@ DEFAULT_SESSION_NAME = "New session"
 
 
 class PostgresStore:
+    """
+    PostgreSQL-backed store for chat sessions and session messages.
+
+    Persists the Studio chat history in normalized relational tables and exposes
+    session-scoped operations for creating conversations, listing recent
+    sessions, renaming sessions, and appending or reading messages.
+
+    Conceptual model
+    ----------------
+    User -> multiple Sessions -> ordered SessionMessages
+
+    Identity
+    --------
+    Sessions and messages are identified by generated UUID primary keys:
+        sessions.session_id
+        session_messages.message_id
+
+    User ownership is enforced by every public read and write operation that
+    accepts a user_id. Messages are only accessible through their owning session.
+
+    Stored data
+    -----------
+    Each session stores:
+        session_id
+        user_id
+        name
+        updated_at
+
+    Each message stores:
+        message_id
+        session_id
+        role
+        content
+        created_at
+        updated_at
+
+    Behaviour
+    ---------
+    - connect() initializes the required schema if it does not already exist
+    - create_session() creates a named session for a user
+    - add_message() appends a message and refreshes the session updated_at value
+    - list_messages() returns messages in chronological order
+    - deleting a session cascades to its messages through the database schema
+
+    Consistency guarantees
+    ----------------------
+    - add_message() validates session ownership before inserting
+    - message insertion and session timestamp update run in one transaction
+    - list_sessions() and get_latest_session() order by most recently updated
+    """
+
     def __init__(self) -> None:
         self.pool: asyncpg.Pool | None = None
 
     async def connect(self, config_dict: dict) -> None:
+        """
+        Connect to Postgres and initialize the sessions schema.
+
+        Parameters
+        ----------
+        config_dict
+            Dictionary containing ``postgres_url``, an asyncpg-compatible
+            PostgreSQL connection URL.
+
+            Example::
+
+                {
+                    "postgres_url": (
+                        "postgresql://user:password@localhost:5432/studio"
+                    )
+                }
+
+        The method is idempotent for an already connected store.
+        """
         if self.pool is not None:
             return
 
@@ -25,6 +95,7 @@ class PostgresStore:
         logger.info(f"✓ Connected to Postgres at {url}")
 
     async def close(self) -> None:
+        """Close the connection pool if it is open."""
         if self.pool is None:
             return
 
@@ -33,12 +104,14 @@ class PostgresStore:
         logger.info("✓ Closed Postgres connection")
 
     def _ensure_connected(self) -> None:
+        """Ensure the connection pool has been initialized."""
         if self.pool is None:
             raise RuntimeError(
                 f"{self.__class__.__name__} used before connect() was called"
             )
 
     async def _init_schema(self) -> None:
+        """Create the session and message tables required by the store."""
         self._ensure_connected()
         assert self.pool is not None
 
@@ -103,6 +176,7 @@ class PostgresStore:
         user_id: str,
         name: str = DEFAULT_SESSION_NAME,
     ) -> Session:
+        """Create and return a new session for a user."""
         self._ensure_connected()
         assert self.pool is not None
 
@@ -122,6 +196,7 @@ class PostgresStore:
         return self._row_to_session(row)
 
     async def list_sessions(self, user_id: str) -> list[Session]:
+        """Return a user's sessions ordered by most recently updated first."""
         self._ensure_connected()
         assert self.pool is not None
 
@@ -137,6 +212,7 @@ class PostgresStore:
         return [self._row_to_session(row) for row in rows]
 
     async def get_latest_session(self, user_id: str) -> Session | None:
+        """Return the most recently updated session for a user, if one exists."""
         self._ensure_connected()
         assert self.pool is not None
 
@@ -153,6 +229,7 @@ class PostgresStore:
         return self._row_to_session(row) if row else None
 
     async def get_session(self, user_id: str, session_id: UUID) -> Session | None:
+        """Return a session by id when it belongs to the given user."""
         self._ensure_connected()
         assert self.pool is not None
 
@@ -174,6 +251,12 @@ class PostgresStore:
         name: str,
         current_name: str | None = DEFAULT_SESSION_NAME,
     ) -> Session | None:
+        """
+        Update a session name and return the updated session.
+
+        When current_name is provided, the update only succeeds if the existing
+        name still matches it. Passing None updates the name unconditionally.
+        """
         self._ensure_connected()
         assert self.pool is not None
 
@@ -211,6 +294,13 @@ class PostgresStore:
         role: Literal["ai", "user"],
         content: str,
     ) -> SessionMessage:
+        """
+        Append a message to a user-owned session.
+
+        Raises ValueError when the session does not exist for the given user.
+        The message insert and parent session updated_at refresh are committed
+        in the same transaction.
+        """
         self._ensure_connected()
         assert self.pool is not None
 
@@ -263,6 +353,12 @@ class PostgresStore:
         session_id: UUID,
         limit: int = 0,
     ) -> list[SessionMessage]:
+        """
+        Return messages for a user-owned session in chronological order.
+
+        When limit is greater than zero, only the latest limit messages are
+        returned, still ordered from oldest to newest.
+        """
         self._ensure_connected()
         assert self.pool is not None
 
