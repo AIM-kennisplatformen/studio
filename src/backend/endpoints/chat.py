@@ -1,6 +1,15 @@
 import asyncio
 from uuid import UUID
 
+from openai import (
+    APIConnectionError,
+    APITimeoutError,
+    AuthenticationError,
+    BadRequestError,
+    NotFoundError,
+    PermissionDeniedError,
+    RateLimitError,
+)
 import socketio
 from fastapi import APIRouter
 from langchain_openai import ChatOpenAI
@@ -141,8 +150,17 @@ async def _update_session_title(
         generated_title = await _generate_session_title(user_msg)
         if generated_title:
             title = generated_title
+    except (APIConnectionError, APITimeoutError, RateLimitError) as exc:
+        logger.warning(f"Temporary OpenAI failure while generating session title: {exc}")
+    except (
+        AuthenticationError,
+        BadRequestError,
+        NotFoundError,
+        PermissionDeniedError,
+    ) as exc:
+        logger.error(f"OpenAI configuration error while generating session title: {exc}")
     except Exception as exc:
-        logger.warning(f"Failed to generate AI session title: {exc}")
+        logger.warning(f"Unexpected failure while generating AI session title: {exc}")
 
     try:
         await postgres_store.update_session_name(user_id, session_id, title)
@@ -412,4 +430,3 @@ async def select_node(sid, data):
 
         ctx["dialogue_state_asked"] = True
         ctx["previous_question"] = question
-        return
