@@ -1,14 +1,27 @@
 import { logOut } from "../data/api.js";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
     <>
-      <div className="relative inline-block text-left">
+      <div className="relative inline-block text-left" ref={menuRef}>
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="rounded-md !bg-[#038061]/20 p-2 focus:ring-2 focus:ring-green-500 focus:outline-none focus:ring-inset"
+          className="rounded-md bg-[#038061]/20! p-2 focus:ring-2 focus:ring-green-500 focus:outline-none focus:ring-inset"
           aria-expanded={isOpen}
           aria-label="Toggle settings menu">
           <span className="sr-only">Settings</span>
