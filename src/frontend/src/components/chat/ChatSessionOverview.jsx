@@ -33,7 +33,7 @@ export default function ChatSessionOverview({
   return (
     <>
       <div className="flex h-full flex-col p-4">
-        <div className="min-h-0 flex-1 overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
           {isLoading ? (
             <div className="flex h-full flex-col items-center justify-center text-gray-500">
               <svg
