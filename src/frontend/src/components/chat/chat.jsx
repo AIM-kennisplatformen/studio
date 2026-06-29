@@ -192,14 +192,14 @@ function InputArea({
   const { send } = useChatWebSocket(setStatus);
 
   const sendMessage = async (message) => {
+    if (!sessionReady || status !== "ready") return;
+
     shouldLog.current = true;
 
     setMessages((prev) => [
       { key: prev.length + 1, value: message, name: "user" },
       ...prev,
     ]);
-
-    if (!sessionReady || status !== "ready") return;
 
     setStatus("thinking");
 

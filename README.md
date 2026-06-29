@@ -57,6 +57,7 @@ Key variables:
 | `LLM_MODEL` | Model name, e.g. `gpt-4o` or an Ollama model |
 | `OPENAI_HOST` | Base URL of your OpenAI-compatible LLM endpoint |
 | `MCP_TOOL_CONFIG_PATH` | Path to the MCP tool config JSON file |
+| `POSTGRES_URL` | PostgreSQL connection URL for chat/session persistence (default `postgresql://studio:studio@studio_postgres:5432/studio` in Docker Compose) |
 | `QDRANT_URL` | Qdrant host |
 | `QDRANT_PORT` | Qdrant port (default `6333`) |
 | `ZOTERO_API_KEY` | Zotero API key |
@@ -80,6 +81,7 @@ pixi run application
 This starts:
 - `application` — builds the Vite frontend into `kg/` and runs the FastAPI app on port `10090`
 - `redis` — runs Redis on port `6379`
+- `studio_postgres` — runs PostgreSQL on port `5432` for chat/session persistence
 
 The application serves the built frontend from `kg/` and exposes the API at `http://localhost:10090`.
 
