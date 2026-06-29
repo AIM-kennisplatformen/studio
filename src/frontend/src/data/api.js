@@ -139,7 +139,11 @@ export async function getChatSessions() {
       method: "GET",
       credentials: "include", // Required for cookie-based Auth
     });
-    const json = response.json();
+    if (!response.ok) {
+      console.error("Failed to fetch chat sessions:", response.status);
+      return [];
+    }
+    const json = await response.json();
     return json;
   } catch (err) {
     console.error("Error fetching chat sessions:", err);
@@ -154,7 +158,11 @@ export async function getChatSessionDetails(sessionId) {
       method: "GET",
       credentials: "include", // Required for cookie-based Auth
     });
-    const json = response.json();
+    if (!response.ok) {
+      console.error("Failed to fetch chat session details:", response.status);
+      return null;
+    }
+    const json = await response.json();
     return json;
   } catch (err) {
     console.error("Error fetching chat session details:", err);
@@ -183,7 +191,11 @@ export async function newSession() {
       method: "POST",
       credentials: "include", // Required for cookie-based Auth
     });
-    return response.json();
+    if (!response.ok) {
+      console.error("Failed to create new chat session:", response.status);
+      return null;
+    }
+    return await response.json();
   } catch (err) {
     console.error("Error creating new chat session:", err);
     return null;

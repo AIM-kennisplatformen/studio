@@ -61,8 +61,8 @@ export default function ChatSessionOverview({
               </h3>
 
               <ul className="space-y-2">
-                {chats.map((chat, index) => (
-                  <li key={index}>
+                {chats.map((chat) => (
+                  <li key={chat.session_id}>
                     <button
                       onClick={() => {
                         setCurrentChat(chat);

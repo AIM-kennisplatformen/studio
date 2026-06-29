@@ -14,7 +14,6 @@ export default function ChatWindow() {
       {/* Header */}
       <div className="z-20 flex shrink-0 justify-between border-b border-gray-200 bg-white px-4 py-2">
         <ChatSelectionToggle
-          setCurrentChat={setCurrentChat}
           setChatActive={setChatActive}
           chatActive={chatActive}
         />
