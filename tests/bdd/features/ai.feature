@@ -1,4 +1,4 @@
-Feature: Chatbot Messaging
+Feature: Ai Messaging
 
   Scenario: Authenticate via Authentik and send a chat message
 

@@ -3,7 +3,7 @@ import { BACKEND_BASE_URL } from "./backend.js";
 
 const errorResponse = {
   value: "Sorry, I couldn't reach the server. Please try again later.",
-  name: "chatbot",
+  name: "ai",
 };
 
 export async function sendChatMessage(chatId = "1", message) {
@@ -18,14 +18,14 @@ export async function sendChatMessage(chatId = "1", message) {
     });
 
     if (!response.ok) {
-      console.error("Failed to fetch chatbot response:", response.status);
+      console.error("Failed to fetch ai response:", response.status);
       return errorResponse;
     }
 
     const data = await response.json();
     const chatResponse = {
       value: data?.message || "",
-      name: "chatbot",
+      name: "ai",
     };
 
     if (!chatResponse.value) {
@@ -34,7 +34,7 @@ export async function sendChatMessage(chatId = "1", message) {
 
     return chatResponse;
   } catch (err) {
-    console.error("Failed to fetch chatbot response:", err);
+    console.error("Failed to fetch ai response:", err);
     return errorResponse;
   }
 }
@@ -129,5 +129,75 @@ export async function logEvent(name, metadata) {
 }
 
 export function logOut() {
-  window.location.href = `${BACKEND_BASE_URL}"/auth/logout`;
+  window.location.href = `${BACKEND_BASE_URL}/auth/logout`;
+}
+
+export async function getChatSessions() {
+  const url = `${BACKEND_BASE_URL}/sessions`;
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      credentials: "include", // Required for cookie-based Auth
+    });
+    if (!response.ok) {
+      console.error("Failed to fetch chat sessions:", response.status);
+      return [];
+    }
+    const json = await response.json();
+    return json;
+  } catch (err) {
+    console.error("Error fetching chat sessions:", err);
+    return [];
+  }
+}
+
+export async function getChatSessionDetails(sessionId) {
+  const url = `${BACKEND_BASE_URL}/sessions/${sessionId}`;
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      credentials: "include", // Required for cookie-based Auth
+    });
+    if (!response.ok) {
+      console.error("Failed to fetch chat session details:", response.status);
+      return null;
+    }
+    const json = await response.json();
+    return json;
+  } catch (err) {
+    console.error("Error fetching chat session details:", err);
+    return null;
+  }
+}
+
+export async function setActiveChatSession(sessionId) {
+  const url = `${BACKEND_BASE_URL}/sessions/${sessionId}`;
+  try {
+    await fetch(url, {
+      method: "POST",
+      credentials: "include", // Required for cookie-based Auth
+    });
+    return;
+  } catch (err) {
+    console.error("Error setting active chat session:", err);
+    return;
+  }
+}
+
+export async function newSession() {
+  const url = `${BACKEND_BASE_URL}/sessions`; //POST
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      credentials: "include", // Required for cookie-based Auth
+    });
+    if (!response.ok) {
+      console.error("Failed to create new chat session:", response.status);
+      return null;
+    }
+    return await response.json();
+  } catch (err) {
+    console.error("Error creating new chat session:", err);
+    return null;
+  }
 }

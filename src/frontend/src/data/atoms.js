@@ -14,19 +14,21 @@ function generateChatId() {
 // Atom for the chat ID - initialized once on app load
 export const chatIdAtom = atom(generateChatId());
 
-//Atom for the chat Component
-export const messagesAtom = atom([
+export const initialMessages = [
   {
     key: 1,
     value: `Welcome to the knowledge platform for Energy Poverty Intervention Strategies!\n
 Discover expert insights on tackling energy poverty, drawn from scientific research, policy reports, and real-world best practices across Europe.  
 
 What would you like to explore today?`,
-    name: "chatbot",
+    name: "ai",
   },
-]);
+];
 
-// Atom for the last completed chatbot message key (show actions on this message)
+//Atom for the chat Component
+export const messagesAtom = atom(initialMessages);
+
+// Atom for the last completed ai message key (show actions on this message)
 export const lastDoneMessageKeyAtom = atom(null);
 
 //Atoms for the InputArea component

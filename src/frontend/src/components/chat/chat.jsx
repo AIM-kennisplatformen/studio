@@ -19,22 +19,28 @@ import {
 
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
+  initialMessages,
   messagesAtom,
   textAtom,
   textStatusAtom,
   lastDoneMessageKeyAtom,
   selectedNodeAtom,
-} from "./data/atoms";
+} from "../../data/atoms";
 
-import { useChatWebSocket } from "./data/chatWebsocket";
+import { useChatWebSocket } from "../../data/chatWebsocket";
 import {
   Reasoning,
   ReasoningTrigger,
 } from "@/components/shadcn-io/ai/reasoning";
 import { Action, Actions } from "@/components/shadcn-io/ai/actions";
 import { ThumbsUpIcon, ThumbsDownIcon } from "lucide-react";
-import { logResponseFeedback, logEvent } from "./data/api";
-import LogOutButton from "@/components/LogOutButton.jsx";
+import {
+  logResponseFeedback,
+  logEvent,
+  getChatSessionDetails,
+  newSession,
+  setActiveChatSession,
+} from "../../data/api";
 
 async function handleFeedback(
   messageKey,
@@ -53,21 +59,90 @@ async function handleFeedback(
   setFeedbackText(response);
 }
 
-export default function Chat() {
+function mapRestoredMessages(sessionMessages) {
+  const restoredMessages = sessionMessages.map((message, index) => ({
+    key: index + 1,
+    value: message.content,
+    name: message.role,
+  }));
+
+  return restoredMessages.length > 0
+    ? restoredMessages.reverse()
+    : [...initialMessages];
+}
+
+export default function Chat({
+  currentChat,
+  setCurrentChat,
+  pendingMessage,
+  setPendingMessage,
+}) {
   const [feedbackText, setFeedbackText] = useState("");
   const [showFeedback, setShowFeedback] = useState(true);
+  const [sessionReady, setSessionReady] = useState(false);
   const shouldLog = useRef(false);
+  const isNewSessionRef = useRef(false);
+  const setMessages = useSetAtom(messagesAtom);
+  const setText = useSetAtom(textAtom);
+  const setStatus = useSetAtom(textStatusAtom);
+  const setLastDoneMessageKey = useSetAtom(lastDoneMessageKeyAtom);
   const [selectedNode] = useAtom(selectedNodeAtom);
   const focusNodeLabel = selectedNode?.data
     ? selectedNode?.data.label
     : "No nodes available";
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    async function restoreChat() {
+      if (isNewSessionRef.current) {
+        isNewSessionRef.current = false;
+        return;
+      }
+
+      setText("");
+      setStatus("ready");
+      setLastDoneMessageKey(null);
+      setFeedbackText("");
+      setShowFeedback(true);
+      setSessionReady(false);
+      shouldLog.current = false;
+
+      if (currentChat === null) {
+        setMessages([...initialMessages]);
+
+        if (isCurrent) setSessionReady(true);
+        return;
+      }
+
+      const sessionId = currentChat?.session_id;
+      if (!sessionId) return;
+
+      setMessages([]);
+
+      try {
+        await setActiveChatSession(sessionId);
+        const details = await getChatSessionDetails(sessionId);
+        if (!isCurrent) return;
+
+        setMessages(
+          details?.messages ? mapRestoredMessages(details.messages) : []
+        );
+        setSessionReady(true);
+      } catch (err) {
+        console.error("Error restoring chat session:", err);
+      }
+    }
+
+    restoreChat();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [currentChat, setLastDoneMessageKey, setMessages, setStatus, setText]);
+
   return (
     <div className="relative z-10 flex h-full flex-col bg-white">
-      {/* Header with logout */}
-      <div className="flex shrink-0 justify-end border-b border-gray-200 bg-white px-4 py-2">
-        <LogOutButton />
-      </div>
-
       {/* Messages - scrollable */}
       <div className="min-h-0 flex-1 overflow-hidden">
         <Messages
@@ -85,34 +160,87 @@ export default function Chat() {
         <div className="ms-5 w-min truncate pt-1 text-xs text-[#038061] hover:cursor-default">
           <p className="italic">Focus: {focusNodeLabel}</p>
         </div>
-        <InputArea setShowFeedback={setShowFeedback} shouldLog={shouldLog} />
+        <InputArea
+          setShowFeedback={setShowFeedback}
+          shouldLog={shouldLog}
+          initialText={pendingMessage}
+          setPendingMessage={setPendingMessage}
+          sessionReady={sessionReady}
+          isNewSessionRef={isNewSessionRef}
+          setCurrentChat={setCurrentChat}
+          currentChat={currentChat}
+        />
       </div>
     </div>
   );
 }
 
-function InputArea({ setShowFeedback, shouldLog }) {
+function InputArea({
+  setShowFeedback,
+  shouldLog,
+  initialText,
+  setPendingMessage,
+  sessionReady,
+  isNewSessionRef,
+  setCurrentChat,
+  currentChat,
+}) {
   const [text, setText] = useAtom(textAtom);
   const [status, setStatus] = useAtom(textStatusAtom);
   const setMessages = useSetAtom(messagesAtom);
 
   const { send } = useChatWebSocket(setStatus);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!text || status !== "ready") return;
+  const sendMessage = async (message) => {
+    if (!sessionReady || status !== "ready") return;
 
     shouldLog.current = true;
 
     setMessages((prev) => [
-      { key: prev.length + 1, value: text, name: "user" },
+      { key: prev.length + 1, value: message, name: "user" },
       ...prev,
     ]);
 
     setStatus("thinking");
-    send(text);
+
+    let activeSession = currentChat;
+    if (activeSession === null) {
+      try {
+        isNewSessionRef.current = true;
+        activeSession = await newSession();
+        await setActiveChatSession(activeSession.session_id);
+        setCurrentChat(activeSession);
+      } catch (err) {
+        console.error("Error creating new chat session:", err);
+        setMessages((prev) => [
+          {
+            key: prev.length + 1,
+            value: "Something went wrong. Please try again.",
+            name: "ai",
+          },
+          ...prev,
+        ]);
+      }
+    }
+
+    send(message);
+    setPendingMessage?.(null);
     setText("");
     setShowFeedback(true);
+  };
+
+  useEffect(() => {
+    if (!initialText) return;
+
+    sendMessage(initialText);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialText, sessionReady, status]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!text || status !== "ready") return;
+
+    sendMessage(text);
   };
 
   return (
@@ -210,7 +338,7 @@ function Messages({
               );
             }
 
-            if (name === "chatbot") {
+            if (name === "ai") {
               return (
                 <div
                   key={key}
@@ -221,7 +349,7 @@ function Messages({
                     </Response>
                     {key === lastDoneKey &&
                       status === "ready" &&
-                      lastDoneMessage?.name === "chatbot" && (
+                      lastDoneMessage?.name === "ai" && (
                         <div
                           onClick={(e) => e.stopPropagation()}
                           onSubmit={(e) => e.preventDefault()}

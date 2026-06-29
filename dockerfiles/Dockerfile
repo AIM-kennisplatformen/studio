@@ -24,4 +24,4 @@ RUN rm -r /root/.cache/*
 EXPOSE 10090
 
 # Default command (overridden by compose)
-CMD ["pixi", "run", "python", "-m", "uvicorn", "src.backend.main:app", "--host", "0.0.0.0", "--port", "10090", "--reload"]
+CMD ["pixi", "run", "python", "-m", "uvicorn", "src.backend.main:app", "--host", "0.0.0.0", "--port", "10090", "--reload", "--reload-dir", "src/backend"]

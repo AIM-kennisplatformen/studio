@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import "./index.css";
-import Chat from "./chat.jsx";
+import ChatWindow from "./ChatWindow.jsx";
 import Graph from "./graph.jsx";
 import { ReactFlowProvider } from "@xyflow/react";
 import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
@@ -12,13 +12,11 @@ export default function App() {
   const [leftWidth, setLeftWidth] = useState(66.6);
   const containerRef = useRef(null);
   const [data, setData] = useState(null);
-  //const [refetchTrigger, setRefetchTrigger] = useAtom(graphRefetchTriggerAtom); //Read/write if we want to trigger refetch from here, but currently only chatbot triggers refetch, so read only is enough
-  const refetchTrigger = useAtomValue(graphRefetchTriggerAtom); //Read only to trigger refetch when chatbot signals done
+  const refetchTrigger = useAtomValue(graphRefetchTriggerAtom); //Read only to trigger refetch when ai signals done
 
   // Load graph once on mount or when center node changes for the first time
   useEffect(() => {
     let mounted = true;
-    //if (!centerNodeId) setCenterNodeId(1);
 
     (async () => {
       try {
@@ -81,7 +79,7 @@ export default function App() {
       />
 
       <div className="flex h-full flex-1 flex-col overflow-hidden bg-gray-50">
-        <Chat />
+        <ChatWindow />
       </div>
     </div>
   );

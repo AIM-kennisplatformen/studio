@@ -42,6 +42,7 @@ dependencies = [
   "typing-extensions",
   "mcp-use>=1.5.0,<2",
   "redis>=5.0.0",
+  "asyncpg>=0.30.0",
 ]
 
 # ====================================
@@ -52,6 +53,7 @@ dev = [
   "isort>=7.0.0",
   "mypy>=1.18.2",
   "nest-asyncio",
+  "pytest>=8.0.0",
   "ruff>=0.14.5",
   "toml-sort>=0.24.3"
 ]
@@ -88,6 +90,7 @@ nodejs = ">=22.13.0,<22.14"
 ruff = "*"
 
 mypy = "*"
+pytest = "*"
 # Smaller libs
 einops = ">=0.8.1"
 itsdangerous = ">=2.2.0,<3"
@@ -104,7 +107,7 @@ python-dotenv = ">=1.1.0"
 application = "docker compose up -d && docker compose exec application bash scripts/application.sh"
 frontend_hmr = "docker compose exec application bash scripts/frontend_hmr.sh"
 lint = "ruff check"
-typecheck = "mypy ."
+typecheck = "mypy src tests"
 test = "pytest -q"
 qava_test = "python scripts/run_qava_test.py"
 
@@ -136,6 +139,7 @@ disable_error_code = [
 ]
 pretty = true
 exclude = ["^\\.pixi/", "^studio-project/"]
+follow_imports = "skip"
 
 # ====================================
 # Ruff config
