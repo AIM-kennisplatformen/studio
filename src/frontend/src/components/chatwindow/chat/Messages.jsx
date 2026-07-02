@@ -101,7 +101,7 @@ export default function Messages({
           .map(({ key, value, name }) => {
             switch (name) {
               case "system_prompt":
-                return <SystemMessage index={key} value={value} />;
+                return <SystemMessage key={key} value={value} />;
               case "ai":
                 return (
                   <div
@@ -192,7 +192,7 @@ export default function Messages({
                 );
             }
 
-            return <UserMessage index={key} value={value} />;
+            return <UserMessage key={key} value={value} />;
           })}
         {status === "thinking" && (
           <div>
