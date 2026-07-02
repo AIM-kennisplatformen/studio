@@ -88,7 +88,7 @@ function MessageOptions({
       <Action
         label="Copy Message"
         className="!bg-white hover:!bg-gray-200"
-        onClick={(e) => {
+        onClick={() => {
           navigator.clipboard.writeText(value);
           setCopied(true);
           clearTimeout(timeoutRef.current);
@@ -112,7 +112,6 @@ function MessageOptions({
         </div>
       </Action>
       <div className="relative flex min-h-[32px] items-center overflow-hidden">
-        {/* De Thumbs Buttons */}
         <div
           className={`flex transition-all duration-300 ease-in-out ${
             showFeedback
@@ -150,8 +149,6 @@ function MessageOptions({
             <ThumbsDownIcon className="text-primary size-4" />
           </Action>
         </div>
-
-        {/* De Feedback Tekst + Edit link */}
         <div
           className={`flex items-center gap-2 transition-all duration-300 ease-in-out ${
             !showFeedback
