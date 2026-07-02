@@ -9,7 +9,7 @@ import {
   textStatusAtom,
   lastDoneMessageKeyAtom,
   selectedNodeAtom,
-} from "../../../data/atoms";
+} from "../../../lib/atoms";
 import { getChatSessionDetails, setActiveChatSession } from "../../../data/api";
 import Messages from "./Messages";
 import InputArea from "./InputArea";

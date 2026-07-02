@@ -19,7 +19,7 @@ import {
   messagesAtom,
   selectedNodeAtom,
   textStatusAtom,
-} from "@/data/atoms";
+} from "@/lib/atoms";
 
 async function handleFeedback(
   messageKey,

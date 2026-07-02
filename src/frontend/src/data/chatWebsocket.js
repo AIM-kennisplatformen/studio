@@ -6,11 +6,13 @@ import {
   lastDoneMessageKeyAtom,
   graphRefetchTriggerAtom,
   selectNodeEmitAtom,
-} from "./atoms";
+} from "../lib/atoms";
 import { io } from "socket.io-client";
-import { BACKEND_BASE_URL, SOCKET_PATH } from "./backend.js";
+import { BACKEND_BASE_URL } from "./api.js";
 
 export function useChatWebSocket(setStatus) {
+  const SOCKET_PATH = "/socket.io";
+
   const setMessages = useSetAtom(messagesAtom);
   const setLastDoneMessageKey = useSetAtom(lastDoneMessageKeyAtom);
   const triggerRefetch = useSetAtom(graphRefetchTriggerAtom);

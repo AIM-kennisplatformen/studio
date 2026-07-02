@@ -5,7 +5,7 @@ import Graph from "./components/graph/Graph.jsx";
 import { ReactFlowProvider } from "@xyflow/react";
 import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
 import { useAtomValue } from "jotai";
-import { graphRefetchTriggerAtom } from "./data/atoms";
+import { graphRefetchTriggerAtom } from "./lib/atoms";
 import { FeedbackButton } from "./components/FeedbackButton.jsx";
 
 export default function App() {

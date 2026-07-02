@@ -1,4 +1,4 @@
-import { BACKEND_BASE_URL } from "./backend.js";
+import { BACKEND_BASE_URL } from "./api.js";
 
 export async function fetchGraphAnswer() {
   const url = `${BACKEND_BASE_URL}/graph`;
