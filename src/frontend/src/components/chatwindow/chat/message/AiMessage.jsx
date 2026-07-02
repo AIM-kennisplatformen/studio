@@ -1,7 +1,8 @@
 import { Action, Actions } from "@/components/shadcn-io/ai/actions";
-import { ThumbsUpIcon, ThumbsDownIcon, Copy } from "lucide-react";
+import { ThumbsUpIcon, ThumbsDownIcon, Copy, Check } from "lucide-react";
 import { Response } from "@/components/shadcn-io/ai/response";
 import { logResponseFeedback } from "../../../../data/api";
+import { useRef, useState } from "react";
 
 export default function AiMessage({
   index,
@@ -15,6 +16,9 @@ export default function AiMessage({
   feedbackText,
   showFeedback,
 }) {
+  const [copied, setCopied] = useState(false);
+  const timeoutRef = useRef(null);
+
   async function handleFeedback(
     messageKey,
     feedback,
@@ -62,8 +66,29 @@ export default function AiMessage({
                   className="!bg-white hover:!bg-gray-200"
                   onClick={(e) => {
                     navigator.clipboard.writeText(value);
+                    setCopied(true);
+                    clearTimeout(timeoutRef.current);
+                    timeoutRef.current = setTimeout(
+                      () => setCopied(false),
+                      2000
+                    );
                   }}>
-                  <Copy className="text-primary size-4" />
+                  <div className="relative flex size-4 items-center justify-center">
+                    <Copy
+                      className={`text-primary absolute size-4 transition-all duration-300 ease-in-out ${
+                        copied
+                          ? "pointer-events-none scale-75 rotate-45 opacity-0"
+                          : "scale-100 rotate-0 opacity-100"
+                      }`}
+                    />
+                    <Check
+                      className={`text-primary absolute size-4 transition-all duration-300 ease-in-out ${
+                        copied
+                          ? "scale-100 rotate-0 opacity-100"
+                          : "pointer-events-none scale-75 -rotate-45 opacity-0"
+                      }`}
+                    />
+                  </div>
                 </Action>
                 {showFeedback ? (
                   <>
