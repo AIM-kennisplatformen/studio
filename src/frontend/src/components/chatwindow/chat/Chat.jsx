@@ -112,7 +112,7 @@ export default function Chat({
 
       {/* Input - sticky at bottom */}
       <div className="shrink-0 border-t border-gray-200 bg-white">
-        <div className="ms-5 w-min truncate pt-1 text-xs text-[#038061] hover:cursor-default">
+        <div className="text-primary ms-5 w-min truncate pt-1 text-xs hover:cursor-default">
           <p className="italic">Focus: {focusNodeLabel}</p>
         </div>
         <InputArea

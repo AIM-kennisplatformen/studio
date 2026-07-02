@@ -30,23 +30,19 @@ export default function ChatWindow() {
 }
 
 function ChatHeader({ currentChat, setChatActive, chatActive }) {
-  function ChatName({ currentChat }) {
-    return (
-      <h2
-        className="font-inherit inline-block rounded-[8px] border border-transparent px-[1.2em] py-[0.6em] text-[1em] font-medium text-[#038061] transition-colors duration-250 hover:cursor-default hover:text-[#016048]"
-        aria-label="Chat Name">
-        {!currentChat ? "New Chat" : currentChat.name}
-      </h2>
-    );
-  }
-
   return (
     <div className="z-20 flex shrink-0 justify-between border-b border-gray-200 bg-white px-4 py-2">
       <ChatSelectionToggle
         setChatActive={setChatActive}
         chatActive={chatActive}
       />
-      {chatActive && <ChatName currentChat={currentChat} />}
+      {chatActive && (
+        <h2
+          className="font-inherit text-primary inline-block px-[1.2em] py-[0.6em] text-[1em] font-medium transition-colors duration-200 hover:cursor-default"
+          aria-label="Chat Name">
+          {!currentChat ? "New Chat" : currentChat.name}
+        </h2>
+      )}
       <UserMenu />
     </div>
   );

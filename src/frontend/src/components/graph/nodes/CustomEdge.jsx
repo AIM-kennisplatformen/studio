@@ -31,7 +31,7 @@ export const SolidEdge = ({
         path={edgePath}
         style={{
           ...style,
-          stroke: "#038061",
+          stroke: "var(--primary)",
           strokeWidth: 2,
           strokeDasharray: "none",
         }}

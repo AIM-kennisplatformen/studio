@@ -92,7 +92,7 @@ export default function InputArea({
           <PromptInputSubmit
             disabled={!text || status !== "ready"}
             status={status === "thinking" ? "submitted" : status}
-            style={{ backgroundColor: "#038061", color: "white" }}
+            className="!bg-primary hover:!bg-primary-dark !text-white"
           />
         </PromptInputToolbar>
       </PromptInput>

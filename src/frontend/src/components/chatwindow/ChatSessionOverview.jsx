@@ -32,8 +32,8 @@ export default function ChatSessionOverview({
 
   return (
     <>
-      <div className="flex h-full flex-col p-4">
-        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+      <div className="flex h-full flex-col">
+        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4">
           {isLoading ? (
             <div className="flex h-full flex-col items-center justify-center text-gray-500">
               <svg
@@ -71,7 +71,7 @@ export default function ChatSessionOverview({
                       className={
                         "flex w-full cursor-pointer items-center justify-between rounded p-2 text-left transition duration-150 " +
                         (currentChat?.session_id === chat.session_id
-                          ? "!border !border-[#038061] !bg-[#038061]/70 hover:!bg-[#038061]/80"
+                          ? "!border-primary !bg-primary/70 hover:!bg-primary/80 !border"
                           : "!border !border-gray-300 !bg-gray-100 hover:!bg-gray-200")
                       }>
                       <span
@@ -103,7 +103,7 @@ export default function ChatSessionOverview({
             </>
           )}
         </div>
-        <div className="shrink-0 border-t border-gray-200 bg-white pt-4">
+        <div className="shrink-0 border-t border-gray-200 bg-white p-4">
           <h3 className="mb-2 text-sm font-semibold text-black/50">
             Or start a new conversation
           </h3>
@@ -133,7 +133,7 @@ function InputArea({ setChatActive, setCurrentChat, setPendingMessage }) {
   };
 
   return (
-    <div className="w-full p-4">
+    <div className="w-full">
       <PromptInput onSubmit={handleSubmit} className="flex items-center">
         <PromptInputTextarea
           onChange={(e) => setText(e.target.value)}
@@ -145,7 +145,7 @@ function InputArea({ setChatActive, setCurrentChat, setPendingMessage }) {
           <PromptInputSubmit
             disabled={!text.trim()}
             status="ready"
-            style={{ backgroundColor: "#038061", color: "white" }}
+            className="!bg-primary hover:!bg-primary-dark !text-white"
           />
         </PromptInputToolbar>
       </PromptInput>

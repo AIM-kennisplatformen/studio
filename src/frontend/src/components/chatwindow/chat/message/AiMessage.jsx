@@ -1,6 +1,7 @@
 import { Action, Actions } from "@/components/shadcn-io/ai/actions";
 import { ThumbsUpIcon, ThumbsDownIcon } from "lucide-react";
 import { Response } from "@/components/shadcn-io/ai/response";
+import { logResponseFeedback } from "../../../../data/api";
 
 export default function AiMessage({
   index,
@@ -14,6 +15,23 @@ export default function AiMessage({
   feedbackText,
   showFeedback,
 }) {
+  async function handleFeedback(
+    messageKey,
+    feedback,
+    setShowFeedback,
+    setFeedbackText
+  ) {
+    setShowFeedback(false);
+    const response = await logResponseFeedback(messageKey, feedback);
+    if (response === null) {
+      setFeedbackText(
+        "An error occurred while sending your feedback. Please try again."
+      );
+      return;
+    }
+    setFeedbackText(response);
+  }
+
   return (
     <div
       key={index}
@@ -43,15 +61,11 @@ export default function AiMessage({
                   <>
                     <Action
                       label="Good response"
-                      style={{
-                        backgroundColor: "#038061",
-                        color: "white",
-                      }}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         handleFeedback(
-                          key,
+                          index,
                           "positive",
                           setShowFeedback,
                           setFeedbackText
@@ -61,15 +75,11 @@ export default function AiMessage({
                     </Action>
                     <Action
                       label="Bad response"
-                      style={{
-                        backgroundColor: "#038061",
-                        color: "white",
-                      }}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         handleFeedback(
-                          key,
+                          index,
                           "negative",
                           setShowFeedback,
                           setFeedbackText
@@ -84,11 +94,7 @@ export default function AiMessage({
                     <button
                       type="button"
                       onClick={() => setShowFeedback(true)}
-                      className="cursor-pointer border-0 p-0 text-sm hover:underline"
-                      style={{
-                        color: "white",
-                        backgroundColor: "#038061",
-                      }}>
+                      className="!bg-primary hover:!bg-primary-dark cursor-pointer border-0 p-0 text-sm !text-white hover:underline">
                       Edit Feedback
                     </button>
                   </>

@@ -10,7 +10,7 @@ import {
   ReasoningTrigger,
 } from "@/components/shadcn-io/ai/reasoning";
 
-import { logEvent, logResponseFeedback } from "../../../data/api";
+import { logEvent } from "../../../data/api";
 import {
   lastDoneMessageKeyAtom,
   messagesAtom,
@@ -20,23 +20,6 @@ import {
 import SystemMessage from "./message/SystemMessage";
 import UserMessage from "./message/UserMessage";
 import AiMessage from "./message/AiMessage";
-
-async function handleFeedback(
-  messageKey,
-  feedback,
-  setShowFeedback,
-  setFeedbackText
-) {
-  setShowFeedback(false);
-  const response = await logResponseFeedback(messageKey, feedback);
-  if (response === null) {
-    setFeedbackText(
-      "An error occurred while sending your feedback. Please try again."
-    );
-    return;
-  }
-  setFeedbackText(response);
-}
 
 export default function Messages({
   feedbackText,

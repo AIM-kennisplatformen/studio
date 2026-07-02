@@ -89,8 +89,8 @@ def load_knowledge_graph() -> KnowledgeGraphData:
     """Load knowledge graph data from JSON files."""
     kg_data = KnowledgeGraphData()
     # Get paths relative to this file
-    base_path = Path(__file__).parent.parent.parent
-    data_path = base_path / 'frontend' / 'src' / 'knowledge-graph' / 'example-data.json'
+    base_path = Path(__file__).parent.parent
+    data_path = base_path / 'knowledge-graph' / 'example-data.json'
     
     kg_data.load_from_files(str(data_path))
     return kg_data
