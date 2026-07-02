@@ -1,14 +1,4 @@
-"use client";
-
-import { useState, useRef, useEffect } from "react";
-
-import {
-  PromptInput,
-  PromptInputSubmit,
-  PromptInputTextarea,
-  PromptInputToolbar,
-} from "@/components/shadcn-io/ai/prompt-input";
-
+import { useRef, useEffect } from "react";
 import { Response } from "@/components/shadcn-io/ai/response";
 import { Message, MessageContent } from "@/components/shadcn-io/ai/message";
 
@@ -16,31 +6,20 @@ import {
   Conversation,
   ConversationContent,
 } from "@/components/shadcn-io/ai/conversation";
-
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import {
-  initialMessages,
-  messagesAtom,
-  textAtom,
-  textStatusAtom,
-  lastDoneMessageKeyAtom,
-  selectedNodeAtom,
-} from "../../data/atoms";
-
-import { useChatWebSocket } from "../../data/chatWebsocket";
+import { useAtomValue } from "jotai";
 import {
   Reasoning,
   ReasoningTrigger,
 } from "@/components/shadcn-io/ai/reasoning";
 import { Action, Actions } from "@/components/shadcn-io/ai/actions";
 import { ThumbsUpIcon, ThumbsDownIcon } from "lucide-react";
+import { logEvent, logResponseFeedback } from "../../../data/api";
 import {
-  logResponseFeedback,
-  logEvent,
-  getChatSessionDetails,
-  newSession,
-  setActiveChatSession,
-} from "../../data/api";
+  lastDoneMessageKeyAtom,
+  messagesAtom,
+  selectedNodeAtom,
+  textStatusAtom,
+} from "@/data/atoms";
 
 async function handleFeedback(
   messageKey,
@@ -59,212 +38,7 @@ async function handleFeedback(
   setFeedbackText(response);
 }
 
-function mapRestoredMessages(sessionMessages) {
-  const restoredMessages = sessionMessages.map((message, index) => ({
-    key: index + 1,
-    value: message.content,
-    name: message.role,
-  }));
-
-  return restoredMessages.length > 0
-    ? restoredMessages.reverse()
-    : [...initialMessages];
-}
-
-export default function Chat({
-  currentChat,
-  setCurrentChat,
-  pendingMessage,
-  setPendingMessage,
-}) {
-  const [feedbackText, setFeedbackText] = useState("");
-  const [showFeedback, setShowFeedback] = useState(true);
-  const [sessionReady, setSessionReady] = useState(false);
-  const shouldLog = useRef(false);
-  const isNewSessionRef = useRef(false);
-  const setMessages = useSetAtom(messagesAtom);
-  const setText = useSetAtom(textAtom);
-  const setStatus = useSetAtom(textStatusAtom);
-  const setLastDoneMessageKey = useSetAtom(lastDoneMessageKeyAtom);
-  const [selectedNode] = useAtom(selectedNodeAtom);
-  const focusNodeLabel = selectedNode?.data
-    ? selectedNode?.data.label
-    : "No nodes available";
-
-  useEffect(() => {
-    let isCurrent = true;
-
-    async function restoreChat() {
-      if (isNewSessionRef.current) {
-        isNewSessionRef.current = false;
-        return;
-      }
-
-      setText("");
-      setStatus("ready");
-      setLastDoneMessageKey(null);
-      setFeedbackText("");
-      setShowFeedback(true);
-      setSessionReady(false);
-      shouldLog.current = false;
-
-      if (currentChat === null) {
-        setMessages([...initialMessages]);
-
-        if (isCurrent) setSessionReady(true);
-        return;
-      }
-
-      const sessionId = currentChat?.session_id;
-      if (!sessionId) return;
-
-      setMessages([]);
-
-      try {
-        await setActiveChatSession(sessionId);
-        const details = await getChatSessionDetails(sessionId);
-        if (!isCurrent) return;
-
-        setMessages(
-          details?.messages ? mapRestoredMessages(details.messages) : []
-        );
-        setSessionReady(true);
-      } catch (err) {
-        console.error("Error restoring chat session:", err);
-      }
-    }
-
-    restoreChat();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [currentChat, setLastDoneMessageKey, setMessages, setStatus, setText]);
-
-  return (
-    <div className="relative z-10 flex h-full flex-col bg-white">
-      {/* Messages - scrollable */}
-      <div className="min-h-0 flex-1 overflow-hidden">
-        <Messages
-          feedbackText={feedbackText}
-          showFeedback={showFeedback}
-          setFeedbackText={setFeedbackText}
-          setShowFeedback={setShowFeedback}
-          shouldLog={shouldLog}
-          showSystemMessages={false}
-        />
-      </div>
-
-      {/* Input - sticky at bottom */}
-      <div className="shrink-0 border-t border-gray-200 bg-white">
-        <div className="ms-5 w-min truncate pt-1 text-xs text-[#038061] hover:cursor-default">
-          <p className="italic">Focus: {focusNodeLabel}</p>
-        </div>
-        <InputArea
-          setShowFeedback={setShowFeedback}
-          shouldLog={shouldLog}
-          initialText={pendingMessage}
-          setPendingMessage={setPendingMessage}
-          sessionReady={sessionReady}
-          isNewSessionRef={isNewSessionRef}
-          setCurrentChat={setCurrentChat}
-          currentChat={currentChat}
-        />
-      </div>
-    </div>
-  );
-}
-
-function InputArea({
-  setShowFeedback,
-  shouldLog,
-  initialText,
-  setPendingMessage,
-  sessionReady,
-  isNewSessionRef,
-  setCurrentChat,
-  currentChat,
-}) {
-  const [text, setText] = useAtom(textAtom);
-  const [status, setStatus] = useAtom(textStatusAtom);
-  const setMessages = useSetAtom(messagesAtom);
-
-  const { send } = useChatWebSocket(setStatus);
-
-  const sendMessage = async (message) => {
-    if (!sessionReady || status !== "ready") return;
-
-    shouldLog.current = true;
-
-    setMessages((prev) => [
-      { key: prev.length + 1, value: message, name: "user" },
-      ...prev,
-    ]);
-
-    setStatus("thinking");
-
-    let activeSession = currentChat;
-    if (activeSession === null) {
-      try {
-        isNewSessionRef.current = true;
-        activeSession = await newSession();
-        await setActiveChatSession(activeSession.session_id);
-        setCurrentChat(activeSession);
-      } catch (err) {
-        console.error("Error creating new chat session:", err);
-        setMessages((prev) => [
-          {
-            key: prev.length + 1,
-            value: "Something went wrong. Please try again.",
-            name: "ai",
-          },
-          ...prev,
-        ]);
-      }
-    }
-
-    send(message);
-    setPendingMessage?.(null);
-    setText("");
-    setShowFeedback(true);
-  };
-
-  useEffect(() => {
-    if (!initialText) return;
-
-    sendMessage(initialText);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialText, sessionReady, status]);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!text || status !== "ready") return;
-
-    sendMessage(text);
-  };
-
-  return (
-    <div className="w-full p-4">
-      <PromptInput onSubmit={handleSubmit} className="flex items-center">
-        <PromptInputTextarea
-          onChange={(e) => setText(e.target.value)}
-          value={text}
-          placeholder="Type your message..."
-          className="flex-1"
-        />
-        <PromptInputToolbar className="ml-2">
-          <PromptInputSubmit
-            disabled={!text || status !== "ready"}
-            status={status === "thinking" ? "submitted" : status}
-            style={{ backgroundColor: "#038061", color: "white" }}
-          />
-        </PromptInputToolbar>
-      </PromptInput>
-    </div>
-  );
-}
-
-function Messages({
+export default function Messages({
   feedbackText,
   showFeedback,
   setFeedbackText,

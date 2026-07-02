@@ -1,8 +1,10 @@
 import { useState } from "react";
-import Chat from "./components/chat/chat";
-import UserMenu from "@/components/UserMenu.jsx";
-import ChatSelectionToggle from "@/components/chat/ChatSelectionToggle.jsx";
-import ChatSessionOverview from "@/components/chat/ChatSessionOverview.jsx";
+import Chat from "./chat/Chat";
+import UserMenu from "./UserMenu";
+import ChatSessionOverview from "./ChatSessionOverview";
+import ChatSelectionToggle from "./ChatSelectionToggle";
+
+
 
 export default function ChatWindow() {
   const [currentChat, setCurrentChat] = useState(null);

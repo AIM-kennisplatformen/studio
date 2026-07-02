@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import "./index.css";
-import ChatWindow from "./ChatWindow.jsx";
-import Graph from "./graph/graph.jsx";
+import ChatWindow from "./components/chatwindow/ChatWindow.jsx";
+import Graph from "./components/graph/Graph.jsx";
 import { ReactFlowProvider } from "@xyflow/react";
 import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
 import { useAtomValue } from "jotai";

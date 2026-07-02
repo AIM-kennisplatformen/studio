@@ -1,4 +1,4 @@
-import { logOut } from "../data/api.js";
+import { logOut } from "../../data/api.js";
 import { useEffect, useRef, useState } from "react";
 
 export default function UserMenu() {

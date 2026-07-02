@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef } from "react";
 import { ReactFlow, useReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { CustomNode } from "../components/CustomNode";
-import { SolidEdge } from "../components/CustomEdge";
-import { getEdgeHandles } from "../lib/graphUtils";
-import { applyDagreLayout } from "../lib/ctrytoscapeLayout";
+import { CustomNode } from "./nodes/CustomNode";
+import { SolidEdge } from "./nodes/CustomEdge";
+import { getEdgeHandles } from "../../lib/graphUtils";
+import { applyDagreLayout } from "../../lib/ctrytoscapeLayout";
 import { useAtom, useAtomValue } from "jotai";
 import {
   nodesAtom,
@@ -13,7 +13,7 @@ import {
   centerNodeAtom,
   layoutNodesAtom,
   selectNodeEmitAtom,
-} from "../data/atoms";
+} from "../../data/atoms";
 
 function getSubgraph(data, nodeId) {
   const id = String(nodeId);
