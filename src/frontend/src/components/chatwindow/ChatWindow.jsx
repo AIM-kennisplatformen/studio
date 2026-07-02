@@ -23,6 +23,7 @@ export default function ChatWindow() {
         pendingMessage={pendingMessage}
         setPendingMessage={setPendingMessage}
         setChatActive={setChatActive}
+        chatActive={chatActive}
       />
     </div>
   );
@@ -57,6 +58,7 @@ function ChatBody({
   pendingMessage,
   setPendingMessage,
   setChatActive,
+  chatActive,
 }) {
   return (
     <div className="min-h-0 flex-1">

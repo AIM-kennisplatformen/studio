@@ -1,6 +1,5 @@
 import { useRef, useEffect } from "react";
 import { Response } from "@/components/shadcn-io/ai/response";
-import { Message, MessageContent } from "@/components/shadcn-io/ai/message";
 
 import {
   Conversation,
@@ -20,6 +19,8 @@ import {
   selectedNodeAtom,
   textStatusAtom,
 } from "@/lib/atoms";
+import SystemMessage from "./message/SystemMessage";
+import UserMessage from "./message/UserMessage";
 
 async function handleFeedback(
   messageKey,
@@ -98,122 +99,100 @@ export default function Messages({
             showSystemMessages ? true : name !== "system_prompt"
           )
           .map(({ key, value, name }) => {
-            if (name === "system_prompt") {
-              return (
-                <div
-                  key={key}
-                  className="flex w-full items-start justify-start gap-2 pr-[5%]">
-                  <div className="flex w-full flex-col items-start">
-                    <Response className="w-full rounded-lg border border-gray-200 bg-gray-50 p-2 text-sm wrap-break-word">
-                      {value}
-                    </Response>
-                  </div>
-                </div>
-              );
-            }
-
-            if (name === "ai") {
-              return (
-                <div
-                  key={key}
-                  className="flex w-full items-start justify-start gap-2 pr-[5%]">
-                  <div className="flex w-full flex-col items-start">
-                    <Response className="w-full rounded-lg border border-gray-200 bg-gray-50 p-2 text-sm wrap-break-word">
-                      {value}
-                    </Response>
-                    {key === lastDoneKey &&
-                      status === "ready" &&
-                      lastDoneMessage?.name === "ai" && (
-                        <div
-                          onClick={(e) => e.stopPropagation()}
-                          onSubmit={(e) => e.preventDefault()}
-                          className="mt-1 ml-7">
-                          {questionForFeedback && (
-                            <p className="mb-1 text-xs text-gray-400 italic">
-                              Feedback for: "
-                              {questionForFeedback.length > 80
-                                ? questionForFeedback.slice(0, 80) + "…"
-                                : questionForFeedback}
-                              "
-                            </p>
-                          )}
-                          <Actions>
-                            {showFeedback ? (
-                              <>
-                                <Action
-                                  label="Good response"
-                                  style={{
-                                    backgroundColor: "#038061",
-                                    color: "white",
-                                  }}
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleFeedback(
-                                      key,
-                                      "positive",
-                                      setShowFeedback,
-                                      setFeedbackText
-                                    );
-                                  }}>
-                                  <ThumbsUpIcon className="size-4" />
-                                </Action>
-                                <Action
-                                  label="Bad response"
-                                  style={{
-                                    backgroundColor: "#038061",
-                                    color: "white",
-                                  }}
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleFeedback(
-                                      key,
-                                      "negative",
-                                      setShowFeedback,
-                                      setFeedbackText
-                                    );
-                                  }}>
-                                  <ThumbsDownIcon className="size-4" />
-                                </Action>
-                              </>
-                            ) : (
-                              <>
-                                <p className="text-sm text-gray-600">
-                                  {feedbackText}
-                                </p>
-                                <button
-                                  type="button"
-                                  onClick={() => setShowFeedback(true)}
-                                  className="cursor-pointer border-0 p-0 text-sm hover:underline"
-                                  style={{
-                                    color: "white",
-                                    backgroundColor: "#038061",
-                                  }}>
-                                  Edit Feedback
-                                </button>
-                              </>
+            switch (name) {
+              case "system_prompt":
+                return <SystemMessage index={key} value={value} />;
+              case "ai":
+                return (
+                  <div
+                    key={key}
+                    className="flex w-full items-start justify-start gap-2 pr-[5%]">
+                    <div className="flex w-full flex-col items-start">
+                      <Response className="w-full rounded-lg border border-gray-200 bg-gray-50 p-2 text-sm wrap-break-word">
+                        {value}
+                      </Response>
+                      {key === lastDoneKey &&
+                        status === "ready" &&
+                        lastDoneMessage?.name === "ai" && (
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            onSubmit={(e) => e.preventDefault()}
+                            className="mt-1 ml-7">
+                            {questionForFeedback && (
+                              <p className="mb-1 text-xs text-gray-400 italic">
+                                Feedback for: "
+                                {questionForFeedback.length > 80
+                                  ? questionForFeedback.slice(0, 80) + "…"
+                                  : questionForFeedback}
+                                "
+                              </p>
                             )}
-                          </Actions>
-                        </div>
-                      )}
+                            <Actions>
+                              {showFeedback ? (
+                                <>
+                                  <Action
+                                    label="Good response"
+                                    style={{
+                                      backgroundColor: "#038061",
+                                      color: "white",
+                                    }}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleFeedback(
+                                        key,
+                                        "positive",
+                                        setShowFeedback,
+                                        setFeedbackText
+                                      );
+                                    }}>
+                                    <ThumbsUpIcon className="size-4" />
+                                  </Action>
+                                  <Action
+                                    label="Bad response"
+                                    style={{
+                                      backgroundColor: "#038061",
+                                      color: "white",
+                                    }}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleFeedback(
+                                        key,
+                                        "negative",
+                                        setShowFeedback,
+                                        setFeedbackText
+                                      );
+                                    }}>
+                                    <ThumbsDownIcon className="size-4" />
+                                  </Action>
+                                </>
+                              ) : (
+                                <>
+                                  <p className="text-sm text-gray-600">
+                                    {feedbackText}
+                                  </p>
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowFeedback(true)}
+                                    className="cursor-pointer border-0 p-0 text-sm hover:underline"
+                                    style={{
+                                      color: "white",
+                                      backgroundColor: "#038061",
+                                    }}>
+                                    Edit Feedback
+                                  </button>
+                                </>
+                              )}
+                            </Actions>
+                          </div>
+                        )}
+                    </div>
                   </div>
-                </div>
-              );
+                );
             }
 
-            return (
-              <Message
-                from="user"
-                key={key}
-                className="flex justify-end pl-[5%]">
-                <MessageContent
-                  className="max-w-prose wrap-break-word"
-                  style={{ backgroundColor: "#038061", color: "#ffffff" }}>
-                  {value}
-                </MessageContent>
-              </Message>
-            );
+            return <UserMessage index={key} value={value} />;
           })}
         {status === "thinking" && (
           <div>
