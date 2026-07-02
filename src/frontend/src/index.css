@@ -86,15 +86,11 @@ button {
   background-color: var(--primary);
   color: var(--primary-foreground);
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: 0.25s;
 }
 button:hover {
   background-color: var(--primary-dark);
   color: var(--primary-foreground);
-}
-button:focus,
-button:focus-visible {
-  background-color: var(--primary-dark);
 }
 
 @media (prefers-color-scheme: light) {

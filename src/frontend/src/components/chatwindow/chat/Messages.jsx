@@ -107,15 +107,7 @@ export default function Messages({
         {status === "thinking" && (
           <div>
             <Reasoning isStreaming={status === "thinking"}>
-              <ReasoningTrigger
-                style={{
-                  backgroundColor: "transparent",
-                  color: "black",
-                  border: "none",
-                  padding: "0",
-                  outline: "none",
-                  cursor: "text",
-                }}>
+              <ReasoningTrigger className="!text-primary !cursor-text !bg-transparent">
                 🧠 Thinking...
               </ReasoningTrigger>
             </Reasoning>

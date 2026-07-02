@@ -4,7 +4,7 @@ export default function ChatSelection({ setChatActive, chatActive }) {
       <div className="relative inline-block text-left">
         <button
           onClick={() => setChatActive(!chatActive)}
-          className="flex items-center gap-1 rounded-md p-2 text-white focus:ring-2 focus:ring-green-500 focus:outline-none focus:ring-inset"
+          className="flex items-center gap-1 rounded-md p-2 text-white"
           aria-expanded={chatActive}
           aria-label="Toggle chat history menu">
           Chats

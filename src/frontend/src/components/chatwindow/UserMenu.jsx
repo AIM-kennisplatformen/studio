@@ -21,7 +21,7 @@ export default function UserMenu() {
       <div className="relative inline-block text-left" ref={menuRef}>
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="!bg-primary/20 rounded-md p-2 focus:ring-2 focus:ring-green-500 focus:outline-none focus:ring-inset"
+          className="!bg-primary/20 hover:!bg-primary/30 rounded-md p-2"
           aria-expanded={isOpen}
           aria-label="Toggle settings menu">
           <span className="sr-only">Settings</span>
@@ -73,7 +73,7 @@ const menuOptions = [
       </svg>
     ),
     action: () => console.log("Opening settings..."),
-    textColor: "text-black",
+    textColor: "!text-black",
   },
   {
     label: "Log Out",
@@ -93,7 +93,7 @@ const menuOptions = [
       </svg>
     ),
     action: () => logOut(),
-    textColor: "text-red-600",
+    textColor: "!text-red-700",
   },
 ];
 
@@ -111,7 +111,7 @@ function MenuButton({ option }) {
   return (
     <button
       onClick={option.action}
-      className={`flex w-full items-center rounded !bg-white text-sm ${option.textColor} transition duration-150`}>
+      className={`flex w-full items-center rounded !bg-white text-sm hover:!bg-gray-100 ${option.textColor} transition duration-150`}>
       <div className="mr-3">{option.icon}</div>
       {option.label}
     </button>
