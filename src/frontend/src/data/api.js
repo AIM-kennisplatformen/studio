@@ -50,30 +50,6 @@ export async function logResponseFeedback(key, feedback) {
   }
 }
 
-// export async function logSelectedNode(node) {
-//   const url = `${BACKEND_BASE_URL}/log_event`;
-
-//   try {
-//     const response = await fetch(url, {
-//       method: "POST",
-//       credentials: "include",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({
-//         name: "node_selected",
-//         metadata: {
-//           nodeId: node.id,
-//           nodeLabel: node.data.label,
-//         },
-//       }),
-//     });
-//     if (!response.ok) {
-//       console.error("Failed to log selected node:", response.status);
-//     }
-//   } catch (err) {
-//     console.error("Failed to log selected node:", err);
-//   }
-// }
-
 export async function logEvent(name, metadata) {
   const url = `${BACKEND_BASE_URL}/log_event`;
 
