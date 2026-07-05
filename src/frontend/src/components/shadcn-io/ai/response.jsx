@@ -167,7 +167,7 @@ function parseIncompleteMarkdown(text) {
 }
 
 // Create a hardened version of ReactMarkdown
-const HardenedMarkdown = hardenReactMarkdown(ReactMarkdown);
+const HardenedMarkdown = hardenReactMarkdown.default(ReactMarkdown);
 
 const components = {
   ol: ({ node: _node, children, className, ...props }) => (

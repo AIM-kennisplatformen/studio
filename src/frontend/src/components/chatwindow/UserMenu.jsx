@@ -1,4 +1,4 @@
-import { logOut } from "../data/api.js";
+import { logOut } from "../../data/api.js";
 import { useEffect, useRef, useState } from "react";
 
 export default function UserMenu() {
@@ -21,7 +21,7 @@ export default function UserMenu() {
       <div className="relative inline-block text-left" ref={menuRef}>
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="rounded-md bg-[#038061]/20! p-2 focus:ring-2 focus:ring-green-500 focus:outline-none focus:ring-inset"
+          className="!bg-primary/20 hover:!bg-primary/30 rounded-md p-2"
           aria-expanded={isOpen}
           aria-label="Toggle settings menu">
           <span className="sr-only">Settings</span>
@@ -30,7 +30,7 @@ export default function UserMenu() {
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={2}
-            stroke="#038061"
+            stroke="var(--primary)"
             className="size-6">
             <path
               strokeLinecap="round"
@@ -40,7 +40,7 @@ export default function UserMenu() {
           </svg>
         </button>
         {isOpen && (
-          <div className="absolute right-0 z-10 mt-2 w-48 origin-top-right">
+          <div className="absolute right-0 z-10 mt-6 w-48 origin-top-right">
             <Menu />
           </div>
         )}
@@ -73,7 +73,7 @@ const menuOptions = [
       </svg>
     ),
     action: () => console.log("Opening settings..."),
-    textColor: "text-black",
+    textColor: "!text-black",
   },
   {
     label: "Log Out",
@@ -93,13 +93,13 @@ const menuOptions = [
       </svg>
     ),
     action: () => logOut(),
-    textColor: "text-red-600",
+    textColor: "!text-red-700",
   },
 ];
 
 function Menu() {
   return (
-    <div className="absolute left-0 z-20 mt-4 w-48 rounded-md border border-gray-200 bg-white shadow-lg">
+    <div className="absolute left-0 z-20 w-48 rounded-md border border-gray-200 bg-white shadow-lg">
       {menuOptions.map((option, index) => (
         <MenuButton key={index} option={option} />
       ))}
@@ -111,7 +111,7 @@ function MenuButton({ option }) {
   return (
     <button
       onClick={option.action}
-      className={`flex w-full items-center rounded !bg-white px-4 py-2 text-sm ${option.textColor} transition duration-150`}>
+      className={`flex w-full items-center rounded !bg-white text-sm hover:!bg-gray-100 ${option.textColor} transition duration-150`}>
       <div className="mr-3">{option.icon}</div>
       {option.label}
     </button>

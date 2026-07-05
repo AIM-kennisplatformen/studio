@@ -1,15 +1,10 @@
 import { useCallback, useEffect, useRef } from "react";
-import {
-  ReactFlow,
-  applyEdgeChanges,
-  addEdge,
-  useReactFlow,
-} from "@xyflow/react";
+import { ReactFlow, useReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { CustomNode } from "./components/CustomNode";
-import { SolidEdge } from "./components/CustomEdge";
-import { getEdgeHandles } from "./lib/graphUtils";
-import { applyDagreLayout } from "./lib/ctrytoscapeLayout";
+import { CustomNode } from "./nodes/CustomNode";
+import { SolidEdge } from "./nodes/CustomEdge";
+import { getEdgeHandles } from "./graphUtils";
+import { applyDagreLayout } from "./layout/cytoscapeLayout";
 import { useAtom, useAtomValue } from "jotai";
 import {
   nodesAtom,
@@ -18,7 +13,7 @@ import {
   centerNodeAtom,
   layoutNodesAtom,
   selectNodeEmitAtom,
-} from "./data/atoms";
+} from "../../lib/atoms";
 
 function getSubgraph(data, nodeId) {
   const id = String(nodeId);
@@ -192,17 +187,6 @@ export default function Graph({ data, width }) {
     if (isFirstLoad) prepareGraphData(getSubgraph(data, 1));
   }, [data, prepareGraphData]);
 
-  const onEdgesChange = useCallback(
-    (changes) =>
-      setEdges((currentEdges) => applyEdgeChanges(changes, currentEdges)),
-    [setEdges]
-  );
-
-  const onConnect = useCallback(
-    (params) => setEdges((es) => addEdge(params, es)),
-    [setEdges]
-  );
-
   const onNodeClick = useCallback(
     (_, node) => {
       setCenterNodeId(Number(node.id));
@@ -244,8 +228,6 @@ export default function Graph({ data, width }) {
         edges={edges}
         nodeTypes={{ custom: CustomNode }}
         edgeTypes={{ solid: SolidEdge }}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
         onNodeClick={onNodeClick}
         selectNodesOnDrag={false}
         fitView

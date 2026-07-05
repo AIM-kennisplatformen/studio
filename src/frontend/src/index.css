@@ -22,7 +22,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: #038061;
+  --primary-dark: #016048;
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -49,13 +50,18 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+::selection {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
 a {
   font-weight: 500;
-  color: #646cff;
+  color: var(--primary);
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: var(--primary-dark);
 }
 
 body {
@@ -77,16 +83,14 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: 0.25s;
 }
 button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  background-color: var(--primary-dark);
+  color: var(--primary-foreground);
 }
 
 @media (prefers-color-scheme: light) {
@@ -185,8 +189,8 @@ button:focus-visible {
 
 .custom-node {
   background: #ffffff;
-  color: #038061;
-  border: 2px solid #038061;
+  color: var(--primary);
+  border: 2px solid var(--primary);
   border-radius: 8px;
   padding: 8px;
   font-size: 12px;
@@ -195,6 +199,6 @@ button:focus-visible {
 }
 
 .custom-node.focussed-node {
-  background: #038061;
-  color: #ffffff;
+  background: var(--primary);
+  color: var(--primary-foreground);
 }

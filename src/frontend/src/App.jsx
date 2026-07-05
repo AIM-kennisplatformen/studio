@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import "./index.css";
-import ChatWindow from "./ChatWindow.jsx";
-import Graph from "./graph.jsx";
+import ChatWindow from "./components/chatwindow/ChatWindow.jsx";
+import Graph from "./components/graph/Graph.jsx";
 import { ReactFlowProvider } from "@xyflow/react";
 import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
 import { useAtomValue } from "jotai";
-import { graphRefetchTriggerAtom } from "./data/atoms";
+import { graphRefetchTriggerAtom } from "./lib/atoms";
 import { FeedbackButton } from "./components/FeedbackButton.jsx";
 
 export default function App() {
@@ -57,18 +57,16 @@ export default function App() {
   return (
     <div ref={containerRef} className="flex h-screen w-screen">
       <div
-        className="h-full overflow-hidden bg-gray-100"
-        style={{ width: `${leftWidth}%` }}>
+        className={`h-full overflow-hidden bg-gray-100 width-[${leftWidth}%]`}>
         <ReactFlowProvider>
           <Graph data={data} width={leftWidth} />
         </ReactFlowProvider>
       </div>
 
       <div
-        className="pointer-events-auto absolute z-50"
+        className={`pointer-events-auto absolute bottom-[120px]`}
         style={{
           left: `calc(${leftWidth}% - 86px)`,
-          bottom: "120px",
         }}>
         <FeedbackButton />
       </div>

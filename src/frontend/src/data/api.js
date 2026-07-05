@@ -1,67 +1,29 @@
-import { getFeedbackMessage } from "./feedback.js";
-import { BACKEND_BASE_URL } from "./backend.js";
-
-const errorResponse = {
-  value: "Sorry, I couldn't reach the server. Please try again later.",
-  name: "ai",
-};
-
-export async function sendChatMessage(chatId = "1", message) {
-  const url = `${BACKEND_BASE_URL}/chats/${chatId}/messages`;
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      credentials: "include", // Required for cookie-based Auth
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
-    });
-
-    if (!response.ok) {
-      console.error("Failed to fetch ai response:", response.status);
-      return errorResponse;
-    }
-
-    const data = await response.json();
-    const chatResponse = {
-      value: data?.message || "",
-      name: "ai",
-    };
-
-    if (!chatResponse.value) {
-      return errorResponse;
-    }
-
-    return chatResponse;
-  } catch (err) {
-    console.error("Failed to fetch ai response:", err);
-    return errorResponse;
-  }
-}
-
-export async function sendNodeSelection(nodeId) {
-  const url = `${BACKEND_BASE_URL}/nodes/${nodeId}/context`;
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      credentials: "include", // Required for cookie-based Auth
-    });
-
-    if (!response.ok) {
-      console.error("Failed to send node selection:", response.status);
-      return null;
-    }
-
-    return await response.json();
-  } catch (err) {
-    console.error("Failed to send node selection:", err);
-    return null;
-  }
-}
+export const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL ?? "";
 
 export async function logResponseFeedback(key, feedback) {
   const url = `${BACKEND_BASE_URL}/log_event`;
+
+  const messages = [
+    "Thanks!",
+    "Thank you for the feedback!",
+    "Appreciated!",
+    "Noted, thanks!",
+    "Good to know, thanks!",
+    "Helpful, thank you!",
+    "Got it, thanks!",
+    "Thank you — that's useful!",
+    "Thanks for the direction!",
+    "Much appreciated!",
+    "That helps, thank you!",
+    "Thanks for letting me know!",
+    "Thanks for the input!",
+    "Noted — thank you!",
+    "Thanks — that's clear!",
+    "Thank you for the guidance!",
+  ];
+
+  const getFeedbackMessage = () =>
+    messages[Math.floor(Math.random() * messages.length)];
 
   try {
     const response = await fetch(url, {
@@ -88,29 +50,6 @@ export async function logResponseFeedback(key, feedback) {
   }
 }
 
-export async function logSelectedNode(node) {
-  const url = `${BACKEND_BASE_URL}/log_event`;
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: "node_selected",
-        metadata: {
-          nodeId: node.id,
-          nodeLabel: node.data.label,
-        },
-      }),
-    });
-    if (!response.ok) {
-      console.error("Failed to log selected node:", response.status);
-    }
-  } catch (err) {
-    console.error("Failed to log selected node:", err);
-  }
-}
 export async function logEvent(name, metadata) {
   const url = `${BACKEND_BASE_URL}/log_event`;
 
