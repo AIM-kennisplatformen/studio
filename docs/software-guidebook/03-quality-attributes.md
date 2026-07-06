@@ -12,32 +12,32 @@ Quality attributes define how the system should behave beyond its functional req
 
 **Priority**: High
 
-**Scenario**: When a user sends a chat message, they should see the AI response begin streaming within 2 seconds, with continuous token updates until completion.
+**Scenario**: When a user sends a chat message, they should see the AI response begin streaming within 5 seconds, with continuous token updates until completion.
 
-**Measure**: Time to first token < 2 seconds (dependent on LLM provider)
+**Measure**: Time to first token < 5 seconds (dependent on LLM provider)
 
 **Implementation**:
 - Streaming responses via Server-Sent Events ([`src/llm_worker/endpoints/ask.py:89-124`](https://github.com/AIM-kennisplatformen/studio/blob/main/src/llm_worker/endpoints/ask.py#L89-L124))
 - Socket.IO for real-time client updates ([`src/backend/endpoints/chat.py`](https://github.com/AIM-kennisplatformen/studio/blob/main/src/backend/endpoints/chat.py))
 - "Thinking" indicator in UI while waiting
 
-### 3.2.2 Perceived Performance (Prefetching)
+### 3.2.2 Perceived Performance (Prefetching) --> irrelevant
 
-**Priority**: High
+~~**Priority**: High~~
 
-**Scenario**: After answering a root question, when the user clicks a subnode (Best practices, Target groups, Strategic overview), the answer should appear instantly.
+~~**Scenario**: After answering a root question, when the user clicks a subnode (Best practices, Target groups, Strategic overview), the answer should appear instantly.~~
 
-**Measure**: Time to display prefetched answer < 100ms
+~~**Measure**: Time to display prefetched answer < 100ms~~
 
-**Implementation**:
-- Background prefetching of subnode answers ([`src/backend/endpoints/chat.py:203-211`](https://github.com/AIM-kennisplatformen/studio/blob/main/src/backend/endpoints/chat.py#L203-L211))
-- In-memory cache per user ([`src/backend/endpoints/graph.py:52-57`](https://github.com/AIM-kennisplatformen/studio/blob/main/src/backend/endpoints/graph.py#L52-L57))
+~~**Implementation**:~~
+~~- Background prefetching of subnode answers ([`src/backend/endpoints/chat.py:203-211`](https://github.com/AIM-kennisplatformen/studio/blob/main/src/backend/endpoints/chat.py#L203-L211))~~
+~~- In-memory cache per user ([`src/backend/endpoints/graph.py:52-57`](https://github.com/AIM-kennisplatformen/studio/blob/main/src/backend/endpoints/graph.py#L52-L57))~~
 
 ### 3.2.3 Usability
 
 **Priority**: High
 
-**Scenario**: A researcher with no technical background should be able to explore the knowledge graph and ask questions without training.
+**Scenario**: A user with no technical background and domain expertise should be able to easily and inuïtively explore the knowledge graph and ask questions without training.
 
 **Measures**:
 - Time to first successful question < 1 minute
@@ -53,7 +53,7 @@ Quality attributes define how the system should behave beyond its functional req
 
 **Priority**: Medium
 
-**Scenario**: The system should work with different LLM providers (Ollama local, OpenAI cloud, Nebius) without code changes.
+**Scenario**: The system should work with different opensource LLM's providers without code changes.
 
 **Measure**: Switching providers requires only configuration changes
 
@@ -83,13 +83,27 @@ Quality attributes define how the system should behave beyond its functional req
 
 **Priority**: Medium
 
-**Scenario**: Operations staff should be able to trace LLM requests to understand performance and debug issues.
+**Scenario**: Developers and researchers should be able to trace LLM requests to understand performance and debug issues.
 
 **Measure**: All LLM calls traceable via Langfuse
 
 **Implementation**:
 - Langfuse integration ([`src/llm_worker/endpoints/ask.py:22-26`](https://github.com/AIM-kennisplatformen/studio/blob/main/src/llm_worker/endpoints/ask.py#L22-L26))
 - Langfuse callbacks on agent ([`src/llm_worker/endpoints/ask.py:55`](https://github.com/AIM-kennisplatformen/studio/blob/main/src/llm_worker/endpoints/ask.py#L55))
+
+### 3.2.x Testability/Researchability
+
+**Priority**: High
+
+**Scenario**: Technical improvements on information retreival and accuracy is testable and loggable. Live user tetsts are easy to set up, monitor and analyse.
+
+**Measure**: 
+- All LLM calls traceable via Langfuse
+- User UI-inputs are logged in langfuse
+- Modular components are easily adaptable and interchangeble (Embeddind model, LLM, tokenizer, KG, etc)
+
+**Implementation**:
+???
 
 ### 3.2.7 Security
 

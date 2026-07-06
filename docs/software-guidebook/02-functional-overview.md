@@ -33,7 +33,7 @@ mindmap
 
 </details>
 
-## 2.2 Feature Details
+## 2.2 Feature Details --> needs revision
 
 ### 2.2.1 Interactive Knowledge Graph
 
@@ -49,7 +49,7 @@ The application displays a knowledge graph that users can explore visually.
 - React Flow for graph rendering ([`src/frontend/src/graph.jsx`](https://github.com/AIM-kennisplatformen/studio/blob/main/src/frontend/src/graph.jsx))
 - Graph data loaded from JSON ([`example-data.json`](https://github.com/AIM-kennisplatformen/studio/blob/main/src/frontend/src/knowledge-graph/example-data.json))
 
-**Current Graph Structure** (Energy Poverty domain):
+**Current Graph Structure** (Energy Poverty domain) Wrong graph:
 
 ![Knowledge Graph Structure](02-knowledge-graph.png)
 
@@ -126,7 +126,7 @@ The AI assistant searches academic literature to support its answers.
 - Bibliography metadata from Zotero
 - Relevance scores for citations
 
-**How It Works**:
+**How It Works**: --> is this how it works?
 
 1. User asks a question
 2. LLM invokes `paper_search` tool with question + keywords
@@ -135,7 +135,7 @@ The AI assistant searches academic literature to support its answers.
 5. Results returned to LLM for synthesis
 6. LLM generates answer citing relevant sources
 
-### 2.2.4 Prefetched Subnode Answers
+### 2.2.4 Prefetched Subnode Answers --> not relevant
 
 When a user asks a question at the root node, the system prefetches answers for subnodes in the background.
 
@@ -161,7 +161,7 @@ Optional OAuth authentication via Authentik.
 
 ## 2.3 User Journeys
 
-### 2.3.1 First-Time User
+### 2.3.1 First-Time User --> reverse ask quesiton and explore or better: To seperate but interacting paths
 
 ![First-Time User Journey](02-first-time-user-journey.png)
 

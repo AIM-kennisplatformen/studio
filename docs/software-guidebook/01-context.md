@@ -4,9 +4,9 @@ This chapter provides the big picture view of the Studio application, including 
 
 ## 1.1 System Purpose
 
-**Studio** is an interactive knowledge exploration platform that combines a visual knowledge graph with AI-powered question answering. It enables researchers and domain experts to explore complex topics through an intuitive interface while receiving evidence-based answers backed by academic literature.
+**Studio** is an interactive knowledge exploration platform that combines a visual knowledge graph with AI-powered information retreival. It enables non-experts (laymen) to explore complex topics through an intuitive interface while receiving evidence-based answers backed by expert knowledge.
 
-### 1.1.1 Problem Statement
+### 1.1.1 Problem Statement --> needs revision
 
 Researchers and domain experts often struggle to:
 - Navigate complex relationships between concepts in their field
@@ -19,20 +19,19 @@ Researchers and domain experts often struggle to:
 Studio addresses these challenges by providing:
 - A visual knowledge graph for intuitive concept navigation
 - AI-powered chat that synthesizes answers from academic literature
-- Integration with Zotero for bibliography management
-- Semantic search via vector embeddings for relevant content retrieval
+- Integration with a graph database for acecess to curated and maintanded data (non-generated information)
+- Semantic search via vector embeddings for relevant content retrieval **???**
 
 ## 1.2 Users and Stakeholders
 
-### 1.2.1 Primary Users
+### 1.2.1 Primary Users --> revise
 
 | User Type | Description | Goals |
 |-----------|-------------|-------|
-| Researchers | Academic or industry researchers exploring a domain | Find evidence-based answers, discover relevant literature |
-| Domain Experts | Practitioners seeking best practices and strategies | Understand intervention strategies, identify target groups |
+| Laymen | Target groups that need to to work with expert knowledge beyond their own domain of expertise | Find evidence-based answers, discover relevant literature, intuïtive access to expert databases |
 | Policy Makers | Decision makers needing strategic overviews | Access synthesized knowledge for planning |
 
-### 1.2.2 Stakeholders
+### 1.2.2 Stakeholders --> needs revision
 
 | Stakeholder | Interest |
 |-------------|----------|
@@ -94,6 +93,16 @@ C4Context
 
 **Why Zotero**: Widely used in academia, good API, supports group libraries for collaborative collections.
 
+### 1.4.x TypeDB
+
+**Type**: Graph database and knowledge graph
+
+**Purpose**: Stores relevant data and document reference, maps expert domain knowledge to end users
+
+**Integration**: The MCP server queries TypDB
+
+**Why TypeDB**: Intuitive, direct and rich knowledge graph modelling/programming
+
 ### 1.4.3 LLM Provider
 
 **Type**: AI Language Model
@@ -154,14 +163,14 @@ C4Context
 | Frontend | React 19, Vite, TailwindCSS, shadcn/ui, React Flow, Jotai |
 | Backend | FastAPI, Python 3.12, python-socketio, authlib |
 | AI/ML | LangChain, MCP, sentence-transformers, Langfuse |
-| Data | Qdrant (vectors), JSON (graph), Zotero (bibliography) |
+| Data | Qdrant (vectors), JSON (graph), Zotero (bibliography), TypeDB |
 | Infrastructure | Docker, Pixi, Docker Compose |
 
 ## 1.8 Assumptions
 
 1. Users have modern web browsers with JavaScript enabled
 2. The knowledge graph is pre-created and relatively static
-3. Academic papers are already indexed in Zotero and Qdrant
+3. Literature is indexed in Zotero
 4. Network connectivity is available to external services
 5. LLM provider is accessible (local Ollama or cloud API)
 
