@@ -4,7 +4,7 @@ import "@xyflow/react/dist/style.css";
 import { CustomNode } from "./nodes/CustomNode";
 import { SolidEdge } from "./nodes/CustomEdge";
 import { getEdgeHandles } from "./graphUtils";
-import { applyDagreLayout } from "./layout/cytoscapeLayout";
+import { applyDagreLayout, applyFcoseLayout } from "./layout/cytoscapeLayout";
 import { useAtom, useAtomValue } from "jotai";
 import {
   nodesAtom,
@@ -128,28 +128,106 @@ export default function Graph({ data, width }) {
         })
         .filter(Boolean);
 
-      const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
+      // const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
 
-      // Apply dagre layout to new nodes, keeping fixed nodes in place
-      const layoutPositions = applyDagreLayout(newNodes, newEdges, {
+      // Effe hardcoded of vanuit je state die andere constraints trekken:
+      // 1. Define your source constraints (always use Strings for IDs)
+      const fixedNodes = [{ id: "1", position: { x: 0, y: 0 } }];
+
+      const alignmentConstraints = [
+        { type: "horizontal", nodeIds: ["2", "3", "4"] },
+      ];
+
+      const relativePlacementConstraints = [
+        { top: "1", bottom: "3", gap: 150 },
+      ];
+
+      // 2. Get a Set of all node IDs currently present in the graph
+      const activeNodeIds = new Set(newNodes.map((node) => String(node.id)));
+
+      // 3. Filter and map alignment IDs that are actually active
+      const activeAlignedIds = ["2", "3", "4"].filter((id) =>
+        activeNodeIds.has(id)
+      );
+
+      // 4. Run the fcose layout engine with correct configurations
+      const layoutPositions = applyFcoseLayout(newNodes, newEdges, {
         quality: "proof",
         nodeSeparation: 200,
         idealEdgeLength: 300,
         nodeRepulsion: 50000,
-        maxIterations: 2000,
+        maxIterations: 3000,
         animationDuration: 1000,
         gravity: 0.05,
         numIter: 5000,
-        tile: true,
-        tilingPaddingVertical: 20,
-        tilingPaddingHorizontal: 20,
-        incremental: true,
         nodeDimensionsIncludeLabels: true,
-        fixedNodeConstraint: fixedNodes.map((n) => ({
-          nodeId: n.id,
-          position: n.position,
-        })),
+
+        // Disabling tile and incremental ensures constraints are strictly followed
+        tile: false,
+        incremental: false,
+
+        // Map Fixed Constraints
+        fixedNodeConstraint: fixedNodes
+          .filter((node) => activeNodeIds.has(String(node.id)))
+          .map((node) => ({
+            nodeId: String(node.id),
+            position: node.position,
+          })),
+
+        // Map Alignment Constraints directly into the expected library object format
+        alignmentConstraint:
+          activeAlignedIds.length >= 2
+            ? {
+                horizontal: [activeAlignedIds],
+              }
+            : undefined,
+
+        // Map Relative Placement Constraints
+        relativePlacementConstraint: relativePlacementConstraints
+          .filter((constraint) => {
+            const sourceId = constraint.left || constraint.top;
+            const targetId = constraint.right || constraint.bottom;
+            return (
+              activeNodeIds.has(String(sourceId)) &&
+              activeNodeIds.has(String(targetId))
+            );
+          })
+          .map((constraint) => {
+            if (constraint.left && constraint.right) {
+              return {
+                left: String(constraint.left),
+                right: String(constraint.right),
+                gap: Number(constraint.gap) || 20,
+              };
+            } else {
+              return {
+                top: String(constraint.top),
+                bottom: String(constraint.bottom),
+                gap: Number(constraint.gap) || 20,
+              };
+            }
+          }),
       });
+      // Apply dagre layout to new nodes, keeping fixed nodes in place
+      // const layoutPositions = applyDagreLayout(newNodes, newEdges, {
+      //   quality: "proof",
+      //   nodeSeparation: 200,
+      //   idealEdgeLength: 300,
+      //   nodeRepulsion: 50000,
+      //   maxIterations: 2000,
+      //   animationDuration: 1000,
+      //   gravity: 0.05,
+      //   numIter: 5000,
+      //   tile: false,
+      //   tilingPaddingVertical: 20,
+      //   tilingPaddingHorizontal: 20,
+      //   incremental: true,
+      //   nodeDimensionsIncludeLabels: true,
+      //   fixedNodeConstraint: fixedNodes.map((n) => ({
+      //     nodeId: n.id,
+      //     position: n.position,
+      //   })),
+      // });
 
       // Merge positions: keep old positions, use layout positions for new nodes
       const mergedNodes = newNodes.map((n) => ({

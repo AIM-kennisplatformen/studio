@@ -7,12 +7,24 @@ import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
 import { useAtomValue } from "jotai";
 import { graphRefetchTriggerAtom } from "./lib/atoms";
 import { FeedbackButton } from "./components/FeedbackButton.jsx";
+import LayoutMenu from "./components/graph/layout/LayoutMenu";
 
 export default function App() {
   const [leftWidth, setLeftWidth] = useState(66.6);
   const containerRef = useRef(null);
   const [data, setData] = useState(null);
-  const refetchTrigger = useAtomValue(graphRefetchTriggerAtom); //Read only to trigger refetch when ai signals done
+  const refetchTrigger = useAtomValue(graphRefetchTriggerAtom);
+
+  const [fixedNodes, setFixedNodes] = useState([
+    { id: "1", position: { x: 0, y: 0 } }, // Keep your initial root fixed
+  ]);
+
+  const [alignmentConstraints, setAlignmentConstraints] = useState([
+    { id: "init-align", type: "horizontal", nodeIds: ["2", "3", "4"] },
+  ]);
+
+  const [relativePlacementConstraints, setRelativePlacementConstraints] =
+    useState([{ id: "init-rel", top: "1", bottom: "3", gap: 150 }]); //Read only to trigger refetch when ai signals done
 
   // Load graph once on mount or when center node changes for the first time
   useEffect(() => {
@@ -57,9 +69,36 @@ export default function App() {
   return (
     <div ref={containerRef} className="flex h-screen w-screen">
       <div
-        className={`h-full overflow-hidden bg-gray-100 width-[${leftWidth}%]`}>
+        className="h-full overflow-hidden bg-gray-100"
+        style={{ width: `${leftWidth}%` }}>
         <ReactFlowProvider>
-          <Graph data={data} width={leftWidth} />
+          {/* Kijk dan, dit is die Flex-bak die de boel neitjes naas mekaar zet */}
+          <div className="flex h-full w-full">
+            {/* Dit is je menuutje, die blijft strak 450px en krimp nie inmekaar */}
+            <div className="flex-shrink-0">
+              <LayoutMenu
+                fixedNodes={fixedNodes}
+                setFixedNodes={setFixedNodes}
+                alignmentConstraints={alignmentConstraints}
+                setAlignmentConstraints={setAlignmentConstraints}
+                relativePlacementConstraints={relativePlacementConstraints}
+                setRelativePlacementConstraints={
+                  setRelativePlacementConstraints
+                }
+              />
+            </div>
+
+            {/* En dit is die grafiek-bak, die pakt rücksichtslos alle ruimte die overblijft */}
+            <div className="relative h-full flex-grow">
+              <Graph
+                data={data}
+                width={leftWidth}
+                fixedNodes={fixedNodes}
+                alignmentConstraints={alignmentConstraints}
+                relativePlacementConstraints={relativePlacementConstraints}
+              />
+            </div>
+          </div>
         </ReactFlowProvider>
       </div>
 
