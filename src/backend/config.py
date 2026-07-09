@@ -100,4 +100,8 @@ config: dict = {
     ),
     "vite_dev_server_url": require_env("VITE_DEV_SERVER_URL", "http://localhost:5173"),
     "pdf_storage_dir": require_env("PDF_STORAGE_DIR", "/data/pdfs"),
+    # "app-name:key,other-app:key" pairs authorizing machine clients (e.g.
+    # scepa-rs, upload_interface) to call the /pdfs endpoints. Empty by
+    # default, which safely rejects every request rather than warning.
+    "pdf_api_keys": os.getenv("PDF_API_KEYS", ""),
 }
