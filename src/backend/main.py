@@ -11,7 +11,9 @@ from backend.endpoints.auth import auth_router
 from backend.endpoints.chat import chat_router, socket_app
 from backend.endpoints.graph import graph_router
 from backend.endpoints.log_event import log_event_router
+from backend.endpoints.pdfs import pdf_router
 from backend.endpoints.sessions import sessions_router
+from backend.stores.pdf_store import pdf_store
 from backend.stores.postgres import postgres_store
 from backend.stores.redis import redis_store
 
@@ -35,11 +37,15 @@ async def lifespan(app: FastAPI):
     await postgres_store.connect({
         "postgres_url": config["postgres_url"],
     })
+    await pdf_store.connect({
+        "pdf_storage_dir": config["pdf_storage_dir"],
+    })
 
     yield
 
     await postgres_store.close()
     await redis_store.close()
+    await pdf_store.close()
 
 app = FastAPI(
     title="Knowledge Graph API",
@@ -69,5 +75,6 @@ app.include_router(auth_router)
 app.include_router(chat_router)
 app.include_router(graph_router)
 app.include_router(log_event_router)
+app.include_router(pdf_router, prefix="/api")
 app.include_router(sessions_router)
 app.include_router(frontend)
