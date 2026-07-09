@@ -34,7 +34,33 @@ def test_upload_pdf_stores_content_and_returns_its_size(monkeypatch, tmp_path):
     )
 
     assert response == {"sha256": digest, "size": len(content)}
-    assert store.read(digest) == content
+    assert asyncio.run(store.read(digest)) == content
+
+
+def test_upload_pdf_accepts_an_uppercase_sha256_path_param(monkeypatch, tmp_path):
+    store = _install_store(monkeypatch, tmp_path)
+    content = b"%PDF-1.4 a real-ish paper"
+    digest = _sha256(content)
+
+    response = asyncio.run(
+        pdfs_module.upload_pdf(digest.upper(), _upload_file(content), app="scepa-rs")
+    )
+
+    assert response == {"sha256": digest, "size": len(content)}
+    assert asyncio.run(store.read(digest)) == content
+
+
+def test_upload_pdf_rejects_content_over_the_configured_size_limit(monkeypatch, tmp_path):
+    _install_store(monkeypatch, tmp_path)
+    monkeypatch.setitem(pdfs_module.config, "pdf_max_size_bytes", 10)
+    content = b"more than ten bytes of content"
+    digest = _sha256(content)
+
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(
+            pdfs_module.upload_pdf(digest, _upload_file(content), app="scepa-rs")
+        )
+    assert exc.value.status_code == 413
 
 
 def test_upload_pdf_rejects_a_malformed_sha256_path_param(monkeypatch, tmp_path):
@@ -74,12 +100,23 @@ def test_get_pdf_returns_stored_bytes(monkeypatch, tmp_path):
     store = _install_store(monkeypatch, tmp_path)
     content = b"%PDF-1.4 stored paper"
     digest = _sha256(content)
-    store.save(digest, content)
+    asyncio.run(store.save(digest, content))
 
     response = asyncio.run(pdfs_module.get_pdf(digest, caller="scepa-rs"))
 
     assert response.body == content
     assert response.media_type == "application/pdf"
+
+
+def test_get_pdf_accepts_an_uppercase_sha256_path_param(monkeypatch, tmp_path):
+    store = _install_store(monkeypatch, tmp_path)
+    content = b"%PDF-1.4 stored paper"
+    digest = _sha256(content)
+    asyncio.run(store.save(digest, content))
+
+    response = asyncio.run(pdfs_module.get_pdf(digest.upper(), caller="scepa-rs"))
+
+    assert response.body == content
 
 
 def test_get_pdf_returns_404_when_missing(monkeypatch, tmp_path):
@@ -94,11 +131,11 @@ def test_delete_pdf_removes_an_existing_file(monkeypatch, tmp_path):
     store = _install_store(monkeypatch, tmp_path)
     content = b"%PDF-1.4 to be deleted"
     digest = _sha256(content)
-    store.save(digest, content)
+    asyncio.run(store.save(digest, content))
 
     asyncio.run(pdfs_module.delete_pdf(digest, app="scepa-rs"))
 
-    assert store.read(digest) is None
+    assert asyncio.run(store.read(digest)) is None
 
 
 def test_delete_pdf_returns_404_when_missing(monkeypatch, tmp_path):

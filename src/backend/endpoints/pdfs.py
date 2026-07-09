@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.responses import Response
 from loguru import logger
 
+from backend.config import config
 from backend.endpoints.auth import get_current_user_or_api_key, require_api_key
 from backend.stores.pdf_store import pdf_store
 
@@ -14,12 +15,34 @@ pdf_router = APIRouter(prefix="/pdf", tags=["pdf"])
 
 
 def _validated(sha256: str) -> str:
+    # Normalized as a safety net -- callers in other languages don't all
+    # default hexdigest() output to lowercase the way Python's hashlib does.
+    sha256 = sha256.lower()
     if not pdf_store.is_valid_sha256(sha256):
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
             detail="sha256 must be a 64-character lowercase hex digest",
         )
     return sha256
+
+
+async def _read_limited(file: UploadFile, max_bytes: int) -> bytes:
+    """
+    Reads file in chunks, rejecting it once the running total exceeds
+    max_bytes -- rejects an oversized upload before it's fully buffered
+    into memory, rather than after.
+    """
+    chunks: list[bytes] = []
+    total = 0
+    while chunk := await file.read(1024 * 1024):
+        total += len(chunk)
+        if total > max_bytes:
+            raise HTTPException(
+                status.HTTP_413_CONTENT_TOO_LARGE,
+                detail=f"PDF exceeds the {max_bytes} byte limit",
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 
 # PUT, not POST: the identifier is derived from the content itself, so
@@ -44,10 +67,10 @@ async def upload_pdf(sha256: str, file: UploadFile, app: str = Depends(require_a
             detail="Only PDF files are accepted",
         )
 
-    content = await file.read()
+    content = await _read_limited(file, config["pdf_max_size_bytes"])
 
     try:
-        pdf_store.save(sha256, content)
+        await pdf_store.save(sha256, content)
     except ValueError as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
@@ -67,7 +90,7 @@ async def get_pdf(sha256: str, caller: str = Depends(get_current_user_or_api_key
     """
     sha256 = _validated(sha256)
 
-    content = pdf_store.read(sha256)
+    content = await pdf_store.read(sha256)
     if content is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"No PDF stored under {sha256}")
 
@@ -83,5 +106,5 @@ async def delete_pdf(sha256: str, app: str = Depends(require_api_key)):
     """Delete the PDF stored under sha256. Machine clients only."""
     sha256 = _validated(sha256)
 
-    if not pdf_store.delete(sha256):
+    if not await pdf_store.delete(sha256):
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"No PDF stored under {sha256}")

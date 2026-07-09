@@ -1,6 +1,8 @@
+import asyncio
 import hashlib
 import re
 from pathlib import Path
+from typing import Any
 
 from loguru import logger
 
@@ -35,12 +37,15 @@ class PdfStore:
       hash implies same content, so re-uploads are safe)
     - read() returns the raw bytes for a stored PDF, or None if missing
     - delete() removes a stored PDF, returning whether one was actually removed
+
+    All filesystem I/O runs in a worker thread (asyncio.to_thread) rather
+    than blocking the event loop directly.
     """
 
     def __init__(self) -> None:
         self.directory: Path | None = None
 
-    async def connect(self, config_dict: dict) -> None:
+    async def connect(self, config_dict: dict[str, Any]) -> None:
         """
         Ensure the configured storage directory exists.
 
@@ -56,7 +61,7 @@ class PdfStore:
             return
 
         directory = Path(config_dict["pdf_storage_dir"])
-        directory.mkdir(parents=True, exist_ok=True)
+        await asyncio.to_thread(directory.mkdir, parents=True, exist_ok=True)
         self.directory = directory
         logger.info(f"✓ PDF storage ready at {directory}")
 
@@ -79,12 +84,12 @@ class PdfStore:
         assert self.directory is not None
         return self.directory / f"{sha256}.pdf"
 
-    def exists(self, sha256: str) -> bool:
+    async def exists(self, sha256: str) -> bool:
         """Return whether a PDF is stored under sha256."""
         self._ensure_connected()
-        return self._path(sha256).is_file()
+        return await asyncio.to_thread(self._path(sha256).is_file)
 
-    def save(self, sha256: str, content: bytes) -> None:
+    async def save(self, sha256: str, content: bytes) -> None:
         """
         Store content under sha256.
 
@@ -99,24 +104,32 @@ class PdfStore:
                 f"content hash {actual} does not match provided identifier {sha256}"
             )
 
-        path = self._path(sha256)
+        await asyncio.to_thread(self._write_sync, self._path(sha256), content)
+
+    @staticmethod
+    def _write_sync(path: Path, content: bytes) -> None:
         if path.exists():
             return
+        _ = path.write_bytes(content)
 
-        path.write_bytes(content)
-
-    def read(self, sha256: str) -> bytes | None:
+    async def read(self, sha256: str) -> bytes | None:
         """Return the stored PDF's bytes, or None if nothing is stored under sha256."""
         self._ensure_connected()
-        path = self._path(sha256)
+        return await asyncio.to_thread(self._read_sync, self._path(sha256))
+
+    @staticmethod
+    def _read_sync(path: Path) -> bytes | None:
         if not path.is_file():
             return None
         return path.read_bytes()
 
-    def delete(self, sha256: str) -> bool:
+    async def delete(self, sha256: str) -> bool:
         """Delete the PDF stored under sha256. Returns whether one was removed."""
         self._ensure_connected()
-        path = self._path(sha256)
+        return await asyncio.to_thread(self._delete_sync, self._path(sha256))
+
+    @staticmethod
+    def _delete_sync(path: Path) -> bool:
         if not path.is_file():
             return False
         path.unlink()
