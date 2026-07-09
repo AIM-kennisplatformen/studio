@@ -99,4 +99,5 @@ config: dict = {
         "postgresql://studio:studio@studio_postgres:5432/studio",
     ),
     "vite_dev_server_url": require_env("VITE_DEV_SERVER_URL", "http://localhost:5173"),
+    "pdf_storage_dir": require_env("PDF_STORAGE_DIR", "/data/pdfs"),
 }
