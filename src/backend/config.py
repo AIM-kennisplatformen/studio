@@ -99,4 +99,13 @@ config: dict = {
         "postgresql://studio:studio@studio_postgres:5432/studio",
     ),
     "vite_dev_server_url": require_env("VITE_DEV_SERVER_URL", "http://localhost:5173"),
+    "pdf_storage_dir": require_env("PDF_STORAGE_DIR", "/data/pdfs"),
+    # "app-name:key,other-app:key" pairs authorizing machine clients (e.g.
+    # scepa-rs, upload_interface) to call the /pdfs endpoints. Empty by
+    # default, which safely rejects every request rather than warning.
+    "pdf_api_keys": os.getenv("PDF_API_KEYS", ""),
+    # Rejects an upload before it's fully buffered into memory, rather than
+    # after -- the actual OOM risk is the in-memory bytes, not the file on
+    # disk. Default 100 MiB.
+    "pdf_max_size_bytes": int(os.getenv("PDF_MAX_SIZE_BYTES", str(100 * 1024 * 1024))),
 }
