@@ -1,5 +1,6 @@
 import asyncio
 from datetime import UTC, datetime
+from typing import Literal
 from uuid import uuid4
 
 import pytest
@@ -17,12 +18,20 @@ class _FakeSessionStore:
             user_id="user-1",
             name="Energy Poverty Actions",
             updated_at=datetime.now(UTC),
+            message_count=2,
+            title_type="static",
+            title_overwritten=False,
+            last_title_message_count=0,
         )
         self.foreign_session = Session(
             session_id=uuid4(),
             user_id="user-2",
             name="Foreign",
             updated_at=datetime.now(UTC),
+            message_count=0,
+            title_type="static",
+            title_overwritten=False,
+            last_title_message_count=0,
         )
         self.messages = [
             SessionMessage(
@@ -41,12 +50,16 @@ class _FakeSessionStore:
             ),
         ]
 
-    async def create_session(self, user_id):
+    async def create_session(self, user_id, name="New session", title_type: Literal["static", "adaptive"] = "static"):
         self.created_session = Session(
             session_id=uuid4(),
             user_id=user_id,
-            name="New session",
+            name=name,
             updated_at=datetime.now(UTC),
+            message_count=0,
+            title_type=title_type,
+            title_overwritten=False,
+            last_title_message_count=0,
         )
         return self.created_session
 
@@ -62,6 +75,14 @@ class _FakeSessionStore:
         if user_id == self.session.user_id and session_id == self.session.session_id:
             return self.messages
         return []
+
+    async def update_session_meta(self, user_id, session_id, **kwargs):
+        if user_id != self.session.user_id or session_id != self.session.session_id:
+            return None
+        for key, value in kwargs.items():
+            if value is not None:
+                setattr(self.session, key, value)
+        return self.session
 
 
 class _FakeRequest:
@@ -157,5 +178,64 @@ def test_activate_session_updates_http_and_socket_visible_state(monkeypatch):
         assert response.session_id == fake_store.session.session_id
         assert active_session_ids["user-1"] == fake_store.session.session_id
         assert request.session[ACTIVE_SESSION_KEY] == str(fake_store.session.session_id)
+
+    asyncio.run(exercise_endpoint())
+
+
+def test_update_session_name_sets_overwritten_flag(monkeypatch):
+    async def exercise_endpoint():
+        fake_store = _FakeSessionStore()
+        _install_fake_store(monkeypatch, fake_store)
+
+        from backend.models.session import UpdateSessionRequest
+        body = UpdateSessionRequest(name="Custom name")
+        response = await sessions_module.update_session(
+            fake_store.session.session_id,
+            body,
+            user={"sub": "user-1"},
+        )
+
+        assert response is not None
+        assert response.name == "Custom name"
+        assert response.title_overwritten is True
+
+    asyncio.run(exercise_endpoint())
+
+
+def test_update_session_title_type(monkeypatch):
+    async def exercise_endpoint():
+        fake_store = _FakeSessionStore()
+        _install_fake_store(monkeypatch, fake_store)
+
+        from backend.models.session import UpdateSessionRequest
+        body = UpdateSessionRequest(title_type="adaptive")
+        response = await sessions_module.update_session(
+            fake_store.session.session_id,
+            body,
+            user={"sub": "user-1"},
+        )
+
+        assert response is not None
+        assert response.title_type == "adaptive"
+        assert response.title_overwritten is False  # not changed
+
+    asyncio.run(exercise_endpoint())
+
+
+def test_update_session_returns_404_for_foreign_session(monkeypatch):
+    async def exercise_endpoint():
+        fake_store = _FakeSessionStore()
+        _install_fake_store(monkeypatch, fake_store)
+
+        from backend.models.session import UpdateSessionRequest
+        body = UpdateSessionRequest(name="Hack")
+        with pytest.raises(HTTPException) as exc:
+            await sessions_module.update_session(
+                fake_store.foreign_session.session_id,
+                body,
+                user={"sub": "user-1"},
+            )
+
+        assert exc.value.status_code == 404
 
     asyncio.run(exercise_endpoint())
