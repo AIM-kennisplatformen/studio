@@ -68,12 +68,20 @@ class _FakePool:
     async def fetchrow(self, query, *args):
         normalized = " ".join(query.lower().split())
         if normalized.startswith("insert into sessions"):
-            session_id, user_id, name, updated_at = args
+            session_id = args[0]
+            user_id = args[1]
+            name = args[2]
+            updated_at = args[3]
+            title_type = args[4] if len(args) > 4 else "static"
             row = {
                 "session_id": session_id,
                 "user_id": user_id,
                 "name": name,
                 "updated_at": updated_at,
+                "message_count": 0,
+                "title_type": title_type,
+                "title_overwritten": False,
+                "last_title_message_count": 0,
             }
             self.sessions[session_id] = row
             return row
@@ -89,7 +97,12 @@ class _FakePool:
             user_id, session_id = args
             session = self.sessions.get(session_id)
             if session and session["user_id"] == user_id:
-                return session
+                row = {**session}
+                row.setdefault("message_count", 0)
+                row.setdefault("title_type", "static")
+                row.setdefault("title_overwritten", False)
+                row.setdefault("last_title_message_count", 0)
+                return row
             return None
 
         if normalized.startswith("update sessions set name = $3"):
@@ -98,7 +111,12 @@ class _FakePool:
             if not session or session["user_id"] != user_id:
                 return None
             session["name"] = name
-            return session
+            row = {**session}
+            row.setdefault("message_count", 0)
+            row.setdefault("title_type", "static")
+            row.setdefault("title_overwritten", False)
+            row.setdefault("last_title_message_count", 0)
+            return row
 
         if normalized.startswith("update sessions set name = $4"):
             user_id, session_id, current_name, name = args
@@ -110,7 +128,12 @@ class _FakePool:
             ):
                 return None
             session["name"] = name
-            return session
+            row = {**session}
+            row.setdefault("message_count", 0)
+            row.setdefault("title_type", "static")
+            row.setdefault("title_overwritten", False)
+            row.setdefault("last_title_message_count", 0)
+            return row
 
         raise AssertionError(f"Unexpected fetchrow query: {query}")
 
