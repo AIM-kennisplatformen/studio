@@ -16,11 +16,14 @@ from backend.config import config
 
 sio: Optional[socketio.AsyncServer] = None
 
-# user_id → sid
+# user_id → sid (primary, last-connected)
 user_connections: Dict[str, str] = {}
 
 # sid → user_id
 sid_connections: Dict[str, str] = {}
+
+# user_id → set[sid] (multi-tab support)
+user_sids: Dict[str, set[str]] = {}
 
 
 # =====================================================
@@ -43,6 +46,7 @@ def bind_user(user_id: str, sid: str):
     """
     user_connections[user_id] = sid
     sid_connections[sid] = user_id
+    user_sids.setdefault(user_id, set()).add(sid)
     print(f"[BIND] user={user_id} ↔ sid={sid}")
 
 
@@ -51,8 +55,16 @@ def unbind_sid(sid: str) -> Optional[str]:
     Remove sid and reverse-mapping when client disconnects.
     """
     user_id = sid_connections.pop(sid, None)
-    if user_id:
-        user_connections.pop(user_id, None)
+    if not user_id:
+        print(f"[UNBIND] sid={sid} user=None")
+        return None
+
+    user_connections.pop(user_id, None)
+    sids = user_sids.get(user_id)
+    if sids:
+        sids.discard(sid)
+        if not sids:
+            del user_sids[user_id]
 
     print(f"[UNBIND] sid={sid} user={user_id}")
     return user_id
@@ -163,21 +175,22 @@ async def stream_agent_events(
 
 async def emit_to_user(user_id: str, event: str, payload: dict):
     """
-    Emit a named event to a specific user if connected.
+    Emit a named event to all sockets for a specific user.
     """
     if sio is None:
         print("[emit_to_user] Socket.IO not registered")
         return
 
-    sid = user_connections.get(user_id)
-    if not sid:
-        print(f"[emit_to_user] No active sid for user={user_id}")
+    sids = user_sids.get(user_id)
+    if not sids:
+        print(f"[emit_to_user] No active sids for user={user_id}")
         return
 
-    try:
-        await sio.emit(event, payload, to=sid)
-    except Exception as e:
-        print(f"[emit_to_user] ERROR sending to user={user_id}: {e}")
+    for sid in sids:
+        try:
+            await sio.emit(event, payload, to=sid)
+        except Exception as e:
+            print(f"[emit_to_user] ERROR sending to user={user_id} sid={sid}: {e}")
 
 
 async def push_chat_message(
