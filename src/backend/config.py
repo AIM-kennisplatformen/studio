@@ -109,3 +109,18 @@ config: dict = {
     # disk. Default 100 MiB.
     "pdf_max_size_bytes": int(os.getenv("PDF_MAX_SIZE_BYTES", str(100 * 1024 * 1024))),
 }
+
+
+STATIC_TITLE_PROMPT = (
+    "Create a concise title for this chat session.\n"
+    "Rules: maximum 6 words, no quotation marks, no trailing punctuation, "
+    "and no extra text.\n\n"
+    "First user message:\n{question}\n\nAI response:\n{answer}"
+)
+
+ADAPTIVE_TITLE_PROMPT = (
+    "Create a concise title for this chat session based on the "
+    "latest conversation.\nRules: maximum 6 words, no quotation marks, "
+    "no trailing punctuation, and no extra text.\n\n"
+    "Recent conversation:\n{conversation_text}"
+)
