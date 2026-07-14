@@ -152,6 +152,31 @@ class PostgresStore:
                 """
             )
 
+            await conn.execute(
+                """
+                ALTER TABLE sessions
+                ADD COLUMN IF NOT EXISTS message_count INT NOT NULL DEFAULT 0
+                """
+            )
+            await conn.execute(
+                """
+                ALTER TABLE sessions
+                ADD COLUMN IF NOT EXISTS title_type TEXT NOT NULL DEFAULT 'static'
+                """
+            )
+            await conn.execute(
+                """
+                ALTER TABLE sessions
+                ADD COLUMN IF NOT EXISTS title_overwritten BOOLEAN NOT NULL DEFAULT FALSE
+                """
+            )
+            await conn.execute(
+                """
+                ALTER TABLE sessions
+                ADD COLUMN IF NOT EXISTS last_title_message_count INT NOT NULL DEFAULT 0
+                """
+            )
+
     @staticmethod
     def _row_to_session(row: Any) -> Session:
         return Session(
@@ -159,6 +184,10 @@ class PostgresStore:
             user_id=row["user_id"],
             name=row["name"],
             updated_at=row["updated_at"],
+            message_count=row["message_count"],
+            title_type=row["title_type"],
+            title_overwritten=row["title_overwritten"],
+            last_title_message_count=row["last_title_message_count"],
         )
 
     @staticmethod
@@ -175,6 +204,7 @@ class PostgresStore:
         self,
         user_id: str,
         name: str = DEFAULT_SESSION_NAME,
+        title_type: str = "static",
     ) -> Session:
         """Create and return a new session for a user."""
         self._ensure_connected()
@@ -184,14 +214,19 @@ class PostgresStore:
         now = datetime.now(UTC)
         row = await self.pool.fetchrow(
             """
-            INSERT INTO sessions (session_id, user_id, name, updated_at)
-            VALUES ($1, $2, $3, $4)
-            RETURNING session_id, user_id, name, updated_at
+            INSERT INTO sessions (session_id, user_id, name, updated_at,
+                                  message_count, title_type, title_overwritten,
+                                  last_title_message_count)
+            VALUES ($1, $2, $3, $4, 0, $5, FALSE, 0)
+            RETURNING session_id, user_id, name, updated_at,
+                      message_count, title_type, title_overwritten,
+                      last_title_message_count
             """,
             session_id,
             user_id,
             name,
             now,
+            title_type,
         )
         return self._row_to_session(row)
 
@@ -202,7 +237,9 @@ class PostgresStore:
 
         rows = await self.pool.fetch(
             """
-            SELECT session_id, user_id, name, updated_at
+            SELECT session_id, user_id, name, updated_at,
+                   message_count, title_type, title_overwritten,
+                   last_title_message_count
             FROM sessions
             WHERE user_id = $1
             ORDER BY updated_at DESC
@@ -218,7 +255,9 @@ class PostgresStore:
 
         row = await self.pool.fetchrow(
             """
-            SELECT session_id, user_id, name, updated_at
+            SELECT session_id, user_id, name, updated_at,
+                   message_count, title_type, title_overwritten,
+                   last_title_message_count
             FROM sessions
             WHERE user_id = $1
             ORDER BY updated_at DESC
@@ -235,7 +274,9 @@ class PostgresStore:
 
         row = await self.pool.fetchrow(
             """
-            SELECT session_id, user_id, name, updated_at
+            SELECT session_id, user_id, name, updated_at,
+                   message_count, title_type, title_overwritten,
+                   last_title_message_count
             FROM sessions
             WHERE user_id = $1 AND session_id = $2
             """,
@@ -266,7 +307,9 @@ class PostgresStore:
                 UPDATE sessions
                 SET name = $3
                 WHERE user_id = $1 AND session_id = $2
-                RETURNING session_id, user_id, name, updated_at
+                RETURNING session_id, user_id, name, updated_at,
+                          message_count, title_type, title_overwritten,
+                          last_title_message_count
                 """,
                 user_id,
                 session_id,
@@ -278,7 +321,9 @@ class PostgresStore:
                 UPDATE sessions
                 SET name = $4
                 WHERE user_id = $1 AND session_id = $2 AND name = $3
-                RETURNING session_id, user_id, name, updated_at
+                RETURNING session_id, user_id, name, updated_at,
+                          message_count, title_type, title_overwritten,
+                          last_title_message_count
                 """,
                 user_id,
                 session_id,
@@ -393,6 +438,95 @@ class PostgresStore:
                 session_id,
             )
         return [self._row_to_message(row) for row in rows]
+
+    async def increment_message_count(
+        self,
+        user_id: str,
+        session_id: UUID,
+    ) -> None:
+        """Increment the message counter for a session."""
+        self._ensure_connected()
+        assert self.pool is not None
+
+        await self.pool.execute(
+            """
+            UPDATE sessions
+            SET message_count = message_count + 1
+            WHERE user_id = $1 AND session_id = $2
+            """,
+            user_id,
+            session_id,
+        )
+
+    async def update_session_meta(
+        self,
+        user_id: str,
+        session_id: UUID,
+        name: str | None = None,
+        title_type: str | None = None,
+        title_overwritten: bool | None = None,
+        last_title_message_count: int | None = None,
+    ) -> Session | None:
+        """Update session metadata fields. Only non-None values are applied."""
+        self._ensure_connected()
+        assert self.pool is not None
+
+        sets: list[str] = []
+        params: list[Any] = []
+        idx = 3
+
+        if name is not None:
+            sets.append(f"name = ${idx}")
+            params.append(name)
+            idx += 1
+        if title_type is not None:
+            sets.append(f"title_type = ${idx}")
+            params.append(title_type)
+            idx += 1
+        if title_overwritten is not None:
+            sets.append(f"title_overwritten = ${idx}")
+            params.append(title_overwritten)
+            idx += 1
+        if last_title_message_count is not None:
+            sets.append(f"last_title_message_count = ${idx}")
+            params.append(last_title_message_count)
+            idx += 1
+
+        if not sets:
+            return await self.get_session(user_id, session_id)
+
+        query = f"""
+            UPDATE sessions
+            SET {', '.join(sets)}
+            WHERE user_id = $1 AND session_id = $2
+            RETURNING session_id, user_id, name, updated_at,
+                      message_count, title_type, title_overwritten,
+                      last_title_message_count
+        """
+        row = await self.pool.fetchrow(query, user_id, session_id, *params)
+        return self._row_to_session(row) if row else None
+
+    async def backfill_message_counts(self) -> int:
+        """Set message_count for existing sessions that have count = 0.
+
+        Returns the number of rows updated.
+        """
+        self._ensure_connected()
+        assert self.pool is not None
+
+        result = await self.pool.execute(
+            """
+            UPDATE sessions s
+            SET message_count = (
+                SELECT COUNT(*) FROM session_messages m
+                WHERE m.session_id = s.session_id
+            )
+            WHERE s.message_count = 0
+            """
+        )
+        # asyncpg returns e.g. "UPDATE 5"
+        count = int(result.split()[-1]) if result else 0
+        return count
 
 
 postgres_store = PostgresStore()
