@@ -17,6 +17,8 @@ from langfuse import get_client
 from loguru import logger
 
 from backend.config import (
+    ADAPTIVE_TITLE_PROMPT,
+    STATIC_TITLE_PROMPT,
     config,
     root_question_prompt,
     node_no_question_prompt,
@@ -43,6 +45,7 @@ from backend.utility.session_store import (
     set_active_session_id,
 )
 from backend.utility.chat_util import (
+    emit_to_user,
     push_chat_message,
     register_socketio,
     bind_user,
@@ -64,6 +67,9 @@ register_socketio(sio)
 
 socket_app = socketio.ASGIApp(sio)
 chat_router = APIRouter()
+
+# Per-session in-flight title generation lock
+_title_generation_locks: set[str] = set()
 
 
 async def _resolve_active_session(
@@ -126,28 +132,44 @@ def _sanitize_session_title(raw_title: object) -> str | None:
     return title
 
 
-async def _generate_session_title(user_msg: str) -> str | None:
+async def _generate_session_title(user_msg: str, ai_response: str) -> str | None:
     llm = ChatOpenAI(
         model=config["llm_model"],
         base_url=config["openai_host"],
     )
     result = await llm.ainvoke(
-        "Create a concise title for this chat session.\n"
-        "Rules: maximum 6 words, no quotation marks, no trailing punctuation, "
-        "and no extra text.\n\n"
-        f"First user message:\n{user_msg}"
+        STATIC_TITLE_PROMPT.format(question=user_msg, answer=ai_response[:200])
     )
     return _sanitize_session_title(result.content)
+
+
+async def _generate_adaptive_title(conversation_text: str) -> str | None:
+    llm = ChatOpenAI(
+        model=config["llm_model"],
+        base_url=config["openai_host"],
+    )
+    result = await llm.ainvoke(
+        ADAPTIVE_TITLE_PROMPT.format(conversation_text=conversation_text)
+    )
+    return _sanitize_session_title(result.content)
+
+
+async def _emit_title_updated(user_id: str, session_id: UUID, title: str) -> None:
+    await emit_to_user(user_id, "session_title_updated", {
+        "session_id": str(session_id),
+        "name": title,
+    })
 
 
 async def _update_session_title(
     user_id: str,
     session_id: UUID,
     user_msg: str,
+    ai_response: str,
 ) -> None:
     title = _fallback_session_title(user_msg)
     try:
-        generated_title = await _generate_session_title(user_msg)
+        generated_title = await _generate_session_title(user_msg, ai_response)
         if generated_title:
             title = generated_title
     except (APIConnectionError, APITimeoutError, RateLimitError) as exc:
@@ -163,13 +185,91 @@ async def _update_session_title(
         logger.warning(f"Unexpected failure while generating AI session title: {exc}")
 
     try:
-        await postgres_store.update_session_name(user_id, session_id, title)
+        session = await postgres_store.update_session_name(user_id, session_id, title)
+        if session:
+            await _emit_title_updated(user_id, session_id, session.name)
     except Exception as exc:
         logger.warning(f"Failed to update session title: {exc}")
 
 
-def _schedule_session_title(user_id: str, session_id: UUID, user_msg: str) -> None:
-    asyncio.create_task(_update_session_title(user_id, session_id, user_msg))
+async def _update_session_title_adaptive(
+    user_id: str,
+    session_id: UUID,
+) -> None:
+    title = DEFAULT_SESSION_NAME
+    try:
+        messages = await postgres_store.list_messages(user_id, session_id, limit=20)
+        labels = {"ai": "AI", "user": "User"}
+        conversation_text = "\n".join(
+            f"{labels.get(m.role, m.role)}: {m.content}" for m in messages
+        )
+        title = _fallback_session_title(messages[0].content if messages else "")
+        generated_title = await _generate_adaptive_title(conversation_text)
+        if generated_title:
+            title = generated_title
+    except (APIConnectionError, APITimeoutError, RateLimitError) as exc:
+        logger.warning(f"Temporary OpenAI failure while generating adaptive title: {exc}")
+    except (
+        AuthenticationError,
+        BadRequestError,
+        NotFoundError,
+        PermissionDeniedError,
+    ) as exc:
+        logger.error(f"OpenAI configuration error while generating adaptive title: {exc}")
+    except Exception as exc:
+        logger.warning(f"Unexpected failure while generating adaptive title: {exc}")
+
+    try:
+        session = await postgres_store.update_session_name(
+            user_id, session_id, title, current_name=None
+        )
+        if session:
+            await postgres_store.update_session_meta(
+                user_id, session_id,
+                last_title_message_count=session.message_count,
+            )
+            await _emit_title_updated(user_id, session_id, session.name)
+    except Exception as exc:
+        logger.warning(f"Failed to update adaptive session title: {exc}")
+
+
+def _schedule_session_title(user_id: str, session_id: UUID, user_msg: str, ai_response: str) -> None:
+    asyncio.create_task(_update_session_title(user_id, session_id, user_msg, ai_response))
+
+
+def _schedule_adaptive_title(user_id: str, session_id: UUID) -> None:
+    asyncio.create_task(_update_session_title_adaptive(user_id, session_id))
+
+
+async def _maybe_generate_title(
+    user_id: str,
+    session_id: UUID,
+    user_msg: str,
+    ai_response: str,
+) -> None:
+    session = await postgres_store.get_session(user_id, session_id)
+    if not session or session.title_overwritten:
+        return
+
+    lock_key = str(session_id)
+    if lock_key in _title_generation_locks:
+        return
+
+    if session.name != DEFAULT_SESSION_NAME and session.title_type != "adaptive":
+        return
+
+    if session.name != DEFAULT_SESSION_NAME and session.title_type == "adaptive":
+        if session.message_count < session.last_title_message_count + 20:
+            return
+
+    _title_generation_locks.add(lock_key)
+    try:
+        if session.name == DEFAULT_SESSION_NAME:
+            _schedule_session_title(user_id, session_id, user_msg, ai_response)
+        elif session.title_type == "adaptive":
+            _schedule_adaptive_title(user_id, session_id)
+    finally:
+        _title_generation_locks.discard(lock_key)
 
 
 async def _store_chat_message(
@@ -186,6 +286,7 @@ async def _store_chat_message(
         str(session_id),
         ChatMessage(role=redis_role, message=content),
     )
+    await postgres_store.increment_message_count(user_id, session_id)
 
 
 @sio.event
@@ -261,11 +362,7 @@ async def send_message(sid, data):
             limit,
         )
         history_text = _format_history_text(history_items)
-        is_first_message = not history_items
         await _store_chat_message(user_id, durable_session_id, "user", user_msg)
-
-        if active_session.name == DEFAULT_SESSION_NAME and is_first_message:
-            _schedule_session_title(user_id, durable_session_id, user_msg)
 
         ctx = user_graph_contexts[user_id]
 
@@ -286,6 +383,9 @@ async def send_message(sid, data):
                             durable_session_id,
                             "ai",
                             full_response,
+                        )
+                        await _maybe_generate_title(
+                            user_id, durable_session_id, user_msg, full_response,
                         )
                         await push_chat_message_stream(
                             user_id,
@@ -324,6 +424,9 @@ async def send_message(sid, data):
                     durable_session_id,
                     "ai",
                     full_response,
+                )
+                await _maybe_generate_title(
+                    user_id, durable_session_id, user_msg, full_response,
                 )
                 await push_chat_message_stream(
                     user_id,
@@ -370,6 +473,9 @@ async def send_message(sid, data):
         # FINALIZE ROOT RESPONSE
         # --------------------------------------------------
         await _store_chat_message(user_id, durable_session_id, "ai", full_response)
+        await _maybe_generate_title(
+            user_id, durable_session_id, user_msg, full_response,
+        )
         ctx.setdefault("prefetched", {})["root"] = full_response
 
         root_span.update(output={"response": full_response})
