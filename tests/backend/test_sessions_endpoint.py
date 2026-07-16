@@ -50,7 +50,12 @@ class _FakeSessionStore:
             ),
         ]
 
-    async def create_session(self, user_id, name="New session", title_type: Literal["static", "adaptive"] = "static"):
+    async def create_session(
+        self,
+        user_id,
+        name="New session",
+        title_type: Literal["static", "adaptive"] = "static",
+    ):
         self.created_session = Session(
             session_id=uuid4(),
             user_id=user_id,
@@ -188,6 +193,7 @@ def test_update_session_name_sets_overwritten_flag(monkeypatch):
         _install_fake_store(monkeypatch, fake_store)
 
         from backend.models.session import UpdateSessionRequest
+
         body = UpdateSessionRequest(name="Custom name")
         response = await sessions_module.update_session(
             fake_store.session.session_id,
@@ -208,6 +214,7 @@ def test_update_session_title_type(monkeypatch):
         _install_fake_store(monkeypatch, fake_store)
 
         from backend.models.session import UpdateSessionRequest
+
         body = UpdateSessionRequest(title_type="adaptive")
         response = await sessions_module.update_session(
             fake_store.session.session_id,
@@ -228,6 +235,7 @@ def test_update_session_returns_404_for_foreign_session(monkeypatch):
         _install_fake_store(monkeypatch, fake_store)
 
         from backend.models.session import UpdateSessionRequest
+
         body = UpdateSessionRequest(name="Hack")
         with pytest.raises(HTTPException) as exc:
             await sessions_module.update_session(

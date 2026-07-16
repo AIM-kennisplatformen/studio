@@ -497,7 +497,7 @@ class PostgresStore:
 
         query = f"""
             UPDATE sessions
-            SET {', '.join(sets)}
+            SET {", ".join(sets)}
             WHERE user_id = $1 AND session_id = $2
             RETURNING session_id, user_id, name, updated_at,
                       message_count, title_type, title_overwritten,

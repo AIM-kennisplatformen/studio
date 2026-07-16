@@ -93,7 +93,10 @@ class _FakePool:
             ]
             return max(sessions, key=lambda row: row["updated_at"], default=None)
 
-        if normalized.startswith("select session_id") and "where user_id = $1 and session_id = $2" in normalized:
+        if (
+            normalized.startswith("select session_id")
+            and "where user_id = $1 and session_id = $2" in normalized
+        ):
             user_id, session_id = args
             session = self.sessions.get(session_id)
             if session and session["user_id"] == user_id:
@@ -152,9 +155,7 @@ class _FakePool:
             if not session or session["user_id"] != user_id:
                 return []
 
-            messages = [
-                row for row in self.messages if row["session_id"] == session_id
-            ]
+            messages = [row for row in self.messages if row["session_id"] == session_id]
             if len(args) == 3:
                 messages = sorted(
                     messages,

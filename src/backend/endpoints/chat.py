@@ -155,10 +155,14 @@ async def _generate_adaptive_title(conversation_text: str) -> str | None:
 
 
 async def _emit_title_updated(user_id: str, session_id: UUID, title: str) -> None:
-    await emit_to_user(user_id, "session_title_updated", {
-        "session_id": str(session_id),
-        "name": title,
-    })
+    await emit_to_user(
+        user_id,
+        "session_title_updated",
+        {
+            "session_id": str(session_id),
+            "name": title,
+        },
+    )
 
 
 async def _update_session_title(
@@ -173,14 +177,18 @@ async def _update_session_title(
         if generated_title:
             title = generated_title
     except (APIConnectionError, APITimeoutError, RateLimitError) as exc:
-        logger.warning(f"Temporary OpenAI failure while generating session title: {exc}")
+        logger.warning(
+            f"Temporary OpenAI failure while generating session title: {exc}"
+        )
     except (
         AuthenticationError,
         BadRequestError,
         NotFoundError,
         PermissionDeniedError,
     ) as exc:
-        logger.error(f"OpenAI configuration error while generating session title: {exc}")
+        logger.error(
+            f"OpenAI configuration error while generating session title: {exc}"
+        )
     except Exception as exc:
         logger.warning(f"Unexpected failure while generating AI session title: {exc}")
 
@@ -208,14 +216,18 @@ async def _update_session_title_adaptive(
         if generated_title:
             title = generated_title
     except (APIConnectionError, APITimeoutError, RateLimitError) as exc:
-        logger.warning(f"Temporary OpenAI failure while generating adaptive title: {exc}")
+        logger.warning(
+            f"Temporary OpenAI failure while generating adaptive title: {exc}"
+        )
     except (
         AuthenticationError,
         BadRequestError,
         NotFoundError,
         PermissionDeniedError,
     ) as exc:
-        logger.error(f"OpenAI configuration error while generating adaptive title: {exc}")
+        logger.error(
+            f"OpenAI configuration error while generating adaptive title: {exc}"
+        )
     except Exception as exc:
         logger.warning(f"Unexpected failure while generating adaptive title: {exc}")
 
@@ -225,7 +237,8 @@ async def _update_session_title_adaptive(
         )
         if session:
             await postgres_store.update_session_meta(
-                user_id, session_id,
+                user_id,
+                session_id,
                 last_title_message_count=session.message_count,
             )
             await _emit_title_updated(user_id, session_id, session.name)
@@ -233,8 +246,12 @@ async def _update_session_title_adaptive(
         logger.warning(f"Failed to update adaptive session title: {exc}")
 
 
-def _schedule_session_title(user_id: str, session_id: UUID, user_msg: str, ai_response: str) -> None:
-    asyncio.create_task(_update_session_title(user_id, session_id, user_msg, ai_response))
+def _schedule_session_title(
+    user_id: str, session_id: UUID, user_msg: str, ai_response: str
+) -> None:
+    asyncio.create_task(
+        _update_session_title(user_id, session_id, user_msg, ai_response)
+    )
 
 
 def _schedule_adaptive_title(user_id: str, session_id: UUID) -> None:
@@ -385,7 +402,10 @@ async def send_message(sid, data):
                             full_response,
                         )
                         await _maybe_generate_title(
-                            user_id, durable_session_id, user_msg, full_response,
+                            user_id,
+                            durable_session_id,
+                            user_msg,
+                            full_response,
                         )
                         await push_chat_message_stream(
                             user_id,
@@ -404,7 +424,9 @@ async def send_message(sid, data):
                         langfuse.flush()
                         return
 
-                    question = ctx.get("latest_question") or ctx.get("previous_question")
+                    question = ctx.get("latest_question") or ctx.get(
+                        "previous_question"
+                    )
                 else:
                     ctx["latest_question"] = user_msg
                     ctx["prefetched"] = {}
@@ -426,7 +448,10 @@ async def send_message(sid, data):
                     full_response,
                 )
                 await _maybe_generate_title(
-                    user_id, durable_session_id, user_msg, full_response,
+                    user_id,
+                    durable_session_id,
+                    user_msg,
+                    full_response,
                 )
                 await push_chat_message_stream(
                     user_id,
@@ -453,7 +478,9 @@ async def send_message(sid, data):
         synthetic_prompt = root_question_prompt(user_msg, history_text)
 
         async for evt in stream_agent_events(
-            synthetic_prompt, user_id=user_id, trace_id=trace_id,
+            synthetic_prompt,
+            user_id=user_id,
+            trace_id=trace_id,
             session_id=durable_session_id_str,
         ):
             event_type = evt["type"]
@@ -474,7 +501,10 @@ async def send_message(sid, data):
         # --------------------------------------------------
         await _store_chat_message(user_id, durable_session_id, "ai", full_response)
         await _maybe_generate_title(
-            user_id, durable_session_id, user_msg, full_response,
+            user_id,
+            durable_session_id,
+            user_msg,
+            full_response,
         )
         ctx.setdefault("prefetched", {})["root"] = full_response
 

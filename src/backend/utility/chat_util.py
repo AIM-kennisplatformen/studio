@@ -1,6 +1,6 @@
 import time
 from typing import Optional, Dict, AsyncGenerator
- 
+
 import socketio
 from langchain_openai import ChatOpenAI
 from langfuse import get_client
@@ -30,6 +30,7 @@ user_sids: Dict[str, set[str]] = {}
 # Registration
 # =====================================================
 
+
 def register_socketio(server: socketio.AsyncServer):
     """Register global Socket.IO instance (called once in chat.py)."""
     global sio
@@ -39,6 +40,7 @@ def register_socketio(server: socketio.AsyncServer):
 # =====================================================
 # Connection Mapping
 # =====================================================
+
 
 def bind_user(user_id: str, sid: str):
     """
@@ -83,6 +85,7 @@ async def _create_agent() -> MCPAgent:
         max_steps=30,
         callbacks=[CallbackHandler()],
     )
+
 
 async def run_agent(
     message: str,
@@ -171,7 +174,7 @@ async def stream_agent_events(
             }
     finally:
         langfuse.flush()
- 
+
 
 async def emit_to_user(user_id: str, event: str, payload: dict):
     """
@@ -216,7 +219,7 @@ async def push_chat_message(
     payload = {
         "role": "ai",
         "content": message,
-        "mode": "replace",   
+        "mode": "replace",
         "subnode": subnode,
     }
 
@@ -228,7 +231,7 @@ async def push_chat_message(
                 "full_response": message,
                 "mode": "replace",
                 "subnode": subnode,
-                "message_kind":  message_type
+                "message_kind": message_type,
             },
             to=sid,
         )
@@ -259,16 +262,16 @@ async def push_chat_message_stream(
     payload = {
         "role": "ai",
         "content": message,
-        "mode": "replace", 
+        "mode": "replace",
         "subnode": subnode,
     }
 
     try:
-        if(event_type == "done"):
+        if event_type == "done":
             await sio.emit(
-            "done",
-            {"full_response": message},
-            to=sid,
+                "done",
+                {"full_response": message},
+                to=sid,
             )
         # ALSO emit chat messages for chat UI
         elif event_type == "on_chat_model_stream" and message:

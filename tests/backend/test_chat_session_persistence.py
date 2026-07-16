@@ -13,7 +13,12 @@ class _FakeSessionStore:
         self.sessions = []
         self.messages = []
 
-    async def create_session(self, user_id, name="New session", title_type: Literal["static", "adaptive"] = "static"):
+    async def create_session(
+        self,
+        user_id,
+        name="New session",
+        title_type: Literal["static", "adaptive"] = "static",
+    ):
         session = Session(
             session_id=uuid4(),
             user_id=user_id,
@@ -118,9 +123,7 @@ def test_chat_helpers_auto_create_session_and_mirror_messages(monkeypatch):
             "Targeted support works best.",
         )
 
-        persisted_roles = [
-            message.role for _, message in fake_postgres_store.messages
-        ]
+        persisted_roles = [message.role for _, message in fake_postgres_store.messages]
         redis_roles = [message.role for _, message in fake_redis_store.messages]
         redis_session_ids = [session_id for session_id, _ in fake_redis_store.messages]
 
@@ -164,12 +167,16 @@ def test_store_chat_message_increments_counter(monkeypatch):
         assert session is not None
         assert session.message_count == 0
 
-        await chat_module._store_chat_message("user-1", session.session_id, "user", "Hi")
+        await chat_module._store_chat_message(
+            "user-1", session.session_id, "user", "Hi"
+        )
         session = await fake_store.get_session("user-1", session.session_id)
         assert session is not None
         assert session.message_count == 1
 
-        await chat_module._store_chat_message("user-1", session.session_id, "ai", "Hello")
+        await chat_module._store_chat_message(
+            "user-1", session.session_id, "ai", "Hello"
+        )
         session = await fake_store.get_session("user-1", session.session_id)
         assert session is not None
         assert session.message_count == 2

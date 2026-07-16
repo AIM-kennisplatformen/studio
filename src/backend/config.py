@@ -5,29 +5,38 @@ from loguru import logger
 
 load_dotenv()
 
+
 def root_question_prompt(question: str, history_text: str = "") -> str:
-    history_section = f"Conversation History:\n{history_text}\n\n" if history_text else ""
+    history_section = (
+        f"Conversation History:\n{history_text}\n\n" if history_text else ""
+    )
     return (
         "SYSTEM META-INSTRUCTION:\n"
         "Use the `get_literature_supported_knowledge` MCP tool to identify sources relevant to the question.\n\n"
         f"{history_section}"
-        f"full_question:\n\"{question}\"\n\n"
-        "keywords_related_to_question=\"Best practices || Target groups || Strategic overview\"\n"
+        f'full_question:\n"{question}"\n\n'
+        'keywords_related_to_question="Best practices || Target groups || Strategic overview"\n'
         "Provide an evidence-informed explanation when possible.\n"
     )
 
 
 def subnode_question_prompt(question: str, subnode: str, history_text: str = "") -> str:
-    history_section = f"Conversation History:\n{history_text}\n\n" if history_text else ""
-    keyword = subnode if subnode != "root" else "Best practices || Target groups || Strategic overview"
+    history_section = (
+        f"Conversation History:\n{history_text}\n\n" if history_text else ""
+    )
+    keyword = (
+        subnode
+        if subnode != "root"
+        else "Best practices || Target groups || Strategic overview"
+    )
     return (
         "SYSTEM META-INSTRUCTION:\n"
         "If relevant, use the `paper_search` MCP tool to identify scientific "
         "literature or studies relevant to the question.\n\n"
         "Don't alter question and keywords below — insert them straight into the tool.\n"
         f"{history_section}"
-        f"full_question:\n\"{question}\"\n\n"
-        f"keywords_related_to_question=\"{keyword}\" "
+        f'full_question:\n"{question}"\n\n'
+        f'keywords_related_to_question="{keyword}" '
         "Provide an evidence-informed explanation when possible.\n"
     )
 
@@ -48,10 +57,7 @@ def node_repeat_question_prompt(question: str) -> str:
 
 
 def subnode_no_question_prompt(subnode: str) -> str:
-    return (
-        f"You've selected subset {subnode}. "
-        "Please ask me your question?"
-    )
+    return f"You've selected subset {subnode}. Please ask me your question?"
 
 
 def subnode_repeat_question_prompt(subnode: str, question: str) -> str:
@@ -71,20 +77,23 @@ def require_env(name: str, default: str | None = None) -> str:
         logger.warning(f"Environment variable {name} is empty")
     return value
 
+
 config: dict = {
     "base_url": require_env("BACKEND_BASE_URL", "http://localhost:10090"),
     "discovery_url": require_env(
         "OAUTH_DISCOVERY_URL",
-        "http://auth.localhost:9000/application/o/kg/.well-known/openid-configuration"
+        "http://auth.localhost:9000/application/o/kg/.well-known/openid-configuration",
     ),
     "logout_url": require_env(
         "OAUTH_LOGOUT_URL",
-        "https://authscepa.mads-han.src.surf-hosted.nl/application/o/kg-dev/end-session/"
+        "https://authscepa.mads-han.src.surf-hosted.nl/application/o/kg-dev/end-session/",
     ),
-    "client_id": require_env("OAUTH_CLIENT_ID", "rkuclih8uzm44nTUvwasexioUKFk5aG1zhG8jcJX"),
+    "client_id": require_env(
+        "OAUTH_CLIENT_ID", "rkuclih8uzm44nTUvwasexioUKFk5aG1zhG8jcJX"
+    ),
     "client_secret": require_env(
         "OAUTH_CLIENT_SECRET",
-        "NEb0sAcMc2kTTdvfJMctLYE35Fp0GqyqFp4oOVrstxsevnVMJutiIhvb6TzwPrkbphAh1EiI74oRRO79xRCoZTh1suFYTV9J0tmRJBIFIF4znDYwNyDp3IzUQlESvaS0"
+        "NEb0sAcMc2kTTdvfJMctLYE35Fp0GqyqFp4oOVrstxsevnVMJutiIhvb6TzwPrkbphAh1EiI74oRRO79xRCoZTh1suFYTV9J0tmRJBIFIF4znDYwNyDp3IzUQlESvaS0",
     ),
     "session_secret": require_env("SESSION_SECRET", secrets.token_urlsafe(32)),
     "mcp_tool_config_path": require_env("MCP_TOOL_CONFIG_PATH"),

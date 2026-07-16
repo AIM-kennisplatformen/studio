@@ -54,7 +54,8 @@ async def update_session(
 
     title_overwritten = body.name is not None
     updated = await postgres_store.update_session_meta(
-        user_id, session_id,
+        user_id,
+        session_id,
         name=body.name,
         title_type=body.title_type,
         title_overwritten=title_overwritten or None,
