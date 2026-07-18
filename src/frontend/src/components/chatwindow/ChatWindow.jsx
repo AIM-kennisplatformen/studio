@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Chat from "./chat/Chat";
 import UserMenu from "./UserMenu";
 import ChatSessionOverview from "./ChatSessionOverview";
@@ -8,6 +8,12 @@ export default function ChatWindow() {
   const [currentChat, setCurrentChat] = useState(null);
   const [chatActive, setChatActive] = useState(true);
   const [pendingMessage, setPendingMessage] = useState(null);
+
+  const handleTitleUpdate = useCallback((sessionId, name) => {
+    setCurrentChat((prev) =>
+      prev?.session_id === sessionId ? { ...prev, name } : prev
+    );
+  }, []);
 
   return (
     <div className="relative z-10 flex h-full flex-col bg-white">
@@ -24,6 +30,7 @@ export default function ChatWindow() {
         setPendingMessage={setPendingMessage}
         setChatActive={setChatActive}
         chatActive={chatActive}
+        onTitleUpdate={handleTitleUpdate}
       />
     </div>
   );
@@ -55,6 +62,7 @@ function ChatBody({
   setPendingMessage,
   setChatActive,
   chatActive,
+  onTitleUpdate,
 }) {
   return (
     <div className="min-h-0 flex-1">
@@ -65,6 +73,7 @@ function ChatBody({
           setChatActive={setChatActive}
           pendingMessage={pendingMessage}
           setPendingMessage={setPendingMessage}
+          onTitleUpdate={onTitleUpdate}
         />
       ) : (
         <ChatSessionOverview

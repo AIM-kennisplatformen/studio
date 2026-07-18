@@ -31,6 +31,7 @@ export default function Chat({
   setCurrentChat,
   pendingMessage,
   setPendingMessage,
+  onTitleUpdate,
 }) {
   const [feedbackText, setFeedbackText] = useState("");
   const [showFeedback, setShowFeedback] = useState(true);
@@ -124,6 +125,7 @@ export default function Chat({
           isNewSessionRef={isNewSessionRef}
           setCurrentChat={setCurrentChat}
           currentChat={currentChat}
+          onTitleUpdate={onTitleUpdate}
         />
       </div>
     </div>

@@ -20,12 +20,13 @@ export default function InputArea({
   isNewSessionRef,
   setCurrentChat,
   currentChat,
+  onTitleUpdate,
 }) {
   const [text, setText] = useAtom(textAtom);
   const [status, setStatus] = useAtom(textStatusAtom);
   const setMessages = useSetAtom(messagesAtom);
 
-  const { send } = useChatWebSocket(setStatus);
+  const { send } = useChatWebSocket(setStatus, onTitleUpdate);
 
   const sendMessage = async (message) => {
     if (!sessionReady || status !== "ready") return;

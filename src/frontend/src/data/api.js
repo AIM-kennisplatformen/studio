@@ -123,6 +123,26 @@ export async function setActiveChatSession(sessionId) {
   }
 }
 
+export async function updateSession(sessionId, data) {
+  const url = `${BACKEND_BASE_URL}/sessions/${sessionId}`;
+  try {
+    const response = await fetch(url, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      console.error("Failed to update session:", response.status);
+      return null;
+    }
+    return await response.json();
+  } catch (err) {
+    console.error("Error updating session:", err);
+    return null;
+  }
+}
+
 export async function newSession() {
   const url = `${BACKEND_BASE_URL}/sessions`; //POST
   try {

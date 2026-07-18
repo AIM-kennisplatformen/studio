@@ -10,7 +10,7 @@ import {
 import { io } from "socket.io-client";
 import { BACKEND_BASE_URL } from "./api.js";
 
-export function useChatWebSocket(setStatus) {
+export function useChatWebSocket(setStatus, onTitleUpdate) {
   const SOCKET_PATH = "/socket.io";
 
   const setMessages = useSetAtom(messagesAtom);
@@ -98,6 +98,10 @@ export function useChatWebSocket(setStatus) {
       streamingKeyRef.current = null;
       setStatus("ready");
       triggerRefetch((n) => n + 1);
+    });
+
+    socket.on("session_title_updated", (data) => {
+      onTitleUpdate?.(data.session_id, data.name);
     });
 
     return () => {
