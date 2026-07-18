@@ -75,8 +75,7 @@ export default function ChatSessionOverview({
                           setCurrentChat(chat);
                           setChatActive(true);
                         }}
-                        className="flex-1 cursor-pointer text-left"
-                      >
+                        className="flex-1 cursor-pointer text-left">
                         <span
                           className={
                             "block font-semibold " +
@@ -113,10 +112,19 @@ export default function ChatSessionOverview({
                           });
                         }}
                         className="ml-2 shrink-0 rounded p-1.5 text-gray-400 transition-colors hover:bg-red-100 hover:text-red-600"
-                        title="Delete session"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        title="Delete session">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          className="size-4">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
                         </svg>
                       </button>
                     </div>
