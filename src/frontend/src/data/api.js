@@ -123,6 +123,20 @@ export async function setActiveChatSession(sessionId) {
   }
 }
 
+export async function deleteSession(sessionId) {
+  const url = `${BACKEND_BASE_URL}/sessions/${sessionId}`;
+  try {
+    const response = await fetch(url, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    return response.ok;
+  } catch (err) {
+    console.error("Error deleting session:", err);
+    return false;
+  }
+}
+
 export async function updateSession(sessionId, data) {
   const url = `${BACKEND_BASE_URL}/sessions/${sessionId}`;
   try {

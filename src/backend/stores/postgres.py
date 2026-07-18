@@ -285,6 +285,17 @@ class PostgresStore:
         )
         return self._row_to_session(row) if row else None
 
+    async def delete_session(self, user_id: str, session_id: UUID) -> bool:
+        self._ensure_connected()
+        assert self.pool is not None
+
+        result = await self.pool.execute(
+            "DELETE FROM sessions WHERE user_id = $1 AND session_id = $2",
+            user_id,
+            session_id,
+        )
+        return result != "DELETE 0"
+
     async def update_session_name(
         self,
         user_id: str,

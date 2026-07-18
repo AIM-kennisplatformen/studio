@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
 from backend.endpoints.auth import get_current_user
 from backend.models.session import Session, SessionDetail, UpdateSessionRequest
@@ -77,3 +77,17 @@ async def activate_session(
     request.session[ACTIVE_SESSION_KEY] = str(session.session_id)
     set_active_session_id(user_id, session.session_id)
     return session
+
+
+@sessions_router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_session(
+    session_id: UUID,
+    user=Depends(get_current_user),
+):
+    user_id = user["sub"]
+    session = await postgres_store.get_session(user_id, session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    await postgres_store.delete_session(user_id, session_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
