@@ -23,7 +23,7 @@ async def list_sessions(user=Depends(get_current_user)):
 @sessions_router.post("/", response_model=Session)
 async def create_session(request: Request, user=Depends(get_current_user)):
     user_id = user["sub"]
-    title_type = request.session.get("title_type", "static")
+    title_type = request.session.get("title_type", "adaptive")
     session = await postgres_store.create_session(user_id, title_type=title_type)
     request.session[ACTIVE_SESSION_KEY] = str(session.session_id)
     set_active_session_id(user_id, session.session_id)

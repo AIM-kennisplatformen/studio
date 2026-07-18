@@ -11,7 +11,7 @@ class Session(BaseModel):
     name: str
     updated_at: datetime
     message_count: int = 0
-    title_type: Literal["static", "adaptive"] = "static"
+    title_type: Literal["static", "adaptive"] = "adaptive"
     title_overwritten: bool = False
     last_title_message_count: int = 0
 
