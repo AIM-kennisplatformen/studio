@@ -8,6 +8,7 @@ import { useAtomValue } from "jotai";
 import { graphRefetchTriggerAtom } from "./lib/atoms";
 import { FeedbackButton } from "./components/FeedbackButton.jsx";
 import LayoutMenu from "./components/graph/layout/LayoutMenu";
+import LayoutMenu2 from "./components/graph/layout/LayoutMenu2";
 
 export default function App() {
   const [leftWidth, setLeftWidth] = useState(66.6);
@@ -15,8 +16,10 @@ export default function App() {
   const [data, setData] = useState(null);
   const refetchTrigger = useAtomValue(graphRefetchTriggerAtom);
 
+  const [menuState, setMenuState] = useState("CONSTRAINT"); // "CONSTRAINTS" or "LAYOUT"
+
   const [fixedNodes, setFixedNodes] = useState([
-    { id: "1", position: { x: 0, y: 0 } }, // Keep your initial root fixed
+    { id: "5", position: { x: 0, y: 0 } }, // Keep your initial root fixed
   ]);
 
   const [alignmentConstraints, setAlignmentConstraints] = useState([
@@ -25,6 +28,18 @@ export default function App() {
 
   const [relativePlacementConstraints, setRelativePlacementConstraints] =
     useState([{ id: "init-rel", top: "1", bottom: "3", gap: 150 }]); //Read only to trigger refetch when ai signals done
+
+  const [options, setOptions] = useState({
+    quality: "proof",
+    nodeSeparation: 200,
+    idealEdgeLength: 300,
+    nodeRepulsion: 50000,
+    maxIterations: 3000,
+    animationDuration: 1000,
+    gravity: 0.05,
+    numIter: 5000,
+    nodeDimensionsIncludeLabels: true,
+  });
 
   // Load graph once on mount or when center node changes for the first time
   useEffect(() => {
@@ -76,16 +91,25 @@ export default function App() {
           <div className="flex h-full w-full">
             {/* Dit is je menuutje, die blijft strak 450px en krimp nie inmekaar */}
             <div className="flex-shrink-0">
-              <LayoutMenu
-                fixedNodes={fixedNodes}
-                setFixedNodes={setFixedNodes}
-                alignmentConstraints={alignmentConstraints}
-                setAlignmentConstraints={setAlignmentConstraints}
-                relativePlacementConstraints={relativePlacementConstraints}
-                setRelativePlacementConstraints={
-                  setRelativePlacementConstraints
-                }
-              />
+              {menuState === "CONSTRAINTS" ? (
+                <LayoutMenu
+                  fixedNodes={fixedNodes}
+                  setFixedNodes={setFixedNodes}
+                  alignmentConstraints={alignmentConstraints}
+                  setAlignmentConstraints={setAlignmentConstraints}
+                  relativePlacementConstraints={relativePlacementConstraints}
+                  setRelativePlacementConstraints={
+                    setRelativePlacementConstraints
+                  }
+                  setMenuState={setMenuState}
+                />
+              ) : (
+                <LayoutMenu2
+                  options={options}
+                  setOptions={setOptions}
+                  setMenuState={setMenuState}
+                />
+              )}
             </div>
 
             {/* En dit is die grafiek-bak, die pakt rücksichtslos alle ruimte die overblijft */}
@@ -96,6 +120,7 @@ export default function App() {
                 fixedNodes={fixedNodes}
                 alignmentConstraints={alignmentConstraints}
                 relativePlacementConstraints={relativePlacementConstraints}
+                options={options}
               />
             </div>
           </div>

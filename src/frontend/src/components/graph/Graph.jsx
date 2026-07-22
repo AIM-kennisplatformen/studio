@@ -29,11 +29,18 @@ function getSubgraph(data, nodeId) {
   };
 }
 
-export default function Graph({ data, width }) {
+export default function Graph({
+  data,
+  width,
+  fixedNodes,
+  alignmentConstraints,
+  relativePlacementConstraints,
+  options,
+}) {
   const [nodes, setNodes] = useAtom(nodesAtom);
   const [edges, setEdges] = useAtom(edgesAtom);
   const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom);
-  const [, setCenterNodeId] = useAtom(centerNodeAtom);
+  const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom);
   const [layoutNodes, setLayoutNodes] = useAtom(layoutNodesAtom);
   const emitSelectNode = useAtomValue(selectNodeEmitAtom);
 
@@ -90,7 +97,10 @@ export default function Graph({ data, width }) {
         const reactFlowNode = {
           id: String(node.id),
           type: "custom",
-          position: previousPositions.get(String(node.id)) || { x: 0, y: 0 },
+          position: /*previousPositions.get(String(node.id)) || */ {
+            x: 0,
+            y: 0,
+          },
           data: {
             label: node.title,
             isFocused: isCenter,
@@ -132,15 +142,14 @@ export default function Graph({ data, width }) {
 
       // Effe hardcoded of vanuit je state die andere constraints trekken:
       // 1. Define your source constraints (always use Strings for IDs)
-      const fixedNodes = [{ id: "1", position: { x: 0, y: 0 } }];
 
       const alignmentConstraints = [
         { type: "horizontal", nodeIds: ["2", "3", "4"] },
       ];
 
-      const relativePlacementConstraints = [
-        { top: "1", bottom: "3", gap: 150 },
-      ];
+      // const relativePlacementConstraints = [
+      //   { top: "1", bottom: "3", gap: 150 },
+      // ];
 
       // 2. Get a Set of all node IDs currently present in the graph
       const activeNodeIds = new Set(newNodes.map((node) => String(node.id)));
@@ -152,19 +161,11 @@ export default function Graph({ data, width }) {
 
       // 4. Run the fcose layout engine with correct configurations
       const layoutPositions = applyFcoseLayout(newNodes, newEdges, {
-        quality: "proof",
-        nodeSeparation: 200,
-        idealEdgeLength: 300,
-        nodeRepulsion: 50000,
-        maxIterations: 3000,
-        animationDuration: 1000,
-        gravity: 0.05,
-        numIter: 5000,
-        nodeDimensionsIncludeLabels: true,
+        ...options,
 
         // Disabling tile and incremental ensures constraints are strictly followed
-        tile: false,
-        incremental: false,
+        // tile: false,
+        // incremental: false,
 
         // Map Fixed Constraints
         fixedNodeConstraint: fixedNodes
@@ -233,7 +234,7 @@ export default function Graph({ data, width }) {
       const mergedNodes = newNodes.map((n) => ({
         ...n,
         position:
-          previousPositions.get(n.id) || layoutPositions[n.id] || n.position,
+          layoutPositions[n.id] || previousPositions.get(n.id) || n.position,
       }));
 
       // Persist positions for all seen nodes across subgraph changes
@@ -254,15 +255,28 @@ export default function Graph({ data, width }) {
         }
       }
     },
-    [centerNodeInView, setEdges, setLayoutNodes, setNodes, setSelectedNode]
+    [
+      centerNodeInView,
+      setEdges,
+      setLayoutNodes,
+      setNodes,
+      setSelectedNode,
+      options,
+      fixedNodes,
+      alignmentConstraints,
+      relativePlacementConstraints,
+    ]
   );
 
   // On first load show node 1's neighbourhood; on refetch just update fullDataRef
   useEffect(() => {
     if (!data) return;
-    const isFirstLoad = fullDataRef.current === null;
+
     fullDataRef.current = data;
-    if (isFirstLoad) prepareGraphData(getSubgraph(data, 1));
+    const currentCenterId = selectedNodeRef.current
+      ? selectedNodeRef.current.id
+      : 1;
+    prepareGraphData(getSubgraph(data, currentCenterId));
   }, [data, prepareGraphData]);
 
   const onNodeClick = useCallback(
