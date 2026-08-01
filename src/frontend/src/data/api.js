@@ -1,5 +1,11 @@
 export const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL ?? "";
 
+import createClient from "openapi-fetch";
+
+/** @typedef {import("./api.generated").paths} paths */
+/** @type {import("openapi-fetch").Client<paths>} */
+const client = createClient({ baseUrl: BACKEND_BASE_URL, credentials: "include" });
+
 export async function logResponseFeedback(key, feedback) {
   const url = `${BACKEND_BASE_URL}/log_event`;
 
@@ -72,18 +78,13 @@ export function logOut() {
 }
 
 export async function getChatSessions() {
-  const url = `${BACKEND_BASE_URL}/sessions`;
   try {
-    const response = await fetch(url, {
-      method: "GET",
-      credentials: "include", // Required for cookie-based Auth
-    });
-    if (!response.ok) {
-      console.error("Failed to fetch chat sessions:", response.status);
+    const { data, error } = await client.GET("/sessions/");
+    if (error) {
+      console.error("Failed to fetch chat sessions:", error);
       return [];
     }
-    const json = await response.json();
-    return json;
+    return data;
   } catch (err) {
     console.error("Error fetching chat sessions:", err);
     return [];
