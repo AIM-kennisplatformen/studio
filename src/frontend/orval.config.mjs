@@ -2,7 +2,7 @@ import { defineConfig } from "orval";
 
 export default defineConfig({
   studio: {
-    input: { target: "/tmp/opencode/studio-openapi.json" },
+    input: { target: "./openapi.json" },
     output: {
       client: "zod",
       mode: "single",
