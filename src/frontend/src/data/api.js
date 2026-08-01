@@ -1,3 +1,5 @@
+import { ListSessionsSessionsGetResponse } from "./knowledgeGraphAPI";
+
 export const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL ?? "";
 
 export async function logResponseFeedback(key, feedback) {
@@ -83,7 +85,7 @@ export async function getChatSessions() {
       return [];
     }
     const json = await response.json();
-    return json;
+    return ListSessionsSessionsGetResponse.parse(json);
   } catch (err) {
     console.error("Error fetching chat sessions:", err);
     return [];
