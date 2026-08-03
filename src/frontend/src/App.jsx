@@ -9,6 +9,7 @@ import { graphRefetchTriggerAtom } from "./lib/atoms";
 import { FeedbackButton } from "./components/FeedbackButton.jsx";
 import LayoutMenu from "./components/graph/layout/LayoutMenu";
 import LayoutMenu2 from "./components/graph/layout/LayoutMenu2";
+import { DEFAULT_FCOSE_OPTIONS } from "./components/graph/layout/cytoscapeLayout";
 
 export default function App() {
   const [leftWidth, setLeftWidth] = useState(66.6);
@@ -29,17 +30,7 @@ export default function App() {
   const [relativePlacementConstraints, setRelativePlacementConstraints] =
     useState([{ id: "init-rel", top: "1", bottom: "3", gap: 150 }]); //Read only to trigger refetch when ai signals done
 
-  const [options, setOptions] = useState({
-    quality: "proof",
-    nodeSeparation: 200,
-    idealEdgeLength: 300,
-    nodeRepulsion: 50000,
-    maxIterations: 3000,
-    animationDuration: 1000,
-    gravity: 0.05,
-    numIter: 5000,
-    nodeDimensionsIncludeLabels: true,
-  });
+  const [options, setOptions] = useState(DEFAULT_FCOSE_OPTIONS);
 
   // Load graph once on mount or when center node changes for the first time
   useEffect(() => {

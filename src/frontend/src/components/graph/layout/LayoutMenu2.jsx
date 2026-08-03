@@ -1,11 +1,20 @@
+import { useState } from "react";
+import { DEFAULT_FCOSE_OPTIONS } from "./cytoscapeLayout";
+
 export default function LayoutMenu2({ options, setOptions, setMenuState }) {
+  const [formKey, setFormKey] = useState(0);
+
   function handleSubmit(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
     const newOptions = {};
 
     // Define all checkbox keys to ensure they are set to false if unchecked
-    const checkboxKeys = ["incremental", "tile", "nodeDimensionsIncludeLabels"];
+    const checkboxKeys = [
+      "tile",
+      "nodeDimensionsIncludeLabels",
+      "deterministic",
+    ];
     checkboxKeys.forEach((key) => {
       newOptions[key] = false;
     });
@@ -23,6 +32,13 @@ export default function LayoutMenu2({ options, setOptions, setMenuState }) {
     setOptions(newOptions);
   }
 
+  function handleReset() {
+    setOptions(DEFAULT_FCOSE_OPTIONS);
+    // Inputs are uncontrolled (defaultValue/defaultChecked), so remount the
+    // form to pick up the new defaults.
+    setFormKey((k) => k + 1);
+  }
+
   return (
     <>
       <div className="h-auto bg-cyan-100 p-3">
@@ -38,6 +54,7 @@ export default function LayoutMenu2({ options, setOptions, setMenuState }) {
           </button>
         </div>
         <form
+          key={formKey}
           onSubmit={handleSubmit}
           className="grid grid-cols-[1fr_100px] items-center gap-x-4 gap-y-2 text-sm">
           {/* Quality */}
@@ -51,6 +68,15 @@ export default function LayoutMenu2({ options, setOptions, setMenuState }) {
             <option value="default">Default</option>
             <option value="proof">Proof</option>
           </select>
+          {/* Deterministic Layout (Checkbox) */}
+          <label htmlFor="deterministic">Deterministic Layout</label>
+          <input
+            id="deterministic"
+            name="deterministic"
+            type="checkbox"
+            defaultChecked={options?.deterministic}
+            className="h-4 w-4 justify-self-start"
+          />
           {/* Node Separation */}
           <label htmlFor="nodeSeparation">Node Separation</label>
           <input
@@ -76,24 +102,6 @@ export default function LayoutMenu2({ options, setOptions, setMenuState }) {
             name="nodeRepulsion"
             type="number"
             defaultValue={options?.nodeRepulsion}
-            className="h-8 rounded border px-2"
-          />
-          {/* Max Iterations */}
-          <label htmlFor="maxIterations">Max Iterations</label>
-          <input
-            id="maxIterations"
-            name="maxIterations"
-            type="number"
-            defaultValue={options?.maxIterations}
-            className="h-8 rounded border px-2"
-          />
-          {/* Animation Duration */}
-          <label htmlFor="animationDuration">Animation Duration (ms)</label>
-          <input
-            id="animationDuration"
-            name="animationDuration"
-            type="number"
-            defaultValue={options?.animationDuration}
             className="h-8 rounded border px-2"
           />
           {/* Gravity */}
@@ -144,15 +152,6 @@ export default function LayoutMenu2({ options, setOptions, setMenuState }) {
             defaultChecked={options?.tile}
             className="h-4 w-4 justify-self-start"
           />
-          {/* Incremental (Checkbox) */}
-          <label htmlFor="incremental">Incremental</label>
-          <input
-            id="incremental"
-            name="incremental"
-            type="checkbox"
-            defaultChecked={options?.incremental}
-            className="h-4 w-4 justify-self-start"
-          />
           <label htmlFor="initialEnergyOnIncremental">
             Initial Energy on Incremental
           </label>
@@ -163,12 +162,19 @@ export default function LayoutMenu2({ options, setOptions, setMenuState }) {
             defaultValue={options?.initialEnergyOnIncremental}
             className="h-8 rounded border px-2"
           />
-          <div></div> {/* Grid spacing helper */}
-          <button
-            type="submit"
-            className="rounded bg-blue-500 px-4 py-2 text-white transition-colors hover:bg-blue-600">
-            Apply
-          </button>
+          <div className="col-span-2 mt-2 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={handleReset}
+              className="rounded border border-[#78909c] px-4 py-2 text-[#546e7a] transition-colors hover:bg-[#eceff1]">
+              Reset to Default
+            </button>
+            <button
+              type="submit"
+              className="rounded bg-blue-500 px-4 py-2 text-white transition-colors hover:bg-blue-600">
+              Apply
+            </button>
+          </div>
         </form>
       </div>
     </>
