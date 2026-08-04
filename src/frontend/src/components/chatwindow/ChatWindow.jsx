@@ -52,8 +52,6 @@ function ChatHeader({
   currentChatTitle,
   setCurrentChat,
 }) {
-  console.log(currentChatTitle);
-
   return (
     <div className="z-20 flex shrink-0 items-start justify-between border-b border-gray-200 bg-white px-4 py-2">
       <ChatSelectionToggle
