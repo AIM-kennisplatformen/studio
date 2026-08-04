@@ -3,8 +3,10 @@ import Chat from "./chat/Chat";
 import UserMenu from "./UserMenu";
 import ChatSessionOverview from "./ChatSessionOverview";
 import ChatSelectionToggle from "./ChatSelectionToggle";
+import SettingsDrawer from "../slideover/settings";
 
 export default function ChatWindow() {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [currentChat, setCurrentChat] = useState(null);
   const [chatActive, setChatActive] = useState(true);
   const [pendingMessage, setPendingMessage] = useState(null);
@@ -16,27 +18,36 @@ export default function ChatWindow() {
   }, []);
 
   return (
-    <div className="relative z-10 flex h-full flex-col bg-white">
-      <ChatHeader
-        currentChat={currentChat}
-        setChatActive={setChatActive}
-        chatActive={chatActive}
-      />
+    <>
+      <SettingsDrawer setIsOpen={setSettingsOpen} isOpen={settingsOpen} />
+      <div className="relative z-10 flex h-full flex-col bg-white">
+        <ChatHeader
+          currentChat={currentChat}
+          setChatActive={setChatActive}
+          chatActive={chatActive}
+          setSettingsOpen={setSettingsOpen}
+        />
 
-      <ChatBody
-        currentChat={currentChat}
-        setCurrentChat={setCurrentChat}
-        pendingMessage={pendingMessage}
-        setPendingMessage={setPendingMessage}
-        setChatActive={setChatActive}
-        chatActive={chatActive}
-        onTitleUpdate={handleTitleUpdate}
-      />
-    </div>
+        <ChatBody
+          currentChat={currentChat}
+          setCurrentChat={setCurrentChat}
+          pendingMessage={pendingMessage}
+          setPendingMessage={setPendingMessage}
+          setChatActive={setChatActive}
+          chatActive={chatActive}
+          onTitleUpdate={handleTitleUpdate}
+        />
+      </div>
+    </>
   );
 }
 
-function ChatHeader({ currentChat, setChatActive, chatActive }) {
+function ChatHeader({
+  currentChat,
+  setChatActive,
+  chatActive,
+  setSettingsOpen,
+}) {
   return (
     <div className="z-20 flex shrink-0 justify-between border-b border-gray-200 bg-white px-4 py-2">
       <ChatSelectionToggle
@@ -50,7 +61,7 @@ function ChatHeader({ currentChat, setChatActive, chatActive }) {
           {!currentChat ? "New Chat" : currentChat.name}
         </h2>
       )}
-      <UserMenu />
+      <UserMenu setSettingsOpen={setSettingsOpen} />
     </div>
   );
 }
