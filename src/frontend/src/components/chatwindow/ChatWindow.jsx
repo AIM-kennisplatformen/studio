@@ -4,7 +4,7 @@ import UserMenu from "./UserMenu";
 import ChatSessionOverview from "./ChatSessionOverview";
 import ChatSelectionToggle from "./ChatSelectionToggle";
 import SettingsDrawer from "../slideover/settings";
-import { PencilIcon } from "lucide-react";
+import { PencilIcon, Check, X } from "lucide-react";
 
 export default function ChatWindow() {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -28,6 +28,7 @@ export default function ChatWindow() {
           chatActive={chatActive}
           setSettingsOpen={setSettingsOpen}
           currentChatTitle={currentChatTitle}
+          setCurrentChat={setCurrentChat}
         />
 
         <ChatBody
@@ -52,6 +53,25 @@ function ChatHeader({
   currentChatTitle,
   setCurrentChat,
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(currentChatTitle || "New Chat");
+
+  const handleSave = () => {
+    // Hier pas je de daadwerkelijke chat title aan in je applicatie state / backend
+    // onTitleChange(editValue);
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    // Zet de input weer terug naar de originele title
+    setInputValue(currentChatTitle || "New Chat");
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") handleSave();
+    if (e.key === "Escape") handleCancel();
+  };
   return (
     <div className="z-20 flex shrink-0 items-start justify-between border-b border-gray-200 bg-white px-4 py-2">
       <ChatSelectionToggle
@@ -59,13 +79,54 @@ function ChatHeader({
         chatActive={chatActive}
       />
       {chatActive && (
-        <div className="group inline-flex items-start gap-2">
-          <h2
-            className="font-inherit text-primary py-[0.5em] pl-[1.2em] text-[1em] leading-normal font-medium transition-colors duration-200 hover:cursor-default"
-            aria-label="Chat Name">
-            {!currentChatTitle ? "New Chat" : currentChatTitle}
-          </h2>
-          <PencilIcon className="text-primary mt-[0.5em] h-4 w-4 shrink-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:cursor-pointer" />
+        <div className="group inline-flex items-center gap-2">
+          {isEditing ? (
+            // De wrapper div fungeert nu visueel als het inputveld
+            <div className="focus-within:border-primary focus-within:ring-primary flex items-center rounded border border-gray-300 bg-white pr-1 transition-all focus-within:ring-1">
+              <input
+                type="text"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                autoFocus
+                // De input zelf heeft geen achtergrond of borders meer
+                className="font-inherit text-primary w-full min-w-[150px] bg-transparent py-[0.4em] pr-2 pl-[1.2em] text-[1em] leading-normal font-medium outline-none"
+                aria-label="Edit Chat Name"
+              />
+              <div className="flex items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  // Transparante achtergrond, hover effect blijft
+                  className="flex h-6 w-6 items-center justify-center rounded-md !bg-white transition-all duration-200 hover:!bg-gray-200"
+                  aria-label="Save chat title">
+                  <Check className="h-4 w-4 shrink-0 text-green-600" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="flex h-6 w-6 items-center justify-center rounded-md !bg-white transition-all duration-200 hover:!bg-gray-200"
+                  aria-label="Cancel editing">
+                  <X className="h-4 w-4 shrink-0 text-red-500" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <h2
+                className="font-inherit text-primary py-[0.5em] pl-[1.2em] text-[1em] leading-normal font-medium transition-colors duration-200 hover:cursor-default"
+                aria-label="Chat Name">
+                {!currentChatTitle ? "New Chat" : currentChatTitle}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="flex h-6 w-6 items-center justify-center rounded-md !bg-white opacity-0 transition-all duration-200 group-hover:opacity-100 hover:!bg-gray-200"
+                aria-label="Edit chat title">
+                <PencilIcon className="text-primary h-4 w-4 shrink-0" />
+              </button>
+            </>
+          )}
         </div>
       )}
       <UserMenu setSettingsOpen={setSettingsOpen} />
