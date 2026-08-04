@@ -11,7 +11,6 @@ export default function ChatWindow() {
   const [currentChat, setCurrentChat] = useState(null);
   const [chatActive, setChatActive] = useState(true);
   const [pendingMessage, setPendingMessage] = useState(null);
-  const [currentChatTitle, setCurrentChatTitle] = useState(null);
 
   const handleTitleUpdate = useCallback((sessionId, name) => {
     setCurrentChat((prev) =>
@@ -27,7 +26,7 @@ export default function ChatWindow() {
           setChatActive={setChatActive}
           chatActive={chatActive}
           setSettingsOpen={setSettingsOpen}
-          currentChatTitle={currentChatTitle}
+          currentChatTitle={currentChat?.name}
           setCurrentChat={setCurrentChat}
         />
 
@@ -39,7 +38,6 @@ export default function ChatWindow() {
           setChatActive={setChatActive}
           chatActive={chatActive}
           onTitleUpdate={handleTitleUpdate}
-          setCurrentChatTitle={setCurrentChatTitle}
         />
       </div>
     </>
@@ -51,7 +49,6 @@ function ChatHeader({
   chatActive,
   setSettingsOpen,
   currentChatTitle,
-  setCurrentChat,
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(currentChatTitle || "New Chat");
@@ -64,7 +61,7 @@ function ChatHeader({
 
   const handleCancel = () => {
     // Zet de input weer terug naar de originele title
-    setInputValue(currentChatTitle || "New Chat");
+    setEditValue(currentChatTitle || "New Chat");
     setIsEditing(false);
   };
 
@@ -120,7 +117,10 @@ function ChatHeader({
               </h2>
               <button
                 type="button"
-                onClick={() => setIsEditing(true)}
+                onClick={() => {
+                  setEditValue(currentChatTitle || "New Chat");
+                  setIsEditing(true);
+                }}
                 className="flex h-6 w-6 items-center justify-center rounded-md !bg-white opacity-0 transition-all duration-200 group-hover:opacity-100 hover:!bg-gray-200"
                 aria-label="Edit chat title">
                 <PencilIcon className="text-primary h-4 w-4 shrink-0" />
@@ -142,7 +142,6 @@ function ChatBody({
   setChatActive,
   chatActive,
   onTitleUpdate,
-  setCurrentChatTitle,
 }) {
   return (
     <div className="min-h-0 flex-1">
@@ -161,7 +160,6 @@ function ChatBody({
           setCurrentChat={setCurrentChat}
           setPendingMessage={setPendingMessage}
           currentChat={currentChat}
-          setCurrentChatTitle={setCurrentChatTitle}
         />
       )}
     </div>
