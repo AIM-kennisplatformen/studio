@@ -12,6 +12,7 @@ export default function ChatSessionOverview({
   setCurrentChat,
   currentChat,
   setPendingMessage,
+  setCurrentChatTitle,
 }) {
   const [chats, setChats] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,6 +74,7 @@ export default function ChatSessionOverview({
                       <button
                         onClick={() => {
                           setCurrentChat(chat);
+                          setCurrentChatTitle(chat.name);
                           setChatActive(true);
                         }}
                         className="flex-1 cursor-pointer text-left">
