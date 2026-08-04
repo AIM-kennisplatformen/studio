@@ -12,6 +12,7 @@ export default function ChatSessionOverview({
   setCurrentChat,
   currentChat,
   setPendingMessage,
+  setCurrentChatTitle,
 }) {
   const [chats, setChats] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,6 +70,7 @@ export default function ChatSessionOverview({
                     fetchChatSessions={fetchChatSessions}
                     setCurrentChat={setCurrentChat}
                     setChatActive={setChatActive}
+                    setCurrentChatTitle={setCurrentChatTitle}
                   />
                 ))}
               </ul>
@@ -96,6 +98,7 @@ function ChatSessionItem({
   fetchChatSessions,
   setCurrentChat,
   setChatActive,
+  setCurrentChatTitle,
 }) {
   return (
     <li key={chat.session_id}>
@@ -104,6 +107,7 @@ function ChatSessionItem({
         tabIndex={0}
         onClick={() => {
           setCurrentChat(chat);
+          setCurrentChatTitle(chat.name);
           setChatActive(true);
         }}
         className={
