@@ -215,7 +215,7 @@ export const DEFAULT_FCOSE_OPTIONS = {
   quality: "default",
   nodeSeparation: 200,
   idealEdgeLength: 300,
-  nodeRepulsion: 4500,
+  nodeRepulsion: 45000,
   gravity: 0.25,
   gravityRange: 3.8,
   numIter: 2500,

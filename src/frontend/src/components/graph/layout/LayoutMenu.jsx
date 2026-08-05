@@ -128,11 +128,20 @@ export default function LayoutMenu({
             value={fixedNode}
             onChange={(e) => setFixedNode(e.target.value)}
             className="rounded border border-[#b2ebf2] bg-white px-2 py-1 text-sm outline-none">
-            {nodes.map((node) => (
-              <option key={node.id} value={node.id}>
-                {node.title}
-              </option>
-            ))}
+            {nodes
+              .filter(
+                (node) =>
+                  !fixedNodes.some(
+                    (fixedNode) => fixedNode.nodeId === String(node.id)
+                  )
+              )
+              .map((node) => {
+                return (
+                  <option key={node.id} value={node.id}>
+                    {node.title}
+                  </option>
+                );
+              })}
           </select>
           <div className="flex items-center gap-2">
             <span className="ml-2">x :</span>
