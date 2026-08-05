@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import { nodesAtom } from "../../../lib/atoms";
-import { useAtomValue } from "jotai";
 import data from "./nodes.json";
 
 export default function LayoutMenu({
@@ -14,64 +12,63 @@ export default function LayoutMenu({
 }) {
   const [nodes, setNodes] = useState(data.nuggets);
   const [errorMessage, setErrorMessage] = useState("");
-  console.log("LayoutMenu nodes:", nodes);
-  // --- HANDLER FUNCTIONS ---
 
-  // Add a Fixed Node Constraint
-  const addFixedConstraint = (nodeId, x, y) => {
+  // Form states
+  const [fixedNode, setFixedNode] = useState("1");
+  const [fixedX, setFixedX] = useState("-56");
+  const [fixedY, setFixedY] = useState("132");
+
+  const [relNode1, setRelNode1] = useState("1");
+  const [relNode2, setRelNode2] = useState("2");
+  const [relDir, setRelDir] = useState("left-right");
+  const [relGap, setRelGap] = useState("");
+
+  // Alignment menu state
+  const [showAlignmentMenu, setShowAlignmentMenu] = useState(false);
+  const [currentAlignmentType, setCurrentAlignmentType] = useState("");
+  const [selectedAlignmentNodes, setSelectedAlignmentNodes] = useState([]);
+
+  // --- HANDLERS ---
+  const handleAddFixedConstraint = () => {
     const newConstraint = {
       id: `fixed-${Date.now()}`,
-      nodeId: String(nodeId),
-      position: { x: Number(x) || 0, y: Number(y) || 0 },
+      nodeId: String(fixedNode),
+      position: { x: Number(fixedX) || 0, y: Number(fixedY) || 0 },
     };
     setFixedNodes((prev) => [...prev, newConstraint]);
   };
 
-  // Add an Alignment Constraint
   const addAlignmentConstraint = (type, nodeIds) => {
     const newConstraint = {
       id: `align-${Date.now()}`,
-      type, // "horizontal" or "vertical"
+      type,
       nodeIds: nodeIds.map((id) => String(id)),
     };
     setAlignmentConstraints((prev) => [...prev, newConstraint]);
   };
 
-  // Add a Relative Placement Constraint
   const buildRelativeConstraint = () => {
     if (!relNode1 || !relNode2 || relNode1 === relNode2) {
       setErrorMessage("Please select two different nodes.");
       return;
     }
     setErrorMessage("");
-    // config shape: { left, right, gap } OR { top, bottom, gap }
-    if (relDir === "left-right") {
-      const config = {
-        left: relNode1,
-        right: relNode2,
-        gap: relGap ? Number(relGap) : 20,
-      };
-      addRelativePlacementConstraint(config);
-    } else if (relDir === "top-bottom") {
-      const config = {
-        top: relNode1,
-        bottom: relNode2,
-        gap: relGap ? Number(relGap) : 20,
-      };
-      addRelativePlacementConstraint(config);
-    }
+
+    const config =
+      relDir === "left-right"
+        ? { left: relNode1, right: relNode2, gap: relGap ? Number(relGap) : 20 }
+        : {
+            top: relNode1,
+            bottom: relNode2,
+            gap: relGap ? Number(relGap) : 20,
+          };
+
+    setRelativePlacementConstraints((prev) => [
+      ...prev,
+      { id: `rel-${Date.now()}`, ...config },
+    ]);
   };
 
-  const addRelativePlacementConstraint = (config) => {
-    const newConstraint = {
-      id: `rel-${Date.now()}`,
-      ...config,
-      gap: Number(config.gap) || 20,
-    };
-    setRelativePlacementConstraints((prev) => [...prev, newConstraint]);
-  };
-
-  // Delete any constraint by ID
   const deleteConstraint = (id, type) => {
     if (type === "fixed") {
       setFixedNodes((prev) => prev.filter((c) => c.id !== id));
@@ -84,26 +81,34 @@ export default function LayoutMenu({
     }
   };
 
-  // State veur de versjillende input velder
-  const [fixedNode, setFixedNode] = useState("1");
-  const [fixedX, setFixedX] = useState("-56");
-  const [fixedY, setFixedY] = useState("132");
+  const handleOpenAlignmentMenu = (type) => {
+    setCurrentAlignmentType(type);
+    setSelectedAlignmentNodes([]);
+    setErrorMessage("");
+    setShowAlignmentMenu(true);
+  };
 
-  const [relNode1, setRelNode1] = useState("1");
-  const [relNode2, setRelNode2] = useState("2");
-  const [relDir, setRelDir] = useState("left-right");
-  const [relGap, setRelGap] = useState("");
+  const handleToggleAlignmentNode = (nodeId) => {
+    setSelectedAlignmentNodes((prev) =>
+      prev.includes(nodeId)
+        ? prev.filter((id) => id !== nodeId)
+        : [...prev, nodeId]
+    );
+  };
 
-  // Dummy data veur de tabel
-  const [constraints, setConstraints] = useState([
-    { id: 1, type: "Fixed", nodes: "f1", info: "x: -150 y: -100" },
-    { id: 2, type: "Fixed", nodes: "f2", info: "x: -50 y: -150" },
-    { id: 3, type: "Fixed", nodes: "f3", info: "x: 100 y: 150" },
-  ]);
+  const handleAddAlignmentConstraint = () => {
+    if (selectedAlignmentNodes.length < 2) {
+      setErrorMessage("Please select at least two nodes for alignment.");
+      return;
+    }
+    setErrorMessage("");
+    addAlignmentConstraint(currentAlignmentType, selectedAlignmentNodes);
+    setShowAlignmentMenu(false);
+    setSelectedAlignmentNodes([]);
+  };
 
   return (
     <div className="w-[450px] rounded-sm bg-[#e0f7fa] p-4 font-sans text-sm text-[#37474f] shadow-md select-none">
-      {/* Header */}
       <h2 className="mb-4 text-xl font-bold text-[#546e7a]">Constraints</h2>
       <button
         onClick={() => setMenuState("LAYOUT")}
@@ -137,7 +142,6 @@ export default function LayoutMenu({
               onChange={(e) => setFixedX(e.target.value)}
               className="w-16 rounded border border-[#b2ebf2] bg-white px-2 py-1 text-sm outline-none"
             />
-
             <span>y :</span>
             <input
               type="text"
@@ -145,9 +149,8 @@ export default function LayoutMenu({
               onChange={(e) => setFixedY(e.target.value)}
               className="w-16 rounded border border-[#b2ebf2] bg-white px-2 py-1 text-sm outline-none"
             />
-
             <button
-              onClick={addFixedConstraint}
+              onClick={handleAddFixedConstraint}
               className="ml-auto rounded bg-[#78909c] px-4 py-1 text-white transition-colors hover:bg-[#607d8b]">
               Add
             </button>
@@ -162,24 +165,61 @@ export default function LayoutMenu({
         <h3 className="mb-2 font-semibold text-[#546e7a]">
           Alignment Constraint
         </h3>
-
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-[#78909c]">Selected Nodes Vertically</span>
-          <button className="rounded bg-[#78909c] px-4 py-1 text-white transition-colors hover:bg-[#607d8b]">
-            Add
-          </button>
-        </div>
-
-        <div className="mb-3 flex items-center justify-between">
-          <span className="text-[#78909c]">Selected Nodes Horizontally</span>
-          <button className="rounded bg-[#78909c] px-4 py-1 text-white transition-colors hover:bg-[#607d8b]">
-            Add
-          </button>
-        </div>
-
-        <p className="text-xs text-[#546e7a] italic">
-          Click on a node for selecting. Shift + click for extending selection.
-        </p>
+        {!showAlignmentMenu ? (
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleOpenAlignmentMenu("vertical")}
+              className="rounded bg-[#78909c] px-4 py-1 text-white transition-colors hover:bg-[#607d8b]">
+              Vertical
+            </button>
+            <button
+              onClick={() => handleOpenAlignmentMenu("horizontal")}
+              className="rounded bg-[#78909c] px-4 py-1 text-white transition-colors hover:bg-[#607d8b]">
+              Horizontal
+            </button>
+          </div>
+        ) : (
+          <div className="rounded border border-[#b2ebf2] bg-white p-3">
+            <h4 className="mb-2 font-medium text-[#546e7a]">
+              Select Nodes for{" "}
+              {currentAlignmentType === "vertical" ? "Vertical" : "Horizontal"}{" "}
+              Alignment
+            </h4>
+            <div className="mb-2 max-h-32 overflow-y-auto border-b border-[#b2ebf2] pb-2">
+              {nodes.map((node) => (
+                <div key={node.id} className="mb-1 flex items-center">
+                  <input
+                    type="checkbox"
+                    id={`align-node-${node.id}`}
+                    checked={selectedAlignmentNodes.includes(node.id)}
+                    onChange={() => handleToggleAlignmentNode(node.id)}
+                    className="mr-2 accent-[#78909c]"
+                  />
+                  <label
+                    htmlFor={`align-node-${node.id}`}
+                    className="cursor-pointer text-sm">
+                    {node.title} (ID: {node.id})
+                  </label>
+                </div>
+              ))}
+            </div>
+            {errorMessage && (
+              <p className="mb-2 text-xs text-red-400">{errorMessage}</p>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowAlignmentMenu(false)}
+                className="rounded bg-[#90a4ae] px-3 py-1 text-white transition-colors hover:bg-[#78909c]">
+                Cancel
+              </button>
+              <button
+                onClick={handleAddAlignmentConstraint}
+                className="rounded bg-[#78909c] px-3 py-1 text-white transition-colors hover:bg-[#607d8b]">
+                Add Constraint
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <hr className="mb-4 border-[#b2ebf2]" />
@@ -194,14 +234,13 @@ export default function LayoutMenu({
             <select
               value={relNode1}
               onChange={(e) => setRelNode1(e.target.value)}
-              className="w-20 rounded border border-[#b2ebf2] bg-white px-2 py-1 text-sm outline-none">
+              className="w-24 rounded border border-[#b2ebf2] bg-white px-2 py-1 text-sm outline-none">
               {nodes.map((node) => (
                 <option key={node.id} value={node.id}>
                   {node.title}
                 </option>
               ))}
             </select>
-
             <select
               value={relDir}
               onChange={(e) => setRelDir(e.target.value)}
@@ -233,7 +272,7 @@ export default function LayoutMenu({
             <select
               value={relNode2}
               onChange={(e) => setRelNode2(e.target.value)}
-              className="w-20 rounded border border-[#b2ebf2] bg-white px-2 py-1 text-sm outline-none">
+              className="w-24 rounded border border-[#b2ebf2] bg-white px-2 py-1 text-sm outline-none">
               {nodes.map((node) => (
                 <option key={node.id} value={node.id}>
                   {node.title}
@@ -250,9 +289,7 @@ export default function LayoutMenu({
       <div>
         <p
           className={`mb-2 text-xs ${errorMessage ? "text-red-400" : "text-[#546e7a]"} italic`}>
-          {errorMessage === ""
-            ? "Click the × button to delete a constraint."
-            : errorMessage}
+          {errorMessage || "Click the × button to delete a constraint."}
         </p>
         <div className="max-h-56 overflow-x-auto overflow-y-auto">
           <table className="w-full border-collapse text-left text-xs">
@@ -268,9 +305,9 @@ export default function LayoutMenu({
               {fixedNodes.map((c) => (
                 <tr
                   key={c.id}
-                  className={`"bg-[#c8e6c9]/10" transition-colors hover:bg-[#b2dfdb]`}>
+                  className="bg-[#c8e6c9]/10 transition-colors hover:bg-[#b2dfdb]">
                   <td className="p-2">Fixed</td>
-                  <td className="p-2">{c.id}</td>
+                  <td className="p-2">{c.nodeId}</td>
                   <td className="p-2">
                     X: {c.position.x}, Y: {c.position.y}
                   </td>
@@ -312,7 +349,7 @@ export default function LayoutMenu({
                       : `${c.left} → ${c.right}`}
                   </td>
                   <td className="p-2">
-                    {c.top ? "Top-Bottom" : c.left ? "Left-Right" : "None"}
+                    {c.top ? "Top-Bottom" : "Left-Right"}
                     {c.gap ? `, Gap: ${c.gap}` : ""}
                   </td>
                   <td className="p-2 text-center">

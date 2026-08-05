@@ -139,49 +139,36 @@ export default function Graph({
         .filter(Boolean);
 
       // const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
-
-      // Effe hardcoded of vanuit je state die andere constraints trekken:
-      // 1. Define your source constraints (always use Strings for IDs)
-
-      const alignmentConstraints = [
-        { type: "horizontal", nodeIds: ["2", "3", "4"] },
-      ];
-
-      // const relativePlacementConstraints = [
-      //   { top: "1", bottom: "3", gap: 150 },
-      // ];
-
-      // 2. Get a Set of all node IDs currently present in the graph
       const activeNodeIds = new Set(newNodes.map((node) => String(node.id)));
 
-      // 3. Filter and map alignment IDs that are actually active
-      const activeAlignedIds = ["2", "3", "4"].filter((id) =>
-        activeNodeIds.has(id)
-      );
-
-      // 4. Run the fcose layout engine with correct configurations
       const layoutPositions = applyFcoseLayout(newNodes, newEdges, {
         ...options,
 
-        // Disabling tile and incremental ensures constraints are strictly followed
-        // tile: false,
-        // incremental: false,
-
         // Map Fixed Constraints
         fixedNodeConstraint: fixedNodes
-          .filter((node) => activeNodeIds.has(String(node.id)))
+          .filter((node) => activeNodeIds.has(String(node.nodeId)))
           .map((node) => ({
-            nodeId: String(node.id),
+            nodeId: String(node.nodeId),
             position: node.position,
           })),
 
         // Map Alignment Constraints directly into the expected library object format
-        alignmentConstraint:
-          activeAlignedIds.length >= 2
-            ? {
-                horizontal: [activeAlignedIds],
+        alignmentConstraint: alignmentConstraints.reduce(
+          (acc, constraint) => {
+            const activeIds = constraint.nodeIds.filter((id) =>
+              activeNodeIds.has(String(id))
+            );
+            if (activeIds.length >= 2) {
+              if (constraint.type === "horizontal") {
+                acc.horizontal.push(activeIds);
+              } else if (constraint.type === "vertical") {
+                acc.vertical.push(activeIds);
               }
-            : undefined,
+            }
+            return acc;
+          },
+          { horizontal: [], vertical: [] }
+        ),
 
         // Map Relative Placement Constraints
         relativePlacementConstraint: relativePlacementConstraints
@@ -209,26 +196,6 @@ export default function Graph({
             }
           }),
       });
-      // Apply dagre layout to new nodes, keeping fixed nodes in place
-      // const layoutPositions = applyDagreLayout(newNodes, newEdges, {
-      //   quality: "proof",
-      //   nodeSeparation: 200,
-      //   idealEdgeLength: 300,
-      //   nodeRepulsion: 50000,
-      //   maxIterations: 2000,
-      //   animationDuration: 1000,
-      //   gravity: 0.05,
-      //   numIter: 5000,
-      //   tile: false,
-      //   tilingPaddingVertical: 20,
-      //   tilingPaddingHorizontal: 20,
-      //   incremental: true,
-      //   nodeDimensionsIncludeLabels: true,
-      //   fixedNodeConstraint: fixedNodes.map((n) => ({
-      //     nodeId: n.id,
-      //     position: n.position,
-      //   })),
-      // });
 
       // Merge positions: keep old positions, use layout positions for new nodes
       const mergedNodes = newNodes.map((n) => ({
@@ -262,7 +229,6 @@ export default function Graph({
       setNodes,
       setSelectedNode,
       options,
-      fixedNodes,
       alignmentConstraints,
       relativePlacementConstraints,
     ]

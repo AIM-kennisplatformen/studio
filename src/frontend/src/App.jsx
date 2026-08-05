@@ -19,16 +19,12 @@ export default function App() {
 
   const [menuState, setMenuState] = useState("CONSTRAINT"); // "CONSTRAINTS" or "LAYOUT"
 
-  const [fixedNodes, setFixedNodes] = useState([
-    { id: "5", position: { x: 0, y: 0 } }, // Keep your initial root fixed
-  ]);
+  const [fixedNodes, setFixedNodes] = useState([]);
 
-  const [alignmentConstraints, setAlignmentConstraints] = useState([
-    { id: "init-align", type: "horizontal", nodeIds: ["2", "3", "4"] },
-  ]);
+  const [alignmentConstraints, setAlignmentConstraints] = useState([]);
 
   const [relativePlacementConstraints, setRelativePlacementConstraints] =
-    useState([{ id: "init-rel", top: "1", bottom: "3", gap: 150 }]); //Read only to trigger refetch when ai signals done
+    useState([]); //Read only to trigger refetch when ai signals done
 
   const [options, setOptions] = useState(DEFAULT_FCOSE_OPTIONS);
 
