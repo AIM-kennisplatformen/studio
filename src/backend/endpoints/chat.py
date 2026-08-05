@@ -160,15 +160,16 @@ async def _generate_adaptive_title(conversation_text: str) -> str | None:
     return _sanitize_session_title(result.content)
 
 
-async def _emit_title_updated(user_id: str, session_id: UUID, title: str) -> None:
-    await emit_to_user(
-        user_id,
-        "session_title_updated",
-        {
-            "session_id": str(session_id),
-            "name": title,
-        },
-    )
+async def _emit_title_updated(
+    user_id: str,
+    session_id: UUID,
+    title: str,
+    previous_name: str | None = None,
+) -> None:
+    payload: dict[str, object] = {"session_id": str(session_id), "name": title}
+    if previous_name is not None:
+        payload["previous_name"] = previous_name
+    await emit_to_user(user_id, "session_title_updated", payload)
 
 
 async def _update_session_title(
@@ -239,6 +240,10 @@ async def _update_session_title_adaptive(
 
     if user_title_settings.get(user_id, True):
         try:
+            previous = await postgres_store.get_session(user_id, session_id)
+            if not previous:
+                return
+            previous_name = previous.name
             session = await postgres_store.update_session_name(
                 user_id, session_id, title, current_name=None
             )
@@ -248,7 +253,12 @@ async def _update_session_title_adaptive(
                     session_id,
                     last_title_message_count=session.message_count,
                 )
-                await _emit_title_updated(user_id, session_id, session.name)
+                await _emit_title_updated(
+                    user_id,
+                    session_id,
+                    session.name,
+                    previous_name=previous_name,
+                )
         except Exception as exc:
             logger.warning(f"Failed to update adaptive session title: {exc}")
         return
@@ -671,3 +681,29 @@ async def session_title_reject(sid, data):
         return
 
     _ = _pending_title_candidates.pop(candidate_id, None)
+
+
+@sio.event
+async def session_title_revert(sid, data):
+    user_id = sid_connections.get(sid)
+    if not user_id:
+        return
+
+    session_id = parse_session_id(data.get("session_id"))
+    name = (data.get("name") or "").strip()
+    if session_id is None or not name:
+        return
+
+    try:
+        session = await postgres_store.update_session_name(
+            user_id, session_id, name, current_name=None
+        )
+        if session:
+            _ = await postgres_store.update_session_meta(
+                user_id,
+                session_id,
+                last_title_message_count=session.message_count,
+            )
+            await _emit_title_updated(user_id, session_id, session.name)
+    except Exception as exc:
+        logger.warning(f"Failed to revert session title: {exc}")

@@ -264,8 +264,47 @@ def test_adaptive_autoapply_mode_applies_and_emits(monkeypatch):
             ]
             assert len(updated_emits) == 1
             assert updated_emits[0][2]["name"] == "Auto title"
+            assert updated_emits[0][2]["previous_name"] == "Existing title"
         finally:
             _ = chat_module.user_title_settings.pop("user-1", None)
+            chat_module._pending_title_candidates.clear()
+
+    asyncio.run(exercise())
+
+
+def test_title_revert_restores_previous_name(monkeypatch):
+    async def exercise():
+        fake_store = _FakeSessionStore()
+        monkeypatch.setattr(chat_module, "postgres_store", fake_store)
+        emissions: list[tuple[str, str, dict[str, object]]] = []
+        monkeypatch.setattr(
+            chat_module, "emit_to_user", _async_emit_collector(emissions)
+        )
+        monkeypatch.setattr(chat_module, "sid_connections", {"sid-1": "user-1"})
+
+        session = await fake_store.create_session("user-1")
+        session.name = "Auto title"
+        session.message_count = 25
+        session.last_title_message_count = 25
+        session.title_overwritten = False
+        try:
+            await chat_module.session_title_revert(
+                "sid-1",
+                {"session_id": str(session.session_id), "name": "Existing title"},
+            )
+            updated = await fake_store.get_session("user-1", session.session_id)
+            assert updated is not None
+            assert updated.name == "Existing title"
+            assert updated.title_overwritten is False
+            assert updated.last_title_message_count == 25
+
+            updated_emits = [
+                e for e in emissions if e[1] == "session_title_updated"
+            ]
+            assert len(updated_emits) == 1
+            assert updated_emits[0][2]["name"] == "Existing title"
+            assert "previous_name" not in updated_emits[0][2]
+        finally:
             chat_module._pending_title_candidates.clear()
 
     asyncio.run(exercise())
