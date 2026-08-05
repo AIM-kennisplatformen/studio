@@ -95,7 +95,13 @@ export default function Chat({
     return () => {
       isCurrent = false;
     };
-  }, [currentChat, setLastDoneMessageKey, setMessages, setStatus, setText]);
+  }, [
+    currentChat?.session_id,
+    setLastDoneMessageKey,
+    setMessages,
+    setStatus,
+    setText,
+  ]);
 
   return (
     <div className="relative z-10 flex h-full flex-col bg-white">
