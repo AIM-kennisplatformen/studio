@@ -13,6 +13,7 @@ from backend.endpoints.graph import graph_router
 from backend.endpoints.log_event import log_event_router
 from backend.endpoints.pdfs import pdf_router
 from backend.endpoints.sessions import sessions_router
+from backend.endpoints.settings import settings_router
 from backend.stores.pdf_store import pdf_store
 from backend.stores.postgres import postgres_store
 from backend.stores.redis import redis_store
@@ -77,4 +78,5 @@ app.include_router(graph_router)
 app.include_router(log_event_router)
 app.include_router(pdf_router, prefix="/api")
 app.include_router(sessions_router)
+app.include_router(settings_router)
 app.include_router(frontend)

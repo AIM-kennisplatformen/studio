@@ -32,3 +32,10 @@ class SessionDetail(BaseModel):
 class UpdateSessionRequest(BaseModel):
     name: str | None = None
     title_type: Literal["static", "adaptive"] | None = None
+
+
+class TitleCandidate(BaseModel):
+    user_id: str
+    session_id: UUID
+    name: str
+    expires_at: float

@@ -1,5 +1,6 @@
 import asyncio
-from uuid import UUID
+import time
+from uuid import UUID, uuid4
 
 from openai import (
     APIConnectionError,
@@ -33,7 +34,7 @@ from backend.endpoints.graph import (
     SUBNODE_MAP,
 )
 from backend.models.session import Session as ChatSession
-from backend.models.session import SessionMessage
+from backend.models.session import SessionMessage, TitleCandidate
 from backend.models.chat_message import ChatMessage
 from backend.stores.postgres import DEFAULT_SESSION_NAME, postgres_store
 from backend.stores.redis import redis_store
@@ -68,8 +69,13 @@ register_socketio(sio)
 socket_app = socketio.ASGIApp(sio)
 chat_router = APIRouter()
 
-# Per-session in-flight title generation lock
 _title_generation_locks: set[str] = set()
+
+user_title_settings: dict[str, bool] = {}
+
+_pending_title_candidates: dict[str, TitleCandidate] = {}
+
+CANDIDATE_TITLE_TIMEOUT_SECONDS = 20.0
 
 
 async def _resolve_active_session(
@@ -231,19 +237,64 @@ async def _update_session_title_adaptive(
     except Exception as exc:
         logger.warning(f"Unexpected failure while generating adaptive title: {exc}")
 
-    try:
-        session = await postgres_store.update_session_name(
-            user_id, session_id, title, current_name=None
-        )
-        if session:
-            await postgres_store.update_session_meta(
-                user_id,
-                session_id,
-                last_title_message_count=session.message_count,
+    if user_title_settings.get(user_id, True):
+        try:
+            session = await postgres_store.update_session_name(
+                user_id, session_id, title, current_name=None
             )
-            await _emit_title_updated(user_id, session_id, session.name)
+            if session:
+                _ = await postgres_store.update_session_meta(
+                    user_id,
+                    session_id,
+                    last_title_message_count=session.message_count,
+                )
+                await _emit_title_updated(user_id, session_id, session.name)
+        except Exception as exc:
+            logger.warning(f"Failed to update adaptive session title: {exc}")
+        return
+
+    # Advance generation counter so a rejected candidate isn't re-offered every message.
+    try:
+        session = await postgres_store.get_session(user_id, session_id)
+        if not session:
+            return
+        _ = await postgres_store.update_session_meta(
+            user_id,
+            session_id,
+            last_title_message_count=session.message_count,
+        )
+        _purge_expired_title_candidates()
+        candidate_id = str(uuid4())
+        expires_at = time.time() + CANDIDATE_TITLE_TIMEOUT_SECONDS
+        _pending_title_candidates[candidate_id] = TitleCandidate(
+            user_id=user_id,
+            session_id=session_id,
+            name=title,
+            expires_at=expires_at,
+        )
+        await emit_to_user(
+            user_id,
+            "session_title_candidate",
+            {
+                "candidate_id": candidate_id,
+                "session_id": str(session_id),
+                "name": title,
+                "expires_at_ms": int(expires_at * 1000),
+            },
+        )
     except Exception as exc:
-        logger.warning(f"Failed to update adaptive session title: {exc}")
+        logger.warning(f"Failed to queue adaptive session title candidate: {exc}")
+
+
+def _purge_expired_title_candidates() -> None:
+    now = time.time()
+    expired = [
+        candidate_id
+        for candidate_id, candidate in _pending_title_candidates.items()
+        if now >= candidate.expires_at
+    ]
+    for candidate_id in expired:
+        _ = _pending_title_candidates.pop(candidate_id, None)
 
 
 def _schedule_session_title(
@@ -322,6 +373,7 @@ async def connect(sid, environ, auth):
 
     user_id = user["sub"]
     bind_user(user_id, sid)
+    user_title_settings[user_id] = bool(session.get("dynamic_title", True))
     await _resolve_active_session(user_id, session, create=False)
     user_graph_contexts[user_id] = _default_user_graph_context()
     start_session(user_id, sid)
@@ -566,3 +618,56 @@ async def select_node(sid, data):
 
         ctx["dialogue_state_asked"] = True
         ctx["previous_question"] = question
+
+
+async def _resolve_title_candidate(
+    user_id: str, candidate_id: str
+) -> TitleCandidate | None:
+    """Fetch a pending candidate, enforcing ownership and expiry."""
+    candidate = _pending_title_candidates.get(candidate_id)
+    if candidate is None:
+        return None
+    if candidate.user_id != user_id:
+        return None
+    if time.time() >= candidate.expires_at:
+        _ = _pending_title_candidates.pop(candidate_id, None)
+        return None
+    return candidate
+
+
+@sio.event
+async def session_title_accept(sid, data):
+    user_id = sid_connections.get(sid)
+    if not user_id:
+        return
+
+    candidate_id = data.get("candidate_id") or ""
+    candidate = await _resolve_title_candidate(user_id, candidate_id)
+    if candidate is None:
+        return
+
+    session_id = candidate.session_id
+    _ = _pending_title_candidates.pop(candidate_id, None)
+
+    try:
+        session = await postgres_store.update_session_name(
+            user_id, session_id, candidate.name, current_name=None
+        )
+        if session:
+            await _emit_title_updated(user_id, session_id, session.name)
+    except Exception as exc:
+        logger.warning(f"Failed to apply accepted session title: {exc}")
+
+
+@sio.event
+async def session_title_reject(sid, data):
+    user_id = sid_connections.get(sid)
+    if not user_id:
+        return
+
+    candidate_id = data.get("candidate_id") or ""
+    candidate = await _resolve_title_candidate(user_id, candidate_id)
+    if candidate is None:
+        return
+
+    _ = _pending_title_candidates.pop(candidate_id, None)

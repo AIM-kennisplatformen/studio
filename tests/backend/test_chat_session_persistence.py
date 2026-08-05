@@ -1,10 +1,11 @@
 import asyncio
+import time
 from datetime import UTC, datetime
 from typing import Literal
 from uuid import uuid4
 
 from backend.endpoints import chat as chat_module
-from backend.models.session import Session, SessionMessage
+from backend.models.session import Session, SessionMessage, TitleCandidate
 from backend.utility.session_store import active_session_ids
 
 
@@ -182,6 +183,216 @@ def test_store_chat_message_increments_counter(monkeypatch):
         assert session.message_count == 2
 
     asyncio.run(exercise())
+
+
+def test_adaptive_approval_mode_emits_candidate_without_applying(monkeypatch):
+    async def exercise():
+        fake_store = _FakeSessionStore()
+        monkeypatch.setattr(chat_module, "postgres_store", fake_store)
+        monkeypatch.setattr(
+            chat_module, "_generate_adaptive_title", _async_title("Suggested title")
+        )
+        emissions: list[tuple[str, str, dict[str, object]]] = []
+        monkeypatch.setattr(
+            chat_module, "emit_to_user", _async_emit_collector(emissions)
+        )
+
+        session = await fake_store.create_session("user-1")
+        session.title_type = "adaptive"
+        session.name = "Existing title"
+        session.message_count = 25
+        session.last_title_message_count = 5
+
+        chat_module.user_title_settings["user-1"] = False
+        chat_module._pending_title_candidates.clear()
+        try:
+            await chat_module._update_session_title_adaptive(
+                "user-1", session.session_id
+            )
+            updated = await fake_store.get_session("user-1", session.session_id)
+            assert updated is not None
+            assert updated.name == "Existing title"
+            assert updated.last_title_message_count == 25
+
+            candidate_emits = [
+                e for e in emissions if e[1] == "session_title_candidate"
+            ]
+            assert len(candidate_emits) == 1
+            payload = candidate_emits[0][2]
+            assert payload["session_id"] == str(session.session_id)
+            assert payload["name"] == "Suggested title"
+            assert payload["candidate_id"] in chat_module._pending_title_candidates
+        finally:
+            _ = chat_module.user_title_settings.pop("user-1", None)
+            chat_module._pending_title_candidates.clear()
+
+    asyncio.run(exercise())
+
+
+def test_adaptive_autoapply_mode_applies_and_emits(monkeypatch):
+    async def exercise():
+        fake_store = _FakeSessionStore()
+        monkeypatch.setattr(chat_module, "postgres_store", fake_store)
+        monkeypatch.setattr(
+            chat_module, "_generate_adaptive_title", _async_title("Auto title")
+        )
+        emissions: list[tuple[str, str, dict[str, object]]] = []
+        monkeypatch.setattr(
+            chat_module, "emit_to_user", _async_emit_collector(emissions)
+        )
+
+        session = await fake_store.create_session("user-1")
+        session.title_type = "adaptive"
+        session.name = "Existing title"
+        session.message_count = 25
+        session.last_title_message_count = 5
+
+        chat_module.user_title_settings["user-1"] = True
+        chat_module._pending_title_candidates.clear()
+        try:
+            await chat_module._update_session_title_adaptive(
+                "user-1", session.session_id
+            )
+            updated = await fake_store.get_session("user-1", session.session_id)
+            assert updated is not None
+            assert updated.name == "Auto title"
+            assert updated.last_title_message_count == 25
+            assert len(chat_module._pending_title_candidates) == 0
+
+            updated_emits = [
+                e for e in emissions if e[1] == "session_title_updated"
+            ]
+            assert len(updated_emits) == 1
+            assert updated_emits[0][2]["name"] == "Auto title"
+        finally:
+            _ = chat_module.user_title_settings.pop("user-1", None)
+            chat_module._pending_title_candidates.clear()
+
+    asyncio.run(exercise())
+
+
+def test_title_candidate_accept_applies_and_emits(monkeypatch):
+    async def exercise():
+        fake_store = _FakeSessionStore()
+        monkeypatch.setattr(chat_module, "postgres_store", fake_store)
+        emissions: list[tuple[str, str, dict[str, object]]] = []
+        monkeypatch.setattr(
+            chat_module, "emit_to_user", _async_emit_collector(emissions)
+        )
+        monkeypatch.setattr(chat_module, "sid_connections", {"sid-1": "user-1"})
+
+        session = await fake_store.create_session("user-1")
+        session.name = "Existing title"
+
+        candidate_id = str(uuid4())
+        chat_module._pending_title_candidates[candidate_id] = TitleCandidate(
+            user_id="user-1",
+            session_id=session.session_id,
+            name="Accepted title",
+            expires_at=time.time() + 60,
+        )
+        try:
+            await chat_module.session_title_accept(
+                "sid-1", {"candidate_id": candidate_id}
+            )
+            updated = await fake_store.get_session("user-1", session.session_id)
+            assert updated is not None
+            assert updated.name == "Accepted title"
+            assert candidate_id not in chat_module._pending_title_candidates
+
+            updated_emits = [
+                e for e in emissions if e[1] == "session_title_updated"
+            ]
+            assert len(updated_emits) == 1
+            assert updated_emits[0][2]["name"] == "Accepted title"
+        finally:
+            chat_module._pending_title_candidates.clear()
+
+    asyncio.run(exercise())
+
+
+def test_title_candidate_reject_discards_without_change(monkeypatch):
+    async def exercise():
+        fake_store = _FakeSessionStore()
+        monkeypatch.setattr(chat_module, "postgres_store", fake_store)
+        emissions: list[tuple[str, str, dict[str, object]]] = []
+        monkeypatch.setattr(
+            chat_module, "emit_to_user", _async_emit_collector(emissions)
+        )
+        monkeypatch.setattr(chat_module, "sid_connections", {"sid-1": "user-1"})
+
+        session = await fake_store.create_session("user-1")
+        session.name = "Existing title"
+
+        candidate_id = str(uuid4())
+        chat_module._pending_title_candidates[candidate_id] = TitleCandidate(
+            user_id="user-1",
+            session_id=session.session_id,
+            name="Rejected title",
+            expires_at=time.time() + 60,
+        )
+        try:
+            await chat_module.session_title_reject(
+                "sid-1", {"candidate_id": candidate_id}
+            )
+            updated = await fake_store.get_session("user-1", session.session_id)
+            assert updated is not None
+            assert updated.name == "Existing title"
+            assert candidate_id not in chat_module._pending_title_candidates
+            assert emissions == []
+        finally:
+            chat_module._pending_title_candidates.clear()
+
+    asyncio.run(exercise())
+
+
+def test_title_candidate_expired_accept_is_noop(monkeypatch):
+    async def exercise():
+        fake_store = _FakeSessionStore()
+        monkeypatch.setattr(chat_module, "postgres_store", fake_store)
+        emissions: list[tuple[str, str, dict[str, object]]] = []
+        monkeypatch.setattr(
+            chat_module, "emit_to_user", _async_emit_collector(emissions)
+        )
+        monkeypatch.setattr(chat_module, "sid_connections", {"sid-1": "user-1"})
+
+        session = await fake_store.create_session("user-1")
+        session.name = "Existing title"
+
+        candidate_id = str(uuid4())
+        chat_module._pending_title_candidates[candidate_id] = TitleCandidate(
+            user_id="user-1",
+            session_id=session.session_id,
+            name="Stale title",
+            expires_at=time.time() - 5,
+        )
+        try:
+            await chat_module.session_title_accept(
+                "sid-1", {"candidate_id": candidate_id}
+            )
+            updated = await fake_store.get_session("user-1", session.session_id)
+            assert updated is not None
+            assert updated.name == "Existing title"
+            assert candidate_id not in chat_module._pending_title_candidates
+            assert emissions == []
+        finally:
+            chat_module._pending_title_candidates.clear()
+
+    asyncio.run(exercise())
+
+
+def _async_title(title: str):
+    async def stub(*args: object, **kwargs: object) -> str:
+        return title
+
+    return stub
+
+
+def _async_emit_collector(emissions: list[tuple[str, str, dict[str, object]]]):
+    async def stub(user_id: str, event: str, payload: dict[str, object]):
+        emissions.append((user_id, event, payload))
+
+    return stub
 
 
 def test_maybe_generate_title_skips_when_overwritten(monkeypatch):
