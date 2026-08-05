@@ -1,5 +1,6 @@
 import Drawer from "./Drawer";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getSettings, updateSettings } from "../../data/api";
 
 export default function SettingsDrawer({ setIsOpen, isOpen }) {
   //states for mocksettings
@@ -7,6 +8,16 @@ export default function SettingsDrawer({ setIsOpen, isOpen }) {
   const [isDynamicTitle, setIsDynamicTitle] = useState(true);
   const [selectedLanguage, setSelectedLanguage] = useState("en");
   const [showSystemMessages, setShowSystemMessages] = useState(true);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    getSettings().then((res) => setIsDynamicTitle(res.dynamic_title));
+  }, [isOpen]);
+
+  const handleDynamicTitleChange = (checked) => {
+    setIsDynamicTitle(checked);
+    updateSettings(checked);
+  };
 
   const settingsHeader = (
     <div className="mb-2 border-b border-gray-200 pb-1">
@@ -74,7 +85,7 @@ export default function SettingsDrawer({ setIsOpen, isOpen }) {
               id="title-gen-toggle"
               type="checkbox"
               checked={isDynamicTitle} // Koppel aan je eigen state
-              onChange={(e) => setIsDynamicTitle(e.target.checked)}
+              onChange={(e) => handleDynamicTitleChange(e.target.checked)}
               className="peer sr-only"
             />
             <div className="peer peer-checked:bg-primary h-6 w-11 rounded-full bg-gray-300 peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"></div>

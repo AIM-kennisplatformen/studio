@@ -174,3 +174,41 @@ export async function newSession() {
     return null;
   }
 }
+
+export async function getSettings() {
+  const url = `${BACKEND_BASE_URL}/settings`;
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      credentials: "include",
+    });
+    if (!response.ok) {
+      console.error("Failed to fetch settings:", response.status);
+      return { dynamic_title: true };
+    }
+    return await response.json();
+  } catch (err) {
+    console.error("Error fetching settings:", err);
+    return { dynamic_title: true };
+  }
+}
+
+export async function updateSettings(dynamic_title) {
+  const url = `${BACKEND_BASE_URL}/settings`;
+  try {
+    const response = await fetch(url, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dynamic_title }),
+    });
+    if (!response.ok) {
+      console.error("Failed to update settings:", response.status);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Error updating settings:", err);
+    return false;
+  }
+}
