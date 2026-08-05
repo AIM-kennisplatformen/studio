@@ -5,6 +5,7 @@ import ChatSessionOverview from "./ChatSessionOverview";
 import ChatSelectionToggle from "./ChatSelectionToggle";
 import SettingsDrawer from "../slideover/settings";
 import { PencilIcon, Check, X } from "lucide-react";
+import { updateSession } from "@/data/api";
 
 export default function ChatWindow() {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -27,6 +28,7 @@ export default function ChatWindow() {
           chatActive={chatActive}
           setSettingsOpen={setSettingsOpen}
           currentChatTitle={currentChat?.name}
+          currentChat={currentChat}
           setCurrentChat={setCurrentChat}
         />
 
@@ -48,14 +50,24 @@ function ChatHeader({
   setChatActive,
   chatActive,
   setSettingsOpen,
+  currentChat,
   currentChatTitle,
+  setCurrentChat,
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(currentChatTitle || "New Chat");
 
-  const handleSave = () => {
-    // Hier pas je de daadwerkelijke chat title aan in je applicatie state / backend
-    // onTitleChange(editValue);
+  const handleSave = async () => {
+    const updated = await updateSession(currentChat.session_id, {
+      name: editValue,
+    });
+    if (updated) {
+      setCurrentChat((prev) =>
+        prev?.session_id === currentChat.session_id
+          ? { ...prev, name: editValue }
+          : prev
+      );
+    }
     setIsEditing(false);
   };
 
@@ -115,16 +127,20 @@ function ChatHeader({
                 aria-label="Chat Name">
                 {!currentChatTitle ? "New Chat" : currentChatTitle}
               </h2>
-              <button
-                type="button"
-                onClick={() => {
-                  setEditValue(currentChatTitle || "New Chat");
-                  setIsEditing(true);
-                }}
-                className="flex h-6 w-6 items-center justify-center rounded-md !bg-white opacity-0 transition-all duration-200 group-hover:opacity-100 hover:!bg-gray-200"
-                aria-label="Edit chat title">
-                <PencilIcon className="text-primary h-4 w-4 shrink-0" />
-              </button>
+              {currentChat && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (currentChat) {
+                      setEditValue(currentChatTitle || "New Chat");
+                      setIsEditing(true);
+                    }
+                  }}
+                  className="flex h-6 w-6 items-center justify-center rounded-md !bg-white opacity-0 transition-all duration-200 group-hover:opacity-100 hover:!bg-gray-200"
+                  aria-label="Edit chat title">
+                  <PencilIcon className="text-primary h-4 w-4 shrink-0" />
+                </button>
+              )}
             </>
           )}
         </div>
