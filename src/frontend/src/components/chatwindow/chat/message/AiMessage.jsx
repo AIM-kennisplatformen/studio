@@ -1,5 +1,11 @@
 import { Action, Actions } from "@/components/shadcn-io/ai/actions";
-import { ThumbsUpIcon, ThumbsDownIcon, Copy, Check } from "lucide-react";
+import {
+  ThumbsUpIcon,
+  ThumbsDownIcon,
+  Copy,
+  Check,
+  BotMessageSquare,
+} from "lucide-react";
 import { Response } from "@/components/shadcn-io/ai/response";
 import { logResponseFeedback } from "../../../../data/api";
 import { useRef, useState } from "react";
@@ -21,6 +27,9 @@ export default function AiMessage({
       key={index}
       className="flex w-full items-start justify-start gap-2 pr-[5%]">
       <div className="flex w-full flex-col items-start">
+        <span className="text-muted-foreground mb-1 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
+          <BotMessageSquare className="h-3 w-3" /> AI
+        </span>
         <Response className="w-full rounded-lg border border-gray-200 bg-gray-50 p-2 text-sm wrap-break-word">
           {value}
         </Response>
