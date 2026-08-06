@@ -22,6 +22,7 @@ export function useChatWebSocket(setStatus, onTitleUpdate) {
   const socketRef = useRef(null);
   const streamingKeyRef = useRef(null);
   const chatModelStartCountRef = useRef(0);
+  const pendingRevertRef = useRef(null);
 
   useEffect(() => {
     const socket = io(BACKEND_BASE_URL, {
@@ -35,8 +36,10 @@ export function useChatWebSocket(setStatus, onTitleUpdate) {
       () => (nodeId) => socket.emit("select_node", { node_id: nodeId })
     );
     setRevertTitleEmit(
-      () => (sessionId, name) =>
-        socket.emit("session_title_revert", { session_id: sessionId, name })
+      () => (sessionId, name) => {
+        pendingRevertRef.current = { sessionId, name };
+        socket.emit("session_title_revert", { session_id: sessionId, name });
+      }
     );
 
     socket.on("connect", () => {
@@ -108,6 +111,15 @@ export function useChatWebSocket(setStatus, onTitleUpdate) {
 
     socket.on("session_title_updated", (data) => {
       onTitleUpdate?.(data.session_id, data.name);
+
+      const pending = pendingRevertRef.current;
+      const isRevertEcho =
+        data.previous_name == null &&
+        pending?.sessionId === data.session_id &&
+        pending?.name === data.name;
+      pendingRevertRef.current = null;
+      if (isRevertEcho) return;
+
       const content = data.name || "";
 
       setMessages((prev) => {
