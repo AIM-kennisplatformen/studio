@@ -100,6 +100,8 @@ export default function Messages({
                     showFeedback={showFeedback}
                   />
                 );
+              case "session_title_updated":
+                return <SystemMessage key={key} value={value} onUndo={true} />;
             }
 
             return <UserMessage key={key} value={value} />;

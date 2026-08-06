@@ -102,6 +102,20 @@ export function useChatWebSocket(setStatus, onTitleUpdate) {
 
     socket.on("session_title_updated", (data) => {
       onTitleUpdate?.(data.session_id, data.name);
+      const content = data.name || "";
+
+      setMessages((prev) => {
+        const newKey = (prev[0]?.key || 0) + 1;
+        return [
+          {
+            key: newKey,
+            name: "session_title_updated",
+            value: content,
+            reasoning: null,
+          },
+          ...prev,
+        ];
+      });
     });
 
     return () => {
