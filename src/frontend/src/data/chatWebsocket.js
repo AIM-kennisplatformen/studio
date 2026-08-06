@@ -6,6 +6,7 @@ import {
   lastDoneMessageKeyAtom,
   graphRefetchTriggerAtom,
   selectNodeEmitAtom,
+  revertTitleEmitAtom,
 } from "../lib/atoms";
 import { io } from "socket.io-client";
 import { BACKEND_BASE_URL } from "./api.js";
@@ -17,6 +18,7 @@ export function useChatWebSocket(setStatus, onTitleUpdate) {
   const setLastDoneMessageKey = useSetAtom(lastDoneMessageKeyAtom);
   const triggerRefetch = useSetAtom(graphRefetchTriggerAtom);
   const setSelectedNodeEmit = useSetAtom(selectNodeEmitAtom);
+  const setRevertTitleEmit = useSetAtom(revertTitleEmitAtom);
   const socketRef = useRef(null);
   const streamingKeyRef = useRef(null);
   const chatModelStartCountRef = useRef(0);
@@ -31,6 +33,10 @@ export function useChatWebSocket(setStatus, onTitleUpdate) {
     socketRef.current = socket;
     setSelectedNodeEmit(
       () => (nodeId) => socket.emit("select_node", { node_id: nodeId })
+    );
+    setRevertTitleEmit(
+      () => (sessionId, name) =>
+        socket.emit("session_title_revert", { session_id: sessionId, name })
     );
 
     socket.on("connect", () => {
@@ -111,6 +117,8 @@ export function useChatWebSocket(setStatus, onTitleUpdate) {
             key: newKey,
             name: "session_title_updated",
             value: content,
+            previousName: data.previous_name ?? null,
+            sessionId: data.session_id,
             reasoning: null,
           },
           ...prev,

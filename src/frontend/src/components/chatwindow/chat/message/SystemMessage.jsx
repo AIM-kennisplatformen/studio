@@ -2,7 +2,12 @@ import { CircleCheck, MonitorCog, PenLine } from "lucide-react";
 import { Response } from "@/components/shadcn-io/ai/response";
 import { cn } from "@/lib/utils";
 
-export default function SystemMessage({ value, reverted = false, onUndo }) {
+export default function SystemMessage({
+  value,
+  reverted = false,
+  previousName,
+  onUndo,
+}) {
   return (
     <div className="flex w-full flex-col items-start gap-1 pr-[5%]">
       <span className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
@@ -35,7 +40,9 @@ export default function SystemMessage({ value, reverted = false, onUndo }) {
             "min-w-0 flex-1 text-[13.5px] leading-snug wrap-break-word",
             reverted ? "text-white" : "text-emerald-950"
           )}>
-          {`Chat renamed to: ***${value}***`}
+          {reverted
+            ? `Reverted to: ***${previousName}***`
+            : `Chat renamed ${previousName ? `from ***${previousName}***` : ""} to: ***${value}***`}
         </Response>
 
         {!reverted && onUndo && (

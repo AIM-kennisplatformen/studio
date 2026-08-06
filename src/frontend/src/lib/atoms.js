@@ -46,3 +46,7 @@ export const layoutNodesAtom = atom([]);
 
 export const graphRefetchTriggerAtom = atom(0);
 export const selectNodeEmitAtom = atom(null);
+
+// Atom holding (sessionId, name) => void, wired up in useChatWebSocket,
+// so components outside the socket-owning tree can trigger a title revert.
+export const revertTitleEmitAtom = atom(null);

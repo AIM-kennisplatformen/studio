@@ -4,7 +4,7 @@ import {
   Conversation,
   ConversationContent,
 } from "@/components/shadcn-io/ai/conversation";
-import { useAtomValue } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import {
   Reasoning,
   ReasoningTrigger,
@@ -14,6 +14,7 @@ import { logEvent } from "../../../data/api";
 import {
   lastDoneMessageKeyAtom,
   messagesAtom,
+  revertTitleEmitAtom,
   selectedNodeAtom,
   textStatusAtom,
 } from "@/lib/atoms";
@@ -30,10 +31,19 @@ export default function Messages({
   showSystemMessages,
 }) {
   const messages = useAtomValue(messagesAtom);
+  const setMessages = useSetAtom(messagesAtom);
   const status = useAtomValue(textStatusAtom);
   const lastDoneKey = useAtomValue(lastDoneMessageKeyAtom);
   const selectedNode = useAtomValue(selectedNodeAtom);
+  const emitRevertTitle = useAtomValue(revertTitleEmitAtom);
   const prevStatusRef = useRef(null);
+
+  const handleUndoTitle = (key, sessionId, previousName) => {
+    emitRevertTitle?.(sessionId, previousName);
+    setMessages((prev) =>
+      prev.map((m) => (m.key === key ? { ...m, reverted: true } : m))
+    );
+  };
 
   // Log response_generated event
   useEffect(() => {
@@ -80,7 +90,7 @@ export default function Messages({
           .filter(({ name }) =>
             showSystemMessages ? true : name !== "system_prompt"
           )
-          .map(({ key, value, name }) => {
+          .map(({ key, value, name, previousName, sessionId, reverted }) => {
             switch (name) {
               case "system_prompt":
                 return <SystemMessage key={key} value={value} />;
@@ -101,7 +111,19 @@ export default function Messages({
                   />
                 );
               case "session_title_updated":
-                return <SystemMessage key={key} value={value} onUndo={true} />;
+                return (
+                  <SystemMessage
+                    key={key}
+                    value={value}
+                    reverted={reverted}
+                    previousName={previousName}
+                    onUndo={
+                      previousName && !reverted
+                        ? () => handleUndoTitle(key, sessionId, previousName)
+                        : undefined
+                    }
+                  />
+                );
             }
 
             return <UserMessage key={key} value={value} />;

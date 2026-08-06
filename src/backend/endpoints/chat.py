@@ -337,7 +337,7 @@ async def _maybe_generate_title(
         return
 
     if session.name != DEFAULT_SESSION_NAME and session.title_type == "adaptive":
-        if session.message_count < session.last_title_message_count + 20:
+        if session.message_count < session.last_title_message_count + 4:
             return
 
     _title_generation_locks.add(lock_key)
