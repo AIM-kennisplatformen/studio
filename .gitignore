@@ -225,4 +225,8 @@ src/studio
 
 # Nix shell
 shell.nix
+
+# secretspec
+secretspec.toml
+
 .vscode/settings.json
