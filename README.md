@@ -72,6 +72,8 @@ Key variables:
 
 ## Running With Docker
 
+### Via pixi
+
 Start the application through Docker Compose:
 
 ```bash
@@ -85,6 +87,18 @@ This starts:
 
 The application serves the built frontend from `kg/` and exposes the API at `http://localhost:10090`.
 
+The `application` and `frontend_hmr` tasks create the external Docker network
+`mcp_server_scepa_studio_net` if it does not exist yet. When using raw Docker
+commands instead, create it once:
+
+```bash
+docker network create mcp_server_scepa_studio_net
+```
+
+`src/frontend/node_modules` is shared with the container (not volume-backed), so
+Docker never creates it as root. The Vite dev-server cache is kept inside the
+container; nothing under `node_modules/` is written by the container.
+
 ### Frontend HMR
 
 To start the Vite dev server and switch `/app` to it while it is running:
@@ -94,6 +108,10 @@ pixi run frontend_hmr
 ```
 
 This starts Vite at `http://localhost:5173`. While it is running, `http://localhost:10090/app` stays on the backend URL and proxies frontend files from Vite; when it stops, the application serves the built frontend from `kg/` again.
+
+`frontend_hmr` needs `src/frontend/node_modules` on the host — run
+`pixi run npm install --prefix src/frontend` first (or plain `npm install`) if it
+is not present.
 
 ### Direct Docker Commands
 
