@@ -35,12 +35,10 @@ export function useChatWebSocket(setStatus, onTitleUpdate) {
     setSelectedNodeEmit(
       () => (nodeId) => socket.emit("select_node", { node_id: nodeId })
     );
-    setRevertTitleEmit(
-      () => (sessionId, name) => {
-        pendingRevertRef.current = { sessionId, name };
-        socket.emit("session_title_revert", { session_id: sessionId, name });
-      }
-    );
+    setRevertTitleEmit(() => (sessionId, name) => {
+      pendingRevertRef.current = { sessionId, name };
+      socket.emit("session_title_revert", { session_id: sessionId, name });
+    });
 
     socket.on("connect", () => {
       console.log("Socket.IO connected:", socket.id);

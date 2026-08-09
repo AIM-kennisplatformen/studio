@@ -64,15 +64,13 @@ export default function Chat({
       setSessionReady(false);
       shouldLog.current = false;
 
-      if (currentChat === null) {
+      const sessionId = currentChat?.session_id;
+      if (!sessionId) {
         setMessages([...initialMessages]);
 
         if (isCurrent) setSessionReady(true);
         return;
       }
-
-      const sessionId = currentChat?.session_id;
-      if (!sessionId) return;
 
       setMessages([]);
 
