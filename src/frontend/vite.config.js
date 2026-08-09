@@ -7,6 +7,11 @@ import react from "@vitejs/plugin-react";
 // https://vite.dev/config/
 export default defineConfig({
   base: "/app/",
+  // eslint-disable-next-line no-undef
+  ...(process.env.VITE_CACHE_DIR
+    ? // eslint-disable-next-line no-undef
+      { cacheDir: process.env.VITE_CACHE_DIR }
+    : {}),
   plugins: [react(), tailwindcss()],
   build: {
     outDir: "../../kg",
