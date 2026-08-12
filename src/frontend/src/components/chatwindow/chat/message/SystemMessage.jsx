@@ -62,8 +62,8 @@ export default function SystemMessage({
           </div>
         </div>
       );
-    case "candidateTitleMessage":
-      return <></>;
+    // case "candidateTitleMessage":
+    //   return <></>;
 
     default:
       return null;

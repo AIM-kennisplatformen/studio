@@ -136,34 +136,34 @@ export function useChatWebSocket(setStatus, onTitleUpdate) {
       });
     });
 
-    socket.on("session_title_candidate", (data) => {
-      onTitleUpdate?.(data.session_id, data.name);
+    // socket.on("session_title_candidate", (data) => {
+    //   onTitleUpdate?.(data.session_id, data.name);
 
-      const pending = pendingRevertRef.current;
-      const isRevertEcho =
-        data.previous_name == null &&
-        pending?.sessionId === data.session_id &&
-        pending?.name === data.name;
-      pendingRevertRef.current = null;
-      if (isRevertEcho) return;
+    //   const pending = pendingRevertRef.current;
+    //   const isRevertEcho =
+    //     data.previous_name == null &&
+    //     pending?.sessionId === data.session_id &&
+    //     pending?.name === data.name;
+    //   pendingRevertRef.current = null;
+    //   if (isRevertEcho) return;
 
-      const content = data.name || "";
+    //   const content = data.name || "";
 
-      setMessages((prev) => {
-        const newKey = (prev[0]?.key || 0) + 1;
-        return [
-          {
-            key: newKey,
-            name: "session_title_candidate",
-            value: content,
-            previousName: data.previous_name ?? null,
-            sessionId: data.session_id,
-            reasoning: null,
-          },
-          ...prev,
-        ];
-      });
-    });
+    //   setMessages((prev) => {
+    //     const newKey = (prev[0]?.key || 0) + 1;
+    //     return [
+    //       {
+    //         key: newKey,
+    //         name: "session_title_candidate",
+    //         value: content,
+    //         previousName: data.previous_name ?? null,
+    //         sessionId: data.session_id,
+    //         reasoning: null,
+    //       },
+    //       ...prev,
+    //     ];
+    //   });
+    // });
 
     return () => {
       socket.disconnect();
