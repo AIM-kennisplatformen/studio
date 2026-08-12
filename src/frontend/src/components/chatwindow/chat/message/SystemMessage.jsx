@@ -66,6 +66,23 @@ export default function SystemMessage({
     //   return <></>;
 
     default:
-      return null;
+      return (
+        <div className="flex w-full flex-col items-start gap-1 pr-[5%]">
+          <span className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
+            <MonitorCog className="h-3 w-3" /> System Message
+          </span>
+          <div
+            className={
+              "flex w-full items-center gap-2.5 rounded-xl border border-emerald-600/20 bg-emerald-500/10 px-3.5 py-2.5"
+            }>
+            <Response
+              className={
+                "min-w-0 flex-1 text-[13.5px] leading-snug wrap-break-word text-emerald-950"
+              }>
+              {value}
+            </Response>
+          </div>
+        </div>
+      );
   }
 }

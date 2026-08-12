@@ -111,7 +111,7 @@ export default function Chat({
           setFeedbackText={setFeedbackText}
           setShowFeedback={setShowFeedback}
           shouldLog={shouldLog}
-          showSystemMessages={false}
+          showSystemMessages={true}
         />
       </div>
 

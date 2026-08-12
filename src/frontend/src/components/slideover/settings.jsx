@@ -153,10 +153,9 @@ export default function SettingsDrawer({ setIsOpen, isOpen }) {
   );
 
   return (
-    <Drawer
-      onClose={() => setIsOpen(false)}
-      children={[settingsHeader, settingsBody]}
-      isOpen={isOpen}
-    />
+    <Drawer onClose={() => setIsOpen(false)} isOpen={isOpen}>
+      {settingsHeader}
+      {settingsBody}
+    </Drawer>
   );
 }
