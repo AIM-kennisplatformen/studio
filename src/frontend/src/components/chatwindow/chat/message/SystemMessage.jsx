@@ -51,7 +51,7 @@ export default function SystemMessage({
                 : `Chat renamed ${previousName ? `from ***${previousName}***` : ""} to: ***${value}***`}
             </Response>
 
-            {!reverted && onUndo && (
+            {!reverted && onButtonClick && (
               <button
                 type="button"
                 onClick={onButtonClick}
