@@ -117,7 +117,7 @@ export default function Messages({
                     value={value}
                     reverted={reverted}
                     previousName={previousName}
-                    onUndo={
+                    onButtonClick={
                       previousName && !reverted
                         ? () => handleUndoTitle(key, sessionId, previousName)
                         : undefined
@@ -132,7 +132,7 @@ export default function Messages({
                     value={value}
                     reverted={reverted}
                     previousName={previousName}
-                    onUndo={
+                    onButtonClick={
                       previousName && !reverted
                         ? () => handleUndoTitle(key, sessionId, previousName)
                         : undefined
