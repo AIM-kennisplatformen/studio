@@ -122,6 +122,22 @@ export default function Messages({
                         ? () => handleUndoTitle(key, sessionId, previousName)
                         : undefined
                     }
+                    type={"adaptiveTitleMessage"}
+                  />
+                );
+              case "session_title_candidate":
+                return (
+                  <SystemMessage
+                    key={key}
+                    value={value}
+                    reverted={reverted}
+                    previousName={previousName}
+                    onUndo={
+                      previousName && !reverted
+                        ? () => handleUndoTitle(key, sessionId, previousName)
+                        : undefined
+                    }
+                    type={"candidateTitleMessage"}
                   />
                 );
             }

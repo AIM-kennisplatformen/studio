@@ -35,12 +35,10 @@ export function useChatWebSocket(setStatus, onTitleUpdate) {
     setSelectedNodeEmit(
       () => (nodeId) => socket.emit("select_node", { node_id: nodeId })
     );
-    setRevertTitleEmit(
-      () => (sessionId, name) => {
-        pendingRevertRef.current = { sessionId, name };
-        socket.emit("session_title_revert", { session_id: sessionId, name });
-      }
-    );
+    setRevertTitleEmit(() => (sessionId, name) => {
+      pendingRevertRef.current = { sessionId, name };
+      socket.emit("session_title_revert", { session_id: sessionId, name });
+    });
 
     socket.on("connect", () => {
       console.log("Socket.IO connected:", socket.id);
@@ -128,6 +126,35 @@ export function useChatWebSocket(setStatus, onTitleUpdate) {
           {
             key: newKey,
             name: "session_title_updated",
+            value: content,
+            previousName: data.previous_name ?? null,
+            sessionId: data.session_id,
+            reasoning: null,
+          },
+          ...prev,
+        ];
+      });
+    });
+
+    socket.on("session_title_candidate", (data) => {
+      onTitleUpdate?.(data.session_id, data.name);
+
+      const pending = pendingRevertRef.current;
+      const isRevertEcho =
+        data.previous_name == null &&
+        pending?.sessionId === data.session_id &&
+        pending?.name === data.name;
+      pendingRevertRef.current = null;
+      if (isRevertEcho) return;
+
+      const content = data.name || "";
+
+      setMessages((prev) => {
+        const newKey = (prev[0]?.key || 0) + 1;
+        return [
+          {
+            key: newKey,
+            name: "session_title_candidate",
             value: content,
             previousName: data.previous_name ?? null,
             sessionId: data.session_id,
