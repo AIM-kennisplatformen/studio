@@ -110,7 +110,8 @@ pixi run frontend_hmr
 This starts Vite at `http://localhost:5173`. While it is running, `http://localhost:10090/app` stays on the backend URL and proxies frontend files from Vite; when it stops, the application serves the built frontend from `kg/` again.
 
 `frontend_hmr` needs `src/frontend/node_modules` on the host — run
-`pixi run npm install --prefix src/frontend` first (or plain `npm install`) if it
+`pixi run npm --prefix src/frontend install` first (or `npm install` from
+`src/frontend`) if it
 is not present.
 
 ### Direct Docker Commands

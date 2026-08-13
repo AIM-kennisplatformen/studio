@@ -21,7 +21,7 @@ trap cleanup EXIT INT TERM HUP
 cleanup
 
 mkdir -p "$hmr_dir"
-CHOKIDAR_USEPOLLING=true WATCHPACK_POLLING=true VITE_CACHE_DIR="$vite_cache_dir" pixi run npm run dev --prefix src/frontend -- --host 0.0.0.0 &
+CHOKIDAR_USEPOLLING=true WATCHPACK_POLLING=true VITE_CACHE_DIR="$vite_cache_dir" pixi run npm --prefix src/frontend run dev -- --host 0.0.0.0 &
 vite_pid=$!
 echo "$vite_pid" > "$pid_file"
 wait "$vite_pid"

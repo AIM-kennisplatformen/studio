@@ -15,8 +15,8 @@ RUN pixi install --frozen
 
 COPY src ./src
 
-RUN pixi run npm install --prefix src/frontend \
-    && VITE_BACKEND_BASE_URL="${BACKEND_BASE_URL:-http://localhost:10090}" pixi run npm run build --prefix src/frontend
+RUN pixi run npm --prefix src/frontend install \
+    && VITE_BACKEND_BASE_URL="${BACKEND_BASE_URL:-http://localhost:10090}" pixi run npm --prefix src/frontend run build
 
 # Remove any cache of pixi (which is useless anyways)
 RUN rm -r /root/.cache/*
