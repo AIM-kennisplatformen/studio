@@ -30,6 +30,7 @@ services:
     volumes:
       - .:/app
       - /app/.pixi
+      - /app/src/frontend/node_modules
       - pdf_data:/data/pdfs
     extra_hosts:
       - "host.docker.internal:host-gateway"

@@ -104,12 +104,12 @@ python-dotenv = ">=1.1.0"
 # Pixi tasks
 # ====================================
 [tool.pixi.tasks]
-ensure-dirs = "mkdir -p .pixi src/frontend/node_modules"
+ensure-dirs = "mkdir -p .pixi"
 docker-net = "docker network create mcp_server_scepa_studio_net 2>/dev/null || true"
 docker = { cmd = "docker compose up -d", depends-on = ["ensure-dirs", "docker-net"] }
 frontend-install = { cmd = "npm install", cwd = "src/frontend", depends-on = ["ensure-dirs"] }
 application = { cmd = "npm run build", cwd = "src/frontend", depends-on = ["docker", "frontend-install"] }
-frontend_hmr = { cmd = "docker compose exec application bash scripts/frontend_hmr.sh", depends-on = ["docker-net"] }
+frontend_hmr = { cmd = "docker compose exec application bash scripts/frontend_hmr.sh", depends-on = ["application"] }
 # Development quality checks
 lint = "ruff check"
 typecheck = "mypy src tests"

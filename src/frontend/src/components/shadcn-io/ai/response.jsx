@@ -23,7 +23,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import { CodeBlock, CodeBlockCopyButton } from "./code-block";
 import "katex/dist/katex.min.css";
-import hardenReactMarkdown from "harden-react-markdown";
+import * as hardenReactMarkdownModule from "harden-react-markdown";
 
 /**
  * Parses markdown text and removes incomplete tokens to prevent partial rendering
@@ -166,8 +166,15 @@ function parseIncompleteMarkdown(text) {
   return result;
 }
 
+// The package is CommonJS, so bundlers can expose it either directly or under
+// a `default` property. Normalize that interop boundary before using it.
+const hardenReactMarkdown =
+  typeof hardenReactMarkdownModule === "function"
+    ? hardenReactMarkdownModule
+    : hardenReactMarkdownModule.default;
+
 // Create a hardened version of ReactMarkdown
-const HardenedMarkdown = hardenReactMarkdown.default(ReactMarkdown);
+const HardenedMarkdown = hardenReactMarkdown(ReactMarkdown);
 
 const components = {
   ol: ({ node: _node, children, className, ...props }) => (
