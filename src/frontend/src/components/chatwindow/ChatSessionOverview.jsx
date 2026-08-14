@@ -6,6 +6,7 @@ import {
   PromptInputTextarea,
   PromptInputToolbar,
 } from "@/components/shadcn-io/ai/prompt-input";
+import { Trash2, X } from "lucide-react";
 
 export default function ChatSessionOverview({
   setChatActive,
@@ -97,83 +98,157 @@ function ChatSessionItem({
   setCurrentChat,
   setChatActive,
 }) {
+  const [isDeleting, setIsDeleting] = useState(false);
   return (
     <li key={chat.session_id}>
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => {
-          setCurrentChat(chat);
-          setChatActive(true);
-        }}
-        className={
-          "group flex w-full cursor-pointer items-center justify-between rounded p-2 text-left transition duration-150 " +
-          (currentChat?.session_id === chat.session_id
-            ? "!border-primary !bg-primary/70 hover:!bg-primary/80 !border"
-            : "!border !border-gray-300 !bg-gray-100 hover:!bg-gray-200")
-        }>
-        <div className="flex min-w-0 flex-col pr-2">
-          <span
-            className={
-              "truncate font-semibold " +
-              (currentChat?.session_id === chat.session_id
-                ? "text-white"
-                : "text-black")
-            }>
-            {chat.name}
-          </span>
-
-          {currentChat?.session_id === chat.session_id && (
-            <span className="text-xs font-medium text-white/80 italic">
-              Currently Active
+      {!isDeleting ? (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            setCurrentChat(chat);
+            setChatActive(true);
+          }}
+          className={
+            "group flex w-full cursor-pointer items-center justify-between rounded p-2 text-left transition duration-150 " +
+            (currentChat?.session_id === chat.session_id
+              ? "!border-primary !bg-primary/70 hover:!bg-primary/80 !border"
+              : "!border !border-gray-300 !bg-gray-100 hover:!bg-gray-200")
+          }>
+          <div className="flex min-w-0 flex-col pr-2">
+            <span
+              className={
+                "truncate font-semibold " +
+                (currentChat?.session_id === chat.session_id
+                  ? "text-white"
+                  : "text-black")
+              }>
+              {chat.name}
             </span>
-          )}
-        </div>
-        <div className="flex shrink-0 items-center">
-          <span
-            className={
-              "text-sm font-semibold transition-all duration-300 " +
-              (currentChat?.session_id === chat.session_id
-                ? "text-white/80"
-                : "text-gray-500")
-            }>
-            {chat.updated_at.split("T")[0].split("-").reverse().join("-")}
-          </span>
 
-          <div className="grid translate-x-3 grid-cols-[0fr] opacity-0 transition-all duration-300 ease-out group-hover:translate-x-0 group-hover:grid-cols-[1fr] group-hover:opacity-100">
-            <div className="flex items-center overflow-hidden">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!window.confirm(`Delete "${chat.name}"?`)) return;
-                  deleteSession(chat.session_id).then((ok) => {
-                    if (!ok) return;
-                    if (currentChat?.session_id === chat.session_id) {
-                      setCurrentChat(null);
-                    }
-                    fetchChatSessions();
-                  });
-                }}
-                className="ml-2 shrink-0 rounded !bg-red-700 p-1.5 text-gray-400 transition-colors hover:!bg-red-800"
-                title="Delete session">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="size-4 text-white">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-              </button>
+            {currentChat?.session_id === chat.session_id && (
+              <span className="text-xs font-medium text-white/80 italic">
+                Currently Active
+              </span>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center">
+            <span
+              className={
+                "text-sm font-semibold transition-all duration-300 " +
+                (currentChat?.session_id === chat.session_id
+                  ? "text-white/80"
+                  : "text-gray-500")
+              }>
+              {chat.updated_at.split("T")[0].split("-").reverse().join("-")}
+            </span>
+
+            <div className="grid translate-x-3 grid-cols-[0fr] opacity-0 transition-all duration-300 ease-out group-hover:translate-x-0 group-hover:grid-cols-[1fr] group-hover:opacity-100">
+              <div className="flex items-center overflow-hidden">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsDeleting(true);
+                  }}
+                  className="ml-2 shrink-0 rounded !bg-red-700 p-1.5 text-gray-400 transition-colors hover:!bg-red-800"
+                  title="Delete session">
+                  <Trash2 />
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div
+          className={
+            "group flex w-full cursor-pointer items-center justify-between rounded p-2 text-left transition duration-150 " +
+            (currentChat?.session_id === chat.session_id
+              ? "!border-2 !border-red-800 !bg-red-800/70 hover:!bg-red-800/80"
+              : "!border-2 !border-red-700 !bg-gray-100 hover:!bg-gray-200")
+          }>
+          <div className="flex min-w-0 flex-col pr-2">
+            <span
+              className={
+                "truncate font-semibold " +
+                (currentChat?.session_id === chat.session_id
+                  ? "text-white"
+                  : "text-black")
+              }>
+              Are you sure you want to delete the following chat:
+            </span>
+            <span
+              className={
+                "truncate font-semibold italic " +
+                (currentChat?.session_id === chat.session_id
+                  ? "text-white"
+                  : "text-black")
+              }>
+              "{chat.name}"
+            </span>
+
+            <span
+              className={
+                "text-xs font-medium italic " +
+                (currentChat?.session_id === chat.session_id
+                  ? "text-white/80"
+                  : "text-red-700")
+              }>
+              This action cannot be undone.
+            </span>
+          </div>
+          <div className="flex shrink-0 items-center">
+            <div className="grid translate-x-3 grid-cols-[0fr] opacity-0 transition-all duration-300 ease-out group-hover:translate-x-0 group-hover:grid-cols-[1fr] group-hover:opacity-100">
+              <div className="flex items-center overflow-hidden">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteSession(chat.session_id).then((ok) => {
+                      if (!ok) return;
+                      if (currentChat?.session_id === chat.session_id) {
+                        setCurrentChat(null);
+                      }
+                      fetchChatSessions();
+                    });
+                  }}
+                  className={
+                    "ml-2 shrink-0 rounded p-1.5 text-gray-400 transition-colors " +
+                    (currentChat?.session_id === chat.session_id
+                      ? "!bg-white hover:!bg-gray-200"
+                      : "!bg-red-700 hover:!bg-red-800")
+                  }
+                  title="Delete session">
+                  <Trash2
+                    className={
+                      currentChat?.session_id === chat.session_id
+                        ? "text-red-700"
+                        : "text-white"
+                    }
+                  />
+                </button>
+                <button
+                  onClick={(e) => {
+                    setIsDeleting(false);
+                  }}
+                  className={
+                    "ml-2 shrink-0 rounded p-1.5 text-gray-400 transition-colors " +
+                    (currentChat?.session_id === chat.session_id
+                      ? "!bg-white hover:!bg-gray-200"
+                      : "!bg-primary/80 hover:!bg-primary")
+                  }
+                  title="Cancel deletion">
+                  <X
+                    className={
+                      currentChat?.session_id === chat.session_id
+                        ? "text-primary"
+                        : "text-white"
+                    }
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </li>
   );
 }
