@@ -64,24 +64,17 @@ export default function AiMessage({
   );
 }
 
-function MessageOptions({
-  value,
-  index,
-  setShowFeedback,
-  setFeedbackText,
-  feedbackText,
-  showFeedback,
-}) {
+function MessageOptions({ value, index, feedbackText, setFeedbackText }) {
   const [copied, setCopied] = useState(false);
+  const [activeFeedback, setActiveFeedback] = useState(null);
   const timeoutRef = useRef(null);
 
-  async function handleFeedback(
-    messageKey,
-    feedback,
-    setShowFeedback,
-    setFeedbackText
-  ) {
-    setShowFeedback(false);
+  async function handleFeedback(messageKey, feedback) {
+    if (activeFeedback === feedback) {
+      setActiveFeedback(null);
+      return;
+    }
+    setActiveFeedback(feedback);
     const response = await logResponseFeedback(messageKey, feedback);
     if (response === null) {
       setFeedbackText(
@@ -120,60 +113,50 @@ function MessageOptions({
           />
         </div>
       </Action>
-      <div className="relative flex min-h-[32px] items-center overflow-hidden">
-        <div
-          className={`flex transition-all duration-300 ease-in-out ${
-            showFeedback
-              ? "dynamic translate-x-0 scale-100 opacity-100"
-              : "pointer-events-none invisible absolute -translate-x-4 scale-95 opacity-0"
-          }`}>
+      <div className="flex items-center gap-2">
+        <div className="flex items-center">
           <Action
             label="Good response"
             className="!bg-white hover:!bg-gray-200"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              handleFeedback(
-                index,
-                "positive",
-                setShowFeedback,
-                setFeedbackText
-              );
+              handleFeedback(index, "positive");
             }}>
-            <ThumbsUpIcon className="text-primary size-4" />
+            <ThumbsUpIcon
+              className={`text-primary size-4 transition-colors duration-200 ${
+                activeFeedback === "positive" ? "fill-primary" : ""
+              }`}
+            />
           </Action>
+
           <Action
             label="Bad response"
             className="!bg-white hover:!bg-gray-200"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              handleFeedback(
-                index,
-                "negative",
-                setShowFeedback,
-                setFeedbackText
-              );
+              handleFeedback(index, "negative");
             }}>
-            <ThumbsDownIcon className="text-primary size-4" />
+            <ThumbsDownIcon
+              className={`text-primary size-4 transition-colors duration-200 ${
+                activeFeedback === "negative" ? "fill-primary" : ""
+              }`}
+            />
           </Action>
         </div>
-        <div
-          className={`flex items-center gap-2 transition-all duration-300 ease-in-out ${
-            !showFeedback
-              ? "translate-x-0 scale-100 opacity-100"
-              : "pointer-events-none invisible absolute translate-x-4 scale-95 opacity-0"
-          }`}>
-          <p className="text-sm whitespace-nowrap text-gray-600">
-            {feedbackText}
-          </p>
-          <a
-            type="button"
-            onClick={() => setShowFeedback(true)}
-            className="text-primary text-sm whitespace-nowrap italic select-none hover:cursor-pointer hover:underline">
-            Edit Feedback
-          </a>
-        </div>
+        {feedbackText && (
+          <div
+            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+              activeFeedback !== null
+                ? "max-w-xs translate-x-0 opacity-100"
+                : "pointer-events-none max-w-0 -translate-x-2 opacity-0"
+            }`}>
+            <p className="text-sm whitespace-nowrap text-gray-600">
+              {feedbackText}
+            </p>
+          </div>
+        )}
       </div>
     </Actions>
   );
