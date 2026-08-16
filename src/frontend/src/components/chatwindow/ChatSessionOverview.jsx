@@ -91,6 +91,173 @@ export default function ChatSessionOverview({
   );
 }
 
+function SelectSessionCard({
+  chat,
+  currentChat,
+  setCurrentChat,
+  setChatActive,
+  setIsDeleting,
+}) {
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => {
+        setCurrentChat(chat);
+        setChatActive(true);
+      }}
+      className={
+        "group flex w-full cursor-pointer items-center justify-between rounded p-2 text-left transition duration-150 " +
+        (currentChat?.session_id === chat.session_id
+          ? "!border-primary !bg-primary/70 hover:!bg-primary/80 !border"
+          : "!border !border-gray-300 !bg-gray-100 hover:!bg-gray-200")
+      }>
+      <div className="flex min-w-0 flex-col pr-2">
+        <span
+          className={
+            "truncate font-semibold " +
+            (currentChat?.session_id === chat.session_id
+              ? "text-white"
+              : "text-black")
+          }>
+          {chat.name}
+        </span>
+
+        {currentChat?.session_id === chat.session_id && (
+          <span className="text-xs font-medium text-white/80 italic">
+            Currently Active
+          </span>
+        )}
+      </div>
+      <div className="flex shrink-0 items-center">
+        <span
+          className={
+            "text-sm font-semibold transition-all duration-300 " +
+            (currentChat?.session_id === chat.session_id
+              ? "text-white/80"
+              : "text-gray-500")
+          }>
+          {chat.updated_at.split("T")[0].split("-").reverse().join("-")}
+        </span>
+
+        <div className="grid translate-x-3 grid-cols-[0fr] opacity-0 transition-all duration-300 ease-out group-hover:translate-x-0 group-hover:grid-cols-[1fr] group-hover:opacity-100">
+          <div className="flex items-center overflow-hidden">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDeleting(true);
+              }}
+              className="ml-2 shrink-0 rounded !bg-red-700 p-1.5 text-gray-400 transition-colors hover:!bg-red-800"
+              title="Delete session">
+              <Trash2 />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeleteSessionCard({
+  chat,
+  currentChat,
+  fetchChatSessions,
+  setCurrentChat,
+  setIsDeleting,
+}) {
+  return (
+    <div
+      className={
+        "group flex w-full cursor-pointer items-center justify-between rounded p-2 text-left transition duration-150 " +
+        (currentChat?.session_id === chat.session_id
+          ? "!border-2 !border-red-800 !bg-red-800/70 hover:!bg-red-800/80"
+          : "!border-2 !border-red-700 !bg-gray-100 hover:!bg-gray-200")
+      }>
+      <div className="flex min-w-0 flex-col pr-2">
+        <span
+          className={
+            "truncate font-semibold " +
+            (currentChat?.session_id === chat.session_id
+              ? "text-white"
+              : "text-black")
+          }>
+          Are you sure you want to delete the following chat:
+        </span>
+        <span
+          className={
+            "truncate font-semibold italic " +
+            (currentChat?.session_id === chat.session_id
+              ? "text-white"
+              : "text-black")
+          }>
+          "{chat.name}"
+        </span>
+
+        <span
+          className={
+            "text-xs font-medium italic " +
+            (currentChat?.session_id === chat.session_id
+              ? "text-white/80"
+              : "text-red-700")
+          }>
+          This action cannot be undone.
+        </span>
+      </div>
+      <div className="flex shrink-0 items-center">
+        <div className="grid translate-x-3 grid-cols-[0fr] opacity-0 transition-all duration-300 ease-out group-hover:translate-x-0 group-hover:grid-cols-[1fr] group-hover:opacity-100">
+          <div className="flex items-center overflow-hidden">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                deleteSession(chat.session_id).then((ok) => {
+                  if (!ok) return;
+                  if (currentChat?.session_id === chat.session_id) {
+                    setCurrentChat(null);
+                  }
+                  fetchChatSessions();
+                });
+              }}
+              className={
+                "ml-2 shrink-0 rounded p-1.5 text-gray-400 transition-colors " +
+                (currentChat?.session_id === chat.session_id
+                  ? "!bg-white hover:!bg-gray-200"
+                  : "!bg-red-700 hover:!bg-red-800")
+              }
+              title="Delete session">
+              <Trash2
+                className={
+                  currentChat?.session_id === chat.session_id
+                    ? "text-red-700"
+                    : "text-white"
+                }
+              />
+            </button>
+            <button
+              onClick={() => {
+                setIsDeleting(false);
+              }}
+              className={
+                "ml-2 shrink-0 rounded p-1.5 text-gray-400 transition-colors " +
+                (currentChat?.session_id === chat.session_id
+                  ? "!bg-white hover:!bg-gray-200"
+                  : "!bg-primary/80 hover:!bg-primary")
+              }
+              title="Cancel deletion">
+              <X
+                className={
+                  currentChat?.session_id === chat.session_id
+                    ? "text-primary"
+                    : "text-white"
+                }
+              />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ChatSessionItem({
   chat,
   currentChat,
@@ -102,152 +269,21 @@ function ChatSessionItem({
   return (
     <li key={chat.session_id}>
       {!isDeleting ? (
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => {
-            setCurrentChat(chat);
-            setChatActive(true);
-          }}
-          className={
-            "group flex w-full cursor-pointer items-center justify-between rounded p-2 text-left transition duration-150 " +
-            (currentChat?.session_id === chat.session_id
-              ? "!border-primary !bg-primary/70 hover:!bg-primary/80 !border"
-              : "!border !border-gray-300 !bg-gray-100 hover:!bg-gray-200")
-          }>
-          <div className="flex min-w-0 flex-col pr-2">
-            <span
-              className={
-                "truncate font-semibold " +
-                (currentChat?.session_id === chat.session_id
-                  ? "text-white"
-                  : "text-black")
-              }>
-              {chat.name}
-            </span>
-
-            {currentChat?.session_id === chat.session_id && (
-              <span className="text-xs font-medium text-white/80 italic">
-                Currently Active
-              </span>
-            )}
-          </div>
-          <div className="flex shrink-0 items-center">
-            <span
-              className={
-                "text-sm font-semibold transition-all duration-300 " +
-                (currentChat?.session_id === chat.session_id
-                  ? "text-white/80"
-                  : "text-gray-500")
-              }>
-              {chat.updated_at.split("T")[0].split("-").reverse().join("-")}
-            </span>
-
-            <div className="grid translate-x-3 grid-cols-[0fr] opacity-0 transition-all duration-300 ease-out group-hover:translate-x-0 group-hover:grid-cols-[1fr] group-hover:opacity-100">
-              <div className="flex items-center overflow-hidden">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsDeleting(true);
-                  }}
-                  className="ml-2 shrink-0 rounded !bg-red-700 p-1.5 text-gray-400 transition-colors hover:!bg-red-800"
-                  title="Delete session">
-                  <Trash2 />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <SelectSessionCard
+          chat={chat}
+          currentChat={currentChat}
+          setCurrentChat={setCurrentChat}
+          setChatActive={setChatActive}
+          setIsDeleting={setIsDeleting}
+        />
       ) : (
-        <div
-          className={
-            "group flex w-full cursor-pointer items-center justify-between rounded p-2 text-left transition duration-150 " +
-            (currentChat?.session_id === chat.session_id
-              ? "!border-2 !border-red-800 !bg-red-800/70 hover:!bg-red-800/80"
-              : "!border-2 !border-red-700 !bg-gray-100 hover:!bg-gray-200")
-          }>
-          <div className="flex min-w-0 flex-col pr-2">
-            <span
-              className={
-                "truncate font-semibold " +
-                (currentChat?.session_id === chat.session_id
-                  ? "text-white"
-                  : "text-black")
-              }>
-              Are you sure you want to delete the following chat:
-            </span>
-            <span
-              className={
-                "truncate font-semibold italic " +
-                (currentChat?.session_id === chat.session_id
-                  ? "text-white"
-                  : "text-black")
-              }>
-              "{chat.name}"
-            </span>
-
-            <span
-              className={
-                "text-xs font-medium italic " +
-                (currentChat?.session_id === chat.session_id
-                  ? "text-white/80"
-                  : "text-red-700")
-              }>
-              This action cannot be undone.
-            </span>
-          </div>
-          <div className="flex shrink-0 items-center">
-            <div className="grid translate-x-3 grid-cols-[0fr] opacity-0 transition-all duration-300 ease-out group-hover:translate-x-0 group-hover:grid-cols-[1fr] group-hover:opacity-100">
-              <div className="flex items-center overflow-hidden">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteSession(chat.session_id).then((ok) => {
-                      if (!ok) return;
-                      if (currentChat?.session_id === chat.session_id) {
-                        setCurrentChat(null);
-                      }
-                      fetchChatSessions();
-                    });
-                  }}
-                  className={
-                    "ml-2 shrink-0 rounded p-1.5 text-gray-400 transition-colors " +
-                    (currentChat?.session_id === chat.session_id
-                      ? "!bg-white hover:!bg-gray-200"
-                      : "!bg-red-700 hover:!bg-red-800")
-                  }
-                  title="Delete session">
-                  <Trash2
-                    className={
-                      currentChat?.session_id === chat.session_id
-                        ? "text-red-700"
-                        : "text-white"
-                    }
-                  />
-                </button>
-                <button
-                  onClick={(e) => {
-                    setIsDeleting(false);
-                  }}
-                  className={
-                    "ml-2 shrink-0 rounded p-1.5 text-gray-400 transition-colors " +
-                    (currentChat?.session_id === chat.session_id
-                      ? "!bg-white hover:!bg-gray-200"
-                      : "!bg-primary/80 hover:!bg-primary")
-                  }
-                  title="Cancel deletion">
-                  <X
-                    className={
-                      currentChat?.session_id === chat.session_id
-                        ? "text-primary"
-                        : "text-white"
-                    }
-                  />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DeleteSessionCard
+          chat={chat}
+          currentChat={currentChat}
+          fetchChatSessions={fetchChatSessions}
+          setCurrentChat={setCurrentChat}
+          setIsDeleting={setIsDeleting}
+        />
       )}
     </li>
   );
