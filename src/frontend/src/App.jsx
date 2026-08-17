@@ -15,9 +15,8 @@ const CHAT_MIN_WIDTH = 448; // px, single source of truth for the chat pane's mi
 // CHAT_MIN_WIDTH px, for a container of the given pixel width.
 function clampLeftWidth(widthPercent, containerWidth) {
   const maxPercent =
-    ((containerWidth - CHAT_MIN_WIDTH - RESIZER_WIDTH) / containerWidth) *
-    100;
-  return Math.min(Math.max(widthPercent, 10), Math.min(maxPercent, 90));
+    ((containerWidth - CHAT_MIN_WIDTH - RESIZER_WIDTH) / containerWidth) * 100;
+  return Math.min(Math.max(widthPercent, 33.3), Math.min(maxPercent, 75));
 }
 
 export default function App() {
