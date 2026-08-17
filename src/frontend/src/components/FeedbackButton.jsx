@@ -4,6 +4,7 @@ export function FeedbackButton() {
   return (
     <Button
       type="button"
+      title="Give feedback"
       variant="link"
       size="sm"
       className="rotate-270 !rounded-tl-[10px] !rounded-tr-[10px] hover:no-underline"

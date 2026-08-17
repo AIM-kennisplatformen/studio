@@ -5,7 +5,8 @@ export default function LogOutButton() {
     <button
       className="!bg-primary rounded px-3 py-1 text-white"
       onClick={() => logOut()}
-      aria-label="Log Out">
+      aria-label="Log Out"
+      title="Log out">
       Log Out
     </button>
   );

@@ -105,6 +105,7 @@ function ChatHeader({
               <div className="flex items-center gap-0.5">
                 <button
                   type="button"
+                  title="Save chat name"
                   onClick={handleSave}
                   // Transparante achtergrond, hover effect blijft
                   className="flex h-6 w-6 items-center justify-center rounded-md !bg-white transition-all duration-200 hover:!bg-gray-200"
@@ -113,6 +114,7 @@ function ChatHeader({
                 </button>
                 <button
                   type="button"
+                  title="Cancel chat name"
                   onClick={handleCancel}
                   className="flex h-6 w-6 items-center justify-center rounded-md !bg-white transition-all duration-200 hover:!bg-gray-200"
                   aria-label="Cancel editing">
@@ -130,6 +132,7 @@ function ChatHeader({
               {currentChat && (
                 <button
                   type="button"
+                  title="Edit chat name"
                   onClick={() => {
                     if (currentChat) {
                       setEditValue(currentChatTitle || "New Chat");

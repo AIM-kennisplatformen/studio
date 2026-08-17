@@ -9,6 +9,7 @@ export default function CopyButton({ value }) {
   return (
     <Action
       label="Copy Message"
+      tooltip="Copy message"
       className="size-6 rounded-md !bg-white/90 p-1 shadow-xs transition-colors hover:!bg-white"
       onClick={() => {
         navigator.clipboard.writeText(value);

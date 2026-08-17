@@ -71,6 +71,7 @@ export default function UserMenu({ setSettingsOpen }) {
           onClick={() => setIsOpen(!isOpen)}
           className="!bg-primary/20 hover:!bg-primary/30 rounded-md p-2"
           aria-expanded={isOpen}
+          title="Open menu"
           aria-label="Toggle settings menu">
           <span className="sr-only">Settings</span>
           <svg

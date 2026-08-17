@@ -6,6 +6,7 @@ export default function ChatSelection({ setChatActive, chatActive }) {
           onClick={() => setChatActive(!chatActive)}
           className="flex items-center gap-1 rounded-md p-2 text-white"
           aria-expanded={chatActive}
+          title="Open chat history"
           aria-label="Toggle chat history menu">
           Chats
           <span className="sr-only">Chat History</span>

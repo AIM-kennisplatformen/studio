@@ -54,6 +54,7 @@ export default function SystemMessage({
             {!reverted && onButtonClick && (
               <button
                 type="button"
+                title="Undo title change"
                 onClick={onButtonClick}
                 className="flex-none rounded px-1 py-0.5 text-[10px] leading-none font-medium text-emerald-700/60 transition-colors hover:text-emerald-700">
                 Undo
