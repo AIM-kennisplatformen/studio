@@ -139,7 +139,7 @@ function ChatHeader({
                       setIsEditing(true);
                     }
                   }}
-                  className="flex h-6 w-6 items-center justify-center rounded-md !bg-white opacity-0 transition-all duration-200 group-hover:opacity-100 hover:!bg-gray-200"
+                  className="mr-3 flex h-6 w-6 items-center justify-center rounded-md !bg-white opacity-0 transition-all duration-200 group-hover:opacity-100 hover:!bg-gray-200"
                   aria-label="Edit chat title">
                   <PencilIcon className="text-primary h-4 w-4 shrink-0" />
                 </button>
