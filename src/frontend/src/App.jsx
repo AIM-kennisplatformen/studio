@@ -8,6 +8,18 @@ import { useAtomValue } from "jotai";
 import { graphRefetchTriggerAtom } from "./lib/atoms";
 import { FeedbackButton } from "./components/FeedbackButton.jsx";
 
+const RESIZER_WIDTH = 4; // px, matches the `w-1` resizer handle
+const CHAT_MIN_WIDTH = 448; // px, single source of truth for the chat pane's min-width
+
+// Largest leftWidth (%) that still leaves the chat pane at least
+// CHAT_MIN_WIDTH px, for a container of the given pixel width.
+function clampLeftWidth(widthPercent, containerWidth) {
+  const maxPercent =
+    ((containerWidth - CHAT_MIN_WIDTH - RESIZER_WIDTH) / containerWidth) *
+    100;
+  return Math.min(Math.max(widthPercent, 10), Math.min(maxPercent, 90));
+}
+
 export default function App() {
   const [leftWidth, setLeftWidth] = useState(66.6);
   const containerRef = useRef(null);
@@ -30,6 +42,17 @@ export default function App() {
     return () => (mounted = false);
   }, [refetchTrigger]);
 
+  // Re-clamp on window resize too, so shrinking the browser can't push the
+  // graph/resizer/feedback-button past the chat pane's min-width either.
+  useEffect(() => {
+    const onResize = () => {
+      if (!containerRef.current) return;
+      setLeftWidth((w) => clampLeftWidth(w, containerRef.current.offsetWidth));
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
   const handleMouseDown = (e) => {
     e.preventDefault();
     const startX = e.clientX;
@@ -42,7 +65,7 @@ export default function App() {
         (((startWidth / 100) * containerWidth + (e.clientX - startX)) /
           containerWidth) *
         100;
-      if (newWidth > 10 && newWidth < 90) setLeftWidth(newWidth);
+      setLeftWidth(clampLeftWidth(newWidth, containerWidth));
     };
 
     const onMouseUp = () => {
@@ -76,7 +99,9 @@ export default function App() {
         onMouseDown={handleMouseDown}
       />
 
-      <div className="flex h-full flex-1 flex-col overflow-hidden bg-gray-50">
+      <div
+        className="flex h-full flex-1 flex-col overflow-hidden bg-gray-50"
+        style={{ minWidth: CHAT_MIN_WIDTH }}>
         <ChatWindow />
       </div>
     </div>
