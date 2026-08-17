@@ -1,6 +1,7 @@
 import Drawer from "./Drawer";
 import { useEffect, useState } from "react";
 import { getSettings, updateSettings } from "../../data/api";
+import { X } from "lucide-react";
 
 export default function SettingsDrawer({ setIsOpen, isOpen }) {
   //states for mocksettings
@@ -26,19 +27,7 @@ export default function SettingsDrawer({ setIsOpen, isOpen }) {
         <button
           onClick={() => setIsOpen(false)}
           className="group rounded-md !bg-white p-2 text-gray-500 transition duration-150 hover:!bg-gray-100 hover:text-red-600 focus:outline-none">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth="2"
-            stroke="currentColor"
-            className="size-6 text-gray-400 transition duration-350 group-hover:text-red-700">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
+          <X className="size-6 text-gray-400 transition duration-350 group-hover:text-red-700" />
         </button>
       </div>
     </div>
