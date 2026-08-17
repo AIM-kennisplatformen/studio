@@ -111,7 +111,7 @@ export default function Chat({
           setFeedbackText={setFeedbackText}
           setShowFeedback={setShowFeedback}
           shouldLog={shouldLog}
-          showSystemMessages={true}
+          showSystemMessages={false} //TODO: controlled by settings menu
         />
       </div>
 
