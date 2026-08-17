@@ -6,7 +6,7 @@ import {
   PromptInputTextarea,
   PromptInputToolbar,
 } from "@/components/shadcn-io/ai/prompt-input";
-import { Trash2, X } from "lucide-react";
+import { Trash2, X, RotateCw } from "lucide-react";
 
 export default function ChatSessionOverview({
   setChatActive,
@@ -37,19 +37,7 @@ export default function ChatSessionOverview({
         <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4">
           {isLoading ? (
             <div className="flex h-full flex-col items-center justify-center text-gray-500">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="size-6 animate-spin">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
-                />
-              </svg>
+              <RotateCw className="size-6 animate-spin" />
             </div>
           ) : chats.length === 0 ? (
             <p className="font-semibold text-gray-500">
