@@ -1,6 +1,6 @@
 import { ChevronUp } from "lucide-react";
 
-export default function ChatSelection({ setChatActive, chatActive }) {
+export default function ChatSelectionToggle({ setChatActive, chatActive }) {
   return (
     <>
       <div className="relative inline-block text-left">

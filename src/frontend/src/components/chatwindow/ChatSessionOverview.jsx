@@ -68,7 +68,7 @@ export default function ChatSessionOverview({
           <h3 className="mb-2 text-sm font-semibold text-black/50">
             Or start a new conversation
           </h3>
-          <InputArea
+          <StartChatPrompt
             setChatActive={setChatActive}
             setCurrentChat={setCurrentChat}
             setPendingMessage={setPendingMessage}
@@ -79,7 +79,7 @@ export default function ChatSessionOverview({
   );
 }
 
-function SelectSessionCard({
+function ChatSessionCard({
   chat,
   currentChat,
   setCurrentChat,
@@ -146,7 +146,7 @@ function SelectSessionCard({
   );
 }
 
-function DeleteSessionCard({
+function SessionDeleteConfirmCard({
   chat,
   currentChat,
   fetchChatSessions,
@@ -257,7 +257,7 @@ function ChatSessionItem({
   return (
     <li key={chat.session_id}>
       {!isDeleting ? (
-        <SelectSessionCard
+        <ChatSessionCard
           chat={chat}
           currentChat={currentChat}
           setCurrentChat={setCurrentChat}
@@ -265,7 +265,7 @@ function ChatSessionItem({
           setIsDeleting={setIsDeleting}
         />
       ) : (
-        <DeleteSessionCard
+        <SessionDeleteConfirmCard
           chat={chat}
           currentChat={currentChat}
           fetchChatSessions={fetchChatSessions}
@@ -277,7 +277,7 @@ function ChatSessionItem({
   );
 }
 
-function InputArea({ setChatActive, setCurrentChat, setPendingMessage }) {
+function StartChatPrompt({ setChatActive, setCurrentChat, setPendingMessage }) {
   const [text, setText] = useState("");
 
   const handleSubmit = (e) => {

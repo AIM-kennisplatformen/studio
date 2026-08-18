@@ -12,7 +12,7 @@ import {
 } from "../../../lib/atoms";
 import { getChatSessionDetails, setActiveChatSession } from "../../../data/api";
 import Messages from "./Messages";
-import InputArea from "./InputArea";
+import InputArea from "./ChatInput";
 
 function mapRestoredMessages(sessionMessages) {
   const restoredMessages = sessionMessages.map((message, index) => ({
@@ -103,7 +103,6 @@ export default function Chat({
 
   return (
     <div className="relative z-10 flex h-full flex-col bg-white">
-      {/* Messages - scrollable */}
       <div className="min-h-0 flex-1 overflow-hidden">
         <Messages
           feedbackText={feedbackText}
@@ -115,7 +114,6 @@ export default function Chat({
         />
       </div>
 
-      {/* Input - sticky at bottom */}
       <div className="shrink-0 border-t border-gray-200 bg-white">
         <div className="text-primary ms-5 w-min truncate pt-1 text-xs hover:cursor-default">
           <p className="italic">Focus: {focusNodeLabel}</p>

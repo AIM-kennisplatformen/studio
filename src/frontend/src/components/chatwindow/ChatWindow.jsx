@@ -3,7 +3,7 @@ import Chat from "./chat/Chat";
 import UserMenu from "./UserMenu";
 import ChatSessionOverview from "./ChatSessionOverview";
 import ChatSelectionToggle from "./ChatSelectionToggle";
-import SettingsDrawer from "../slideover/settings";
+import SettingsDrawer from "../slideover/SettingsDrawer";
 import { PencilIcon, Check, X } from "lucide-react";
 import { updateSession } from "@/data/api";
 

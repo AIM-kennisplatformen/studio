@@ -11,7 +11,7 @@ import { useChatWebSocket } from "../../../data/chatWebsocket";
 import { newSession, setActiveChatSession } from "../../../data/api";
 import { messagesAtom, textAtom, textStatusAtom } from "@/lib/atoms";
 
-export default function InputArea({
+export default function ChatInput({
   setShowFeedback,
   shouldLog,
   initialText,
