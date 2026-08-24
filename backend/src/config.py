@@ -93,7 +93,7 @@ config: dict = {
         "https://authscepa.mads-han.src.surf-hosted.nl/application/o/kg-dev/end-session/",
     ),
     "oauth_redirect_uri": require_env(
-        "OAUTH_REDIRECT_URI", "http://localhost:10090/auth/callback"
+        "OAUTH_REDIRECT_URI", "http://localhost:10090/api/auth/callback"
     ),
     "client_id": require_env(
         "OAUTH_CLIENT_ID", "rkuclih8uzm44nTUvwasexioUKFk5aG1zhG8jcJX"

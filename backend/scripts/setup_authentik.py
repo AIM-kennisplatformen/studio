@@ -109,8 +109,9 @@ scope_mappings = ScopeMapping.objects.filter(scope_name__in=['openid', 'email', 
 
 frontend_url = '{frontend_url}'
 redirect_uris = [
-    RedirectURI(matching_mode=RedirectURIMatchingMode.STRICT, url='http://localhost:10090/auth/callback'),
-    RedirectURI(matching_mode=RedirectURIMatchingMode.STRICT, url='http://host.docker.internal:10090/auth/callback'),
+    RedirectURI(matching_mode=RedirectURIMatchingMode.STRICT, url=f'{{frontend_url}}/api/auth/callback'),
+    RedirectURI(matching_mode=RedirectURIMatchingMode.STRICT, url='http://localhost:10090/api/auth/callback'),
+    RedirectURI(matching_mode=RedirectURIMatchingMode.STRICT, url='http://host.docker.internal:10090/api/auth/callback'),
 ]
 seen = set()
 unique_uris = []

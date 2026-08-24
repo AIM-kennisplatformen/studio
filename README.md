@@ -24,10 +24,10 @@ container.
 Copy `.env.sample` to `.env` and supply the OAuth, LLM, and other service
 credentials needed by your environment.
 
-The default OAuth redirect URI remains
-`http://localhost:10090/auth/callback` for compatibility with the hosted
-Authentik provider. The frontend proxies that callback to the backend; the
-backend does not serve frontend assets.
+The default OAuth redirect URI is
+`http://localhost:10090/api/auth/callback`. The frontend's regular `/api`
+proxy forwards that callback to the backend; the backend does not serve
+frontend assets.
 
 The default MCP configuration in `backend/mcp_tools.json` uses the production
 MCP server over HTTPS. Studio does not require Scepa's Docker network or a local

@@ -34,14 +34,6 @@ export default defineConfig({
         changeOrigin: true,
         ws: true,
       },
-      "/auth/callback": {
-        // Keep the established public OAuth callback while the API remains namespaced.
-        // eslint-disable-next-line no-undef
-        target: process.env.VITE_API_PROXY_TARGET || "http://localhost:10092",
-        changeOrigin: true,
-        rewrite: (requestPath) =>
-          requestPath.replace(/^\/auth\/callback/, "/api/auth/callback"),
-      },
     },
   },
   resolve: {
