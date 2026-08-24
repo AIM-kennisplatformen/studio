@@ -1,185 +1,99 @@
 # Studio
 
-A chat-based knowledge graph application. A React frontend communicates over Socket.IO with a FastAPI backend. The backend uses an LLM agent (via `mcp-use`) backed by an MCP server that queries Qdrant and Zotero for literature-supported answers.
+A React frontend and FastAPI backend for chat-based knowledge graph exploration.
+The browser reaches the backend through the frontend's same-origin `/api` proxy.
+The backend never builds or serves frontend assets.
 
-> **Note:** The MCP server (`src/mcp_servers/`) will be moved to a separate repository in the future.
+## Project structure
 
----
-
-## Project Structure
-
-```
-src/
-  backend/          # FastAPI app (Python)
-    endpoints/      # auth, chat, graph, log_event, assets
-    utility/        # chat_util, graph_data_loader, graph_api_models
-    config.py       # env config + prompt templates
-    main.py         # app entry point
-  frontend/         # React + Vite app
-    src/
-scripts/            # setup_authentik.py, run_qava_test.py
-tests/
-  bdd/              # qavajs end-to-end tests
-docker-compose.yml
-pyproject.toml
+```text
+backend/                 # Python/Pixi project, tests, and backend Dockerfile
+  src/                   # FastAPI package and application code
+  tests/                 # Backend pytest suite
+  scripts/               # Backend support scripts
+frontend/                # React/npm project and frontend Dockerfile
+compose.yaml             # Development containers
+compose.release.yaml     # Release target overrides
 ```
 
----
+Pixi manages only the backend. The frontend uses npm directly or its Node
+container.
 
-## Prerequisites
+## Environment
 
-- [Pixi](https://pixi.sh/) — manages the Python + Node environment
-- [Docker & Docker Compose](https://docs.docker.com/get-docker/) — for containerised deployment
-- A running [Qdrant](https://qdrant.tech/) instance
-- A running [Authentik](https://goauthentik.io/) instance (OAuth2 provider)
-- A running LLM endpoint (OpenAI-compatible, e.g. Ollama or a hosted model)
-- A [Zotero](https://www.zotero.org/) library + API key
+Copy `.env.sample` to `.env` and supply the OAuth, LLM, and other service
+credentials needed by your environment.
 
----
+The default OAuth redirect URI remains
+`http://localhost:10090/auth/callback` for compatibility with the hosted
+Authentik provider. The frontend proxies that callback to the backend; the
+backend does not serve frontend assets.
 
-## Environment Setup
+The default MCP configuration in `backend/mcp_tools.json` uses the production
+MCP server over HTTPS. Studio does not require Scepa's Docker network or a local
+Scepa MCP deployment. Set `MCP_TOOL_CONFIG_PATH` to use another configuration.
 
-Copy the sample env file and fill in the required values:
+Default published ports are deliberately distinct from Scepa:
 
-```bash
-cp .env.sample .env
-```
-
-Key variables:
-
-| Variable | Description |
+| Service | URL or host port |
 |---|---|
-| `BACKEND_BASE_URL` | Public URL of the backend, e.g. `http://localhost:10090` |
-| `OAUTH_DISCOVERY_URL` | Authentik OIDC discovery URL |
-| `OAUTH_CLIENT_ID` | Authentik OAuth2 client ID |
-| `OAUTH_CLIENT_SECRET` | Authentik OAuth2 client secret |
-| `SESSION_SECRET` | Secret key for session cookies |
-| `LLM_MODEL` | Model name, e.g. `gpt-4o` or an Ollama model |
-| `OPENAI_HOST` | Base URL of your OpenAI-compatible LLM endpoint |
-| `MCP_TOOL_CONFIG_PATH` | Path to the MCP tool config JSON file |
-| `POSTGRES_URL` | PostgreSQL connection URL for chat/session persistence (default `postgresql://studio:studio@studio_postgres:5432/studio` in Docker Compose) |
-| `QDRANT_URL` | Qdrant host |
-| `QDRANT_PORT` | Qdrant port (default `6333`) |
-| `ZOTERO_API_KEY` | Zotero API key |
-| `ZOTERO_LIBRARY_ID` | Zotero library ID |
-| `LANGFUSE_PUBLIC_KEY` | Langfuse public key (observability) |
-| `LANGFUSE_SECRET_KEY` | Langfuse secret key |
-| `LANGFUSE_HOST` | Langfuse host URL |
-| `PG_PASS` | PostgreSQL password (only when spinning your own authentik and not using the deployed authentik) |
-| `AUTHENTIK_SECRET_KEY` | Authentik secret key (only when spinning your own authentik and not using the deployed authentik) |
+| Frontend and proxied API | `http://localhost:10090` |
+| Backend (direct) | `http://localhost:10092/api` |
+| Redis | `6379` |
+| PostgreSQL | `5433` |
 
----
+## Docker development
 
-## Running With Docker
-
-### Via pixi
-
-Start the application through Docker Compose:
+Start the Vite frontend, reload-enabled backend, Redis, and PostgreSQL:
 
 ```bash
-pixi run application
+docker compose up --build
 ```
 
-This starts:
-- `application` — builds the Vite frontend into `kg/` and runs the FastAPI app on port `10090`
-- `redis` — runs Redis on port `6379`
-- `studio_postgres` — runs PostgreSQL on port `5432` for chat/session persistence
+Vite serves the application at `http://localhost:10090` and proxies `/api`,
+including Socket.IO, to the backend. Source directories are bind-mounted, while
+`/app/node_modules` and `/app/.pixi` are anonymous volumes so host dependencies
+are never copied into the containers.
 
-The application serves the built frontend from `kg/` and exposes the API at `http://localhost:10090`.
+## Docker release
 
-The `application` and `frontend_hmr` tasks create the external Docker network
-`mcp_server_scepa_studio_net` if it does not exist yet. When using raw Docker
-commands instead, create it once:
+Build the backend release target and the Nginx frontend target:
 
 ```bash
-docker network create mcp_server_scepa_studio_net
+docker compose -f compose.release.yaml up --build
 ```
 
-`src/frontend/node_modules` is shared with the container (not volume-backed), so
-Docker never creates it as root. The Vite dev-server cache is kept inside the
-container; nothing under `node_modules/` is written by the container.
+Nginx serves the SPA and proxies `/api` to the backend container.
 
-### Frontend HMR
+## Backend development
 
-To start the Vite dev server and switch `/app` to it while it is running:
+Run backend tooling from the backend Pixi project:
 
 ```bash
-pixi run frontend_hmr
+cd backend
+pixi run test
+pixi run lint
+pixi run typecheck
 ```
 
-This starts Vite at `http://localhost:5173`. While it is running, `http://localhost:10090/app` stays on the backend URL and proxies frontend files from Vite; when it stops, the application serves the built frontend from `kg/` again.
-
-`frontend_hmr` needs `src/frontend/node_modules` on the host — run
-`pixi run npm --prefix src/frontend install` first (or `npm install` from
-`src/frontend`) if it
-is not present.
-
-### Direct Docker Commands
-
-Build the image once:
+The optional Authentik setup helper is also backend-owned:
 
 ```bash
-docker build -t studio_application -f dockerfiles/Dockerfile .
+python backend/scripts/setup_authentik.py
 ```
 
-Then start all services:
+It reads the repository `.env` and expects an Authentik container named
+`authentik-server`. `AUTHENTIK_BASE_URL` can override its default local URL,
+`http://localhost:10091`.
+
+## Frontend development
+
+For a host-native frontend workflow:
 
 ```bash
-docker compose up
+cd frontend
+npm ci
+npm run dev
 ```
 
----
-
-## Authentik Setup
-
-Authentik is used as the OAuth2/OIDC provider. To set up the OAuth2 application automatically:
-
-```bash
-python scripts/setup_authentik.py
-```
-
-This requires a running Authentik instance and reads credentials from `.env`.
-
----
-
-## Testing
-
-End-to-end tests are written with [qavajs](https://qavajs.github.io/) (Cucumber + Playwright).
-
-### Run all tests (spins up containers automatically)
-
-```bash
-python scripts/run_qava_test.py
-```
-
-### Run tests against already-running services
-
-From `tests/bdd/`:
-
-```bash
-npm install
-npx qavajs run --config config.mjs
-```
-
-Services must be reachable at:
-
-| Service | Default URL |
-|---|---|
-| Backend | `http://localhost:10090` |
-| MCP Server | `http://localhost:8000` |
-| Authentik | `http://localhost:9000` |
-
-### Run a single feature
-
-```bash
-npx qavajs run --config config.mjs -- features/ai.feature
-```
-
----
-
-## Code Quality
-
-```bash
-pixi run ruff check
-pixi run mypy .
-```
+Frontend checks run with `npm run check`.

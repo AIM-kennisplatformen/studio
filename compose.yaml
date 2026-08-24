@@ -1,0 +1,91 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      target: development
+    environment:
+      - BACKEND_BASE_URL=${BACKEND_BASE_URL:-http://localhost:10090/api}
+      - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:10090}
+      - MCP_USE_OAUTH=${MCP_USE_OAUTH:-false}
+      - OAUTH_DISCOVERY_URL
+      - OAUTH_CLIENT_ID
+      - OAUTH_CLIENT_SECRET
+      - OAUTH_LOGOUT_URL
+      - OAUTH_REDIRECT_URI=${OAUTH_REDIRECT_URI:-http://localhost:10090/auth/callback}
+      - SESSION_SECRET
+      - LANGFUSE_SECRET_KEY
+      - LANGFUSE_PUBLIC_KEY
+      - LANGFUSE_HOST
+      - OPENAI_HOST
+      - OPENAI_API_KEY
+      - LLM_MODEL
+      - MCP_TOOL_CONFIG_PATH=${MCP_TOOL_CONFIG_PATH:-mcp_tools.json}
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_EXPIRATION_TIME=${REDIS_EXPIRATION_TIME:-86400}
+      - CHAT_HISTORY_LIMIT=${CHAT_HISTORY_LIMIT:-10}
+      - POSTGRES_URL=${POSTGRES_URL:-postgresql://studio:studio@studio_postgres:5432/studio}
+      - QDRANT_URL
+      - QDRANT_PORT=${QDRANT_PORT:-6333}
+      - ZOTERO_API_KEY
+      - ZOTERO_LIBRARY_ID
+    ports:
+      - "${BACKEND_PORT:-10092}:10090"
+    volumes:
+      - ./backend:/app
+      - /app/.pixi
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+      studio_postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+    environment:
+      VITE_API_PROXY_TARGET: http://backend:10090
+      VITE_HMR_CLIENT_PORT: ${FRONTEND_PORT:-10090}
+    ports:
+      - "${FRONTEND_PORT:-10090}:5174"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  redis:
+    image: redis:8-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  studio_postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: studio
+      POSTGRES_USER: studio
+      POSTGRES_PASSWORD: studio
+      PGDATA: /var/lib/postgresql/18/docker
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
