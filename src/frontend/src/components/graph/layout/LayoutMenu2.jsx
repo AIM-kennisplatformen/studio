@@ -162,6 +162,28 @@ export default function LayoutMenu2({ options, setOptions, setMenuState }) {
             defaultValue={options?.initialEnergyOnIncremental}
             className="h-8 rounded border px-2"
           />
+          {/* Edge Elasticity */}
+          <label htmlFor="edgeElasticity">Edge Elasticity</label>
+          <input
+            id="edgeElasticity"
+            name="edgeElasticity"
+            type="number"
+            step="any"
+            defaultValue={options?.edgeElasticity}
+            className="h-8 rounded border px-2"
+          />
+          {/* Line type */}
+          <label htmlFor="edgeStyle">Edge Style</label>
+          <select
+            id="edgeStyle"
+            name="edgeStyle"
+            defaultValue={options?.edgeStyle || "smoothstep"}
+            className="h-8 rounded border px-2">
+            <option value="straight">Straight</option>
+            <option value="step">Step</option>
+            <option value="smoothstep">Smooth Step</option>
+            <option value="bezier">Bezier</option>
+          </select>
           <div className="col-span-2 mt-2 flex justify-end gap-2">
             <button
               type="button"

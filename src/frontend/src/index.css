@@ -202,3 +202,28 @@ button:hover {
   background: var(--primary);
   color: var(--primary-foreground);
 }
+
+@keyframes edgeFlow {
+  from {
+    stroke-dashoffset: 20; /* Verschuift de stippen */
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.react-flow__edge .custom-solid-edge {
+  stroke: var(--primary);
+  stroke-width: 2px;
+  pointer-events: all;
+  stroke-dasharray: none;
+  transition:
+    stroke 0.2s ease,
+    stroke-width 0.2s ease;
+}
+.react-flow__edge:hover .custom-solid-edge {
+  stroke: var(--primary-dark) !important;
+  stroke-width: 3px !important;
+  stroke-dasharray: 5 5 !important;
+  animation: edgeFlow 1s linear infinite;
+}

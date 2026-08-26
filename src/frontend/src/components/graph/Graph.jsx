@@ -130,6 +130,9 @@ export default function Graph({
             target: String(edge.target_id),
             label: edge.labelToTarget,
             type: "solid",
+            data: {
+              pathType: options?.edgeStyle || edge.pathType || "smoothstep",
+            },
             sourceHandle,
             targetHandle,
             labelStyle: { fill: "#666", fontSize: 10 },
@@ -197,6 +200,26 @@ export default function Graph({
           }),
       });
 
+      const updatedEdges = newEdges.map((edge) => {
+        const sourcePos = layoutPositions[edge.source] || { x: 0, y: 0 };
+        const targetPos = layoutPositions[edge.target] || { x: 0, y: 0 };
+
+        const { sourceHandle, targetHandle } = getEdgeHandles(
+          sourcePos.x,
+          sourcePos.y,
+          targetPos.x,
+          targetPos.y
+        );
+
+        return {
+          ...edge,
+          sourceHandle,
+          targetHandle,
+        };
+      });
+
+      setEdges(updatedEdges);
+
       // Merge positions: keep old positions, use layout positions for new nodes
       const mergedNodes = newNodes.map((n) => ({
         ...n,
@@ -211,7 +234,6 @@ export default function Graph({
       nodesRef.current = mergedNodes;
       edgesRef.current = newEdges;
       setNodes(mergedNodes);
-      setEdges(newEdges);
 
       // Center node 1 on first load only
       if (!selectedNodeRef.current) {

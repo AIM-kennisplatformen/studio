@@ -223,6 +223,8 @@ export const DEFAULT_FCOSE_OPTIONS = {
   tile: true,
   initialEnergyOnIncremental: 0.3,
   deterministic: false,
+  edgeElasticity: 0.45,
+  edgeStyle: "smoothstep", // Custom option for edge style
 };
 
 /**
