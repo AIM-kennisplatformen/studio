@@ -108,7 +108,7 @@ export default function LayoutMenu({
   };
 
   return (
-    <div className="w-[450px] rounded-sm bg-[#e0f7fa] p-4 font-sans text-sm text-[#37474f] shadow-md select-none">
+    <div className="w-[450px] rounded-sm bg-white p-4 font-sans text-sm text-[#37474f] shadow-md select-none">
       <h2 className="mb-4 text-xl font-bold text-[#546e7a]">Constraints</h2>
       <button
         onClick={() => setMenuState("LAYOUT")}

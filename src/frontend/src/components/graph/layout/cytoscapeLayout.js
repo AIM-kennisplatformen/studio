@@ -225,6 +225,9 @@ export const DEFAULT_FCOSE_OPTIONS = {
   deterministic: false,
   edgeElasticity: 0.45,
   edgeStyle: "smoothstep", // Custom option for edge style
+  animate: false,
+  animationDuration: 1000,
+  animationEasing: "ease-out",
 };
 
 /**
@@ -249,8 +252,6 @@ export function applyFcoseLayout(nodes, edges, options = {}) {
   // Run fcose layout with options
   const layout = cy.layout({
     name: "fcose",
-    // Disable animations - layout runs synchronously
-    animate: false,
     // Default options for fcose
     quality: options.quality || "proof", // 'draft', 'default', or 'proof'
     randomize: options.randomize !== undefined ? options.randomize : true,
@@ -260,6 +261,9 @@ export function applyFcoseLayout(nodes, edges, options = {}) {
     nestingFactor: options.nestingFactor || 0.1,
     gravity: options.gravity || 0.25,
     numIter: options.numIter || 2500,
+    animate: options.animate || false,
+    animationDuration: 1000,
+    animationEasing: "ease-out",
     // Enable node dimensions to prevent overlaps
     nodeDimensionsIncludeLabels: false,
     uniformNodeDimensions: false,

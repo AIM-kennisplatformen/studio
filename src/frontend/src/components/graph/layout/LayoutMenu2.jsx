@@ -41,7 +41,7 @@ export default function LayoutMenu2({ options, setOptions, setMenuState }) {
 
   return (
     <>
-      <div className="h-auto bg-cyan-100 p-3">
+      <div className="h-auto rounded-sm bg-white p-3 shadow-md">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-[#546e7a]">
             Layout Options
@@ -185,6 +185,14 @@ export default function LayoutMenu2({ options, setOptions, setMenuState }) {
             <option value="bezier">Bezier</option>
           </select>
           <div className="col-span-2 mt-2 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(); /* Add options here (didnt work just yet, finishing later) */
+              }}
+              className="rounded border border-[#78909c] px-4 py-2 text-[#546e7a] transition-colors hover:bg-[#eceff1]">
+              Copy
+            </button>
             <button
               type="button"
               onClick={handleReset}
