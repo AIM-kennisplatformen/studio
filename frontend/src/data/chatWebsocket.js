@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { useSetAtom } from "jotai";
+import { useSetAtom, useAtomValue } from "jotai";
 import {
   messagesAtom,
   lastDoneMessageKeyAtom,
   graphRefetchTriggerAtom,
   selectNodeEmitAtom,
   revertTitleEmitAtom,
+  showTitleNotificationsAtom,
 } from "../lib/atoms";
 import { io } from "socket.io-client";
 
@@ -18,10 +19,16 @@ export function useChatWebSocket(setStatus, onTitleUpdate) {
   const triggerRefetch = useSetAtom(graphRefetchTriggerAtom);
   const setSelectedNodeEmit = useSetAtom(selectNodeEmitAtom);
   const setRevertTitleEmit = useSetAtom(revertTitleEmitAtom);
+  const showTitleNotifications = useAtomValue(showTitleNotificationsAtom);
   const socketRef = useRef(null);
   const streamingKeyRef = useRef(null);
   const chatModelStartCountRef = useRef(0);
   const pendingRevertRef = useRef(null);
+  const showTitleNotificationsRef = useRef(showTitleNotifications);
+
+  useEffect(() => {
+    showTitleNotificationsRef.current = showTitleNotifications;
+  }, [showTitleNotifications]);
 
   useEffect(() => {
     const socket = io(window.location.origin, {
@@ -116,6 +123,7 @@ export function useChatWebSocket(setStatus, onTitleUpdate) {
         pending?.name === data.name;
       pendingRevertRef.current = null;
       if (isRevertEcho) return;
+      if (!showTitleNotificationsRef.current) return;
 
       const content = data.name || "";
 

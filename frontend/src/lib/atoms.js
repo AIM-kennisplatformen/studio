@@ -50,3 +50,6 @@ export const selectNodeEmitAtom = atom(null);
 // Atom holding (sessionId, name) => void, wired up in useChatWebSocket,
 // so components outside the socket-owning tree can trigger a title revert.
 export const revertTitleEmitAtom = atom(null);
+
+// Whether to post a system message in chat when the session title changes
+export const showTitleNotificationsAtom = atom(false);
