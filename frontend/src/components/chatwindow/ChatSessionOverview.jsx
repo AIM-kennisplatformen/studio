@@ -45,12 +45,33 @@ export default function ChatSessionOverview({
             </p>
           ) : (
             <>
+            {currentChat != null && (
+              <>
+            <h3 className="mb-2 text-sm font-semibold text-black/70">
+                YOUR CURRENT CHAT
+              </h3>
+              {chats.filter((chat) => chat.session_id === currentChat?.session_id).map((chat) => (
+                <ul className="space-y-2">
+                <div className="mb-2">
+                <ChatSessionItem
+                  key={chat.session_id}
+                  chat={chat}
+                  currentChat={currentChat}
+                  fetchChatSessions={fetchChatSessions}
+                  setCurrentChat={setCurrentChat}
+                  setChatActive={setChatActive}
+                />
+                </div>
+                </ul>
+              ))}
+              </>
+            )}
               <h3 className="mb-2 text-sm font-semibold text-black/70">
                 CONTINUE A PREVIOUS CHAT
               </h3>
 
               <ul className="space-y-2">
-                {chats.map((chat) => (
+                {chats.filter((chat) => chat.session_id !== currentChat?.session_id).map((chat) => (
                   <ChatSessionItem
                     key={chat.session_id}
                     chat={chat}
@@ -97,7 +118,7 @@ function ChatSessionCard({
       className={
         "group flex w-full cursor-pointer items-center justify-between rounded p-2 text-left transition duration-150 " +
         (currentChat?.session_id === chat.session_id
-          ? "!border-primary !bg-primary/70 hover:!bg-primary/80 !border"
+          ? "!border-primary !bg-primary hover:!bg-[var(--primary-dark)] !border"
           : "!border !border-gray-300 !bg-gray-100 hover:!bg-gray-200")
       }>
       <div className="flex min-w-0 flex-col pr-2">
@@ -112,7 +133,7 @@ function ChatSessionCard({
         </span>
 
         {currentChat?.session_id === chat.session_id && (
-          <span className="text-xs font-medium text-white/80 italic">
+          <span className="text-xs font-medium text-white/90 italic">
             Currently Active
           </span>
         )}
@@ -122,7 +143,7 @@ function ChatSessionCard({
           className={
             "text-sm font-semibold transition-all duration-300 " +
             (currentChat?.session_id === chat.session_id
-              ? "text-white/80"
+              ? "text-white/90"
               : "text-gray-500")
           }>
           {chat.updated_at.split("T")[0].split("-").reverse().join("-")}
@@ -158,13 +179,13 @@ function SessionDeleteConfirmCard({
       className={
         "group flex w-full cursor-pointer items-center justify-between rounded p-2 text-left transition duration-150 " +
         (currentChat?.session_id === chat.session_id
-          ? "!border-2 !border-red-800 !bg-red-800/70 hover:!bg-red-800/80"
+          ? "!border-2 !border-red-800 !bg-red-800/90 hover:!bg-red-800"
           : "!border-2 !border-red-700 !bg-gray-100 hover:!bg-gray-200")
       }>
       <div className="flex min-w-0 flex-col pr-2">
         <span
           className={
-            "truncate font-semibold " +
+            "break-words font-semibold " +
             (currentChat?.session_id === chat.session_id
               ? "text-white"
               : "text-black")
@@ -185,7 +206,7 @@ function SessionDeleteConfirmCard({
           className={
             "text-xs font-medium italic " +
             (currentChat?.session_id === chat.session_id
-              ? "text-white/80"
+              ? "text-white/90"
               : "text-red-700")
           }>
           This action cannot be undone.
