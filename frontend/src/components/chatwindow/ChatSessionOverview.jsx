@@ -194,7 +194,7 @@ function SessionDeleteConfirmCard({
         </span>
         <span
           className={
-            "break-words font-semibold italic " +
+            "truncate font-semibold italic " +
             (currentChat?.session_id === chat.session_id
               ? "text-white"
               : "text-black")
