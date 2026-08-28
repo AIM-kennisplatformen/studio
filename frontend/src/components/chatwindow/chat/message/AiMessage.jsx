@@ -9,6 +9,7 @@ import {
 import { Response } from "@/components/shadcn-io/ai/response";
 import { logResponseFeedback } from "../../../../data/api";
 import { useRef, useState } from "react";
+import CopyButton from "@/components/CopyButton";
 
 export default function AiMessage({
   index,
@@ -22,10 +23,13 @@ export default function AiMessage({
   feedbackText,
   showFeedback,
 }) {
+  const isFeedbackVisible =
+    index === lastDoneKey && status === "ready" && lastDoneMessage?.name === "ai";
+
   return (
     <div
       key={index}
-      className="flex w-full items-start justify-start gap-2 pr-[5%]">
+      className="group flex w-full items-start justify-start gap-2 pr-[5%]">
       <div className="flex w-full flex-col items-start">
         <span className="text-muted-foreground mb-1 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
           <BotMessageSquare className="h-3 w-3" /> AI
@@ -33,9 +37,9 @@ export default function AiMessage({
         <Response className="w-full rounded-lg border border-gray-200 bg-gray-50 p-2 text-sm wrap-break-word">
           {value}
         </Response>
-        {index === lastDoneKey &&
-          status === "ready" &&
-          lastDoneMessage?.name === "ai" && (
+
+        <div className="flex flex-row">
+        {isFeedbackVisible ? (
             <div
               onClick={(e) => e.stopPropagation()}
               onSubmit={(e) => e.preventDefault()}
@@ -58,7 +62,12 @@ export default function AiMessage({
                 showFeedback={showFeedback}
               />
             </div>
+          ) : (
+        <div className="pointer-events-none mr-1 translate-y-1 opacity-0 transition-all duration-200 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
+          <CopyButton value={value} />
+        </div>
           )}
+        </div>
       </div>
     </div>
   );
