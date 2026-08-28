@@ -53,18 +53,24 @@ export default function SystemMessage({
 
             {!reverted && onButtonClick && (
               <button
-                type="button"
-                title="Undo title change"
-                onClick={onButtonClick}
-                className="flex-none rounded px-1 py-0.5 text-[10px] leading-none font-medium text-emerald-700/60 transition-colors hover:text-emerald-700">
+              type="button"
+              title="Undo title change"
+              onClick={onButtonClick}
+              className="flex-none rounded px-1 py-0.5 text-[10px] leading-none font-medium text-emerald-700/60 transition-colors hover:text-emerald-700">
                 Undo
               </button>
             )}
           </div>
+
+          <p className="text-muted-foreground pl-1 text-[11px] leading-snug">
+            To disable these notifications, go to{" "}
+            <span className="font-medium">
+              Menu › Settings › Dynamic Chat Titles › Title change
+              notifications
+            </span>
+          </p>
         </div>
       );
-    // case "candidateTitleMessage":
-    //   return <></>;
 
     default:
       return (
