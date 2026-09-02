@@ -24,7 +24,9 @@ export default function AiMessage({
   showFeedback,
 }) {
   const isFeedbackVisible =
-    index === lastDoneKey && status === "ready" && lastDoneMessage?.name === "ai";
+    index === lastDoneKey &&
+    status === "ready" &&
+    lastDoneMessage?.name === "ai";
 
   return (
     <div
@@ -39,7 +41,7 @@ export default function AiMessage({
         </Response>
 
         <div className="flex flex-row">
-        {isFeedbackVisible ? (
+          {isFeedbackVisible ? (
             <div
               onClick={(e) => e.stopPropagation()}
               onSubmit={(e) => e.preventDefault()}
@@ -63,9 +65,9 @@ export default function AiMessage({
               />
             </div>
           ) : (
-        <div className="pointer-events-none mr-1 translate-y-1 opacity-0 transition-all duration-200 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
-          <CopyButton value={value} />
-        </div>
+            <div className="pointer-events-none mr-1 translate-y-1 opacity-0 transition-all duration-200 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
+              <CopyButton value={value} />
+            </div>
           )}
         </div>
       </div>

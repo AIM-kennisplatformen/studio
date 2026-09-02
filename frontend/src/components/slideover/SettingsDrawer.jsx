@@ -119,7 +119,7 @@ export default function SettingsDrawer({ setIsOpen, isOpen }) {
           </label>
         </div>
 
-<hr />
+        <hr />
 
         {/* 2. Chat Title Generation Toggle */}
         <div className="flex items-center justify-between">
@@ -144,29 +144,30 @@ export default function SettingsDrawer({ setIsOpen, isOpen }) {
             <div className="peer peer-checked:bg-primary h-6 w-11 rounded-full bg-gray-300 peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
           </label>
         </div>
-        {isDynamicTitle && 
-        <div className="ms-6 flex items-center justify-between">
-          <div>
-            <label
-              htmlFor="title-gen-toggle"
-              className="block cursor-pointer font-semibold text-black">
-              Title change notifications
+        {isDynamicTitle && (
+          <div className="ms-6 flex items-center justify-between">
+            <div>
+              <label
+                htmlFor="title-gen-toggle"
+                className="block cursor-pointer font-semibold text-black">
+                Title change notifications
+              </label>
+              <span className="text-sm text-gray-500">
+                Get notifications in chat about dynamic title changes
+              </span>
+            </div>
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input
+                id="title-gen-toggle"
+                type="checkbox"
+                checked={showTitleNotifications} // Koppel aan je eigen state
+                onChange={(e) => setShowTitleNotifications(e.target.checked)}
+                className="peer sr-only"
+              />
+              <div className="peer peer-checked:bg-primary h-6 w-11 rounded-full bg-gray-300 peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
             </label>
-            <span className="text-sm text-gray-500">
-              Get notifications in chat about dynamic title changes
-            </span>
           </div>
-          <label className="relative inline-flex cursor-pointer items-center">
-            <input
-              id="title-gen-toggle"
-              type="checkbox"
-              checked={showTitleNotifications} // Koppel aan je eigen state
-              onChange={(e) => setShowTitleNotifications(e.target.checked)}
-              className="peer sr-only"
-            />
-            <div className="peer peer-checked:bg-primary h-6 w-11 rounded-full bg-gray-300 peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-          </label>
-        </div>}
+        )}
         <hr />
       </div>
     </div>
