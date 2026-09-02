@@ -13,6 +13,7 @@ import {
 import { getChatSessionDetails, setActiveChatSession } from "../../../data/api";
 import Messages from "./Messages";
 import InputArea from "./ChatInput";
+import { RotateCw } from "lucide-react";
 
 function mapRestoredMessages(sessionMessages) {
   const restoredMessages = sessionMessages.map((message, index) => ({
@@ -36,6 +37,7 @@ export default function Chat({
   const [feedbackText, setFeedbackText] = useState("");
   const [showFeedback, setShowFeedback] = useState(true);
   const [sessionReady, setSessionReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const shouldLog = useRef(false);
   const isNewSessionRef = useRef(false);
   const setMessages = useSetAtom(messagesAtom);
@@ -55,6 +57,7 @@ export default function Chat({
         isNewSessionRef.current = false;
         return;
       }
+      setIsLoading(true);
 
       setText("");
       setStatus("ready");
@@ -67,7 +70,7 @@ export default function Chat({
       const sessionId = currentChat?.session_id;
       if (!sessionId) {
         setMessages([...initialMessages]);
-
+        setIsLoading(false);
         if (isCurrent) setSessionReady(true);
         return;
       }
@@ -85,6 +88,8 @@ export default function Chat({
         setSessionReady(true);
       } catch (err) {
         console.error("Error restoring chat session:", err);
+      } finally {
+        setIsLoading(false);
       }
     }
 
@@ -104,16 +109,22 @@ export default function Chat({
   return (
     <div className="relative z-10 flex h-full flex-col bg-white">
       <div className="min-h-0 flex-1 overflow-hidden">
-        <Messages
-          feedbackText={feedbackText}
-          showFeedback={showFeedback}
-          setFeedbackText={setFeedbackText}
-          setShowFeedback={setShowFeedback}
-          shouldLog={shouldLog}
-          showSystemMessages={false} //TODO: controlled by settings menu
-        />
+        {isLoading ? (
+          <div className="flex h-full flex-col items-center justify-center text-gray-500">
+            <RotateCw className="size-6 animate-spin" />
+            <p className="mt-2 text-sm">Loading chat session...</p>
+          </div>
+        ) : (
+          <Messages
+            feedbackText={feedbackText}
+            showFeedback={showFeedback}
+            setFeedbackText={setFeedbackText}
+            setShowFeedback={setShowFeedback}
+            shouldLog={shouldLog}
+            showSystemMessages={false} //TODO: controlled by settings menu
+          />
+        )}
       </div>
-
       <div className="shrink-0 border-t border-gray-200 bg-white">
         <div className="text-primary ms-5 w-min truncate pt-1 text-xs hover:cursor-default">
           <p className="italic">Focus: {focusNodeLabel}</p>

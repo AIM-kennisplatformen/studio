@@ -38,6 +38,7 @@ export default function ChatSessionOverview({
           {isLoading ? (
             <div className="flex h-full flex-col items-center justify-center text-gray-500">
               <RotateCw className="size-6 animate-spin" />
+              <p className="mt-2 text-sm">Loading chat sessions...</p>
             </div>
           ) : chats.length === 0 ? (
             <p className="font-semibold text-gray-500">
@@ -45,42 +46,48 @@ export default function ChatSessionOverview({
             </p>
           ) : (
             <>
-            {currentChat != null && (
-              <>
-            <h3 className="mb-2 text-sm font-semibold text-black/70">
-                YOUR CURRENT CHAT
-              </h3>
-              {chats.filter((chat) => chat.session_id === currentChat?.session_id).map((chat) => (
-                <ul className="space-y-2">
-                <div className="mb-2">
-                <ChatSessionItem
-                  key={chat.session_id}
-                  chat={chat}
-                  currentChat={currentChat}
-                  fetchChatSessions={fetchChatSessions}
-                  setCurrentChat={setCurrentChat}
-                  setChatActive={setChatActive}
-                />
-                </div>
-                </ul>
-              ))}
-              </>
-            )}
+              {currentChat != null && (
+                <>
+                  <h3 className="mb-2 text-sm font-semibold text-black/70">
+                    YOUR CURRENT CHAT
+                  </h3>
+                  {chats
+                    .filter(
+                      (chat) => chat.session_id === currentChat?.session_id
+                    )
+                    .map((chat) => (
+                      <ul className="space-y-2">
+                        <div className="mb-2">
+                          <ChatSessionItem
+                            key={chat.session_id}
+                            chat={chat}
+                            currentChat={currentChat}
+                            fetchChatSessions={fetchChatSessions}
+                            setCurrentChat={setCurrentChat}
+                            setChatActive={setChatActive}
+                          />
+                        </div>
+                      </ul>
+                    ))}
+                </>
+              )}
               <h3 className="mb-2 text-sm font-semibold text-black/70">
                 CONTINUE A PREVIOUS CHAT
               </h3>
 
               <ul className="space-y-2">
-                {chats.filter((chat) => chat.session_id !== currentChat?.session_id).map((chat) => (
-                  <ChatSessionItem
-                    key={chat.session_id}
-                    chat={chat}
-                    currentChat={currentChat}
-                    fetchChatSessions={fetchChatSessions}
-                    setCurrentChat={setCurrentChat}
-                    setChatActive={setChatActive}
-                  />
-                ))}
+                {chats
+                  .filter((chat) => chat.session_id !== currentChat?.session_id)
+                  .map((chat) => (
+                    <ChatSessionItem
+                      key={chat.session_id}
+                      chat={chat}
+                      currentChat={currentChat}
+                      fetchChatSessions={fetchChatSessions}
+                      setCurrentChat={setCurrentChat}
+                      setChatActive={setChatActive}
+                    />
+                  ))}
               </ul>
             </>
           )}
@@ -118,7 +125,7 @@ function ChatSessionCard({
       className={
         "group flex w-full cursor-pointer items-center justify-between rounded p-2 text-left transition duration-150 " +
         (currentChat?.session_id === chat.session_id
-          ? "!border-primary !bg-primary hover:!bg-[var(--primary-dark)] !border"
+          ? "!border-primary !bg-primary !border hover:!bg-[var(--primary-dark)]"
           : "!border !border-gray-300 !bg-gray-100 hover:!bg-gray-200")
       }>
       <div className="flex min-w-0 flex-col pr-2">
@@ -185,7 +192,7 @@ function SessionDeleteConfirmCard({
       <div className="flex min-w-0 flex-col pr-2">
         <span
           className={
-            "break-words font-semibold " +
+            "font-semibold break-words " +
             (currentChat?.session_id === chat.session_id
               ? "text-white"
               : "text-black")
