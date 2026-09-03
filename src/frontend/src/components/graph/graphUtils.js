@@ -9,19 +9,30 @@
 //           );
 
 export function getEdgeHandles(SourceX, SourceY, TargetX, TargetY) {
-  // Always use bottom for source and top for target
-  if (SourceY - TargetY < 100 && SourceY - TargetY > -100) {
-    if (SourceX < TargetX) {
-      return { sourceHandle: "right", targetHandle: "target-left" };
-    } else {
-      return { sourceHandle: "left", targetHandle: "target-right" };
-    }
+  const difX = Math.abs(SourceX - TargetX);
+  const difY = Math.abs(SourceY - TargetY);
+  const sourceLeft = SourceX < TargetX;
+  const sourceTop = SourceY < TargetY;
+
+  // Horizontal alignment (difY <= 50)
+  if (difY <= 100) {
+    return sourceLeft
+      ? { sourceHandle: "right", targetHandle: "target-left" }
+      : { sourceHandle: "left", targetHandle: "target-right" };
+  }
+
+  // Diagonal / slight vertical offset (50 < difY < 100)
+  if (difY < 300 && difX > 100) {
+    const targetHandle = sourceLeft ? "target-left" : "target-right";
+    const sourceHandle = sourceTop ? "bottom" : "top";
+    return { sourceHandle: sourceHandle, targetHandle: targetHandle };
+  }
+
+  // Major vertical separation (difY >= 100)
+  if (sourceTop) {
+    return { sourceHandle: "bottom", targetHandle: "target-top" };
   } else {
-    if (SourceY < TargetY) {
-      return { sourceHandle: "bottom", targetHandle: "target-top" };
-    } else {
-      return { sourceHandle: "top", targetHandle: "target-bottom" };
-    }
+    return { sourceHandle: "top", targetHandle: "target-bottom" };
   }
 }
 

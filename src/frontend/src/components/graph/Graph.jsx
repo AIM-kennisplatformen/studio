@@ -4,7 +4,7 @@ import "@xyflow/react/dist/style.css";
 import { CustomNode } from "./nodes/CustomNode";
 import { SolidEdge } from "./nodes/CustomEdge";
 import { getEdgeHandles } from "./graphUtils";
-import { applyDagreLayout, applyFcoseLayout } from "./layout/cytoscapeLayout";
+import { applyFcoseLayout } from "./layout/cytoscapeLayout";
 import { useAtom, useAtomValue } from "jotai";
 import {
   nodesAtom,
@@ -121,7 +121,8 @@ export default function Graph({
             sourceNode.position.x,
             sourceNode.position.y,
             targetNode.position.x,
-            targetNode.position.y
+            targetNode.position.y,
+            options.middleHandles
           );
 
           return {

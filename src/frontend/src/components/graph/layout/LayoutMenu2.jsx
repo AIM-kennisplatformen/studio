@@ -187,8 +187,13 @@ export default function LayoutMenu2({ options, setOptions, setMenuState }) {
           <div className="col-span-2 mt-2 flex justify-end gap-2">
             <button
               type="button"
-              onClick={() => {
-                navigator.clipboard.writeText(); /* Add options here (didnt work just yet, finishing later) */
+              onClick={async () => {
+                try {
+                  const copyOptions = JSON.stringify(options, null, 2);
+                  navigator.clipboard.writeText(copyOptions);
+                } catch (err) {
+                  console.log("Failed to copy options ", err);
+                }
               }}
               className="rounded border border-[#78909c] px-4 py-2 text-[#546e7a] transition-colors hover:bg-[#eceff1]">
               Copy
