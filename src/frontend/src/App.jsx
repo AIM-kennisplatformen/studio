@@ -7,12 +7,26 @@ import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
 import { useAtomValue } from "jotai";
 import { graphRefetchTriggerAtom } from "./lib/atoms";
 import { FeedbackButton } from "./components/FeedbackButton.jsx";
+import LayoutMenu from "./components/graph/layout/LayoutMenu";
+import LayoutMenu2 from "./components/graph/layout/LayoutMenu2";
+import { DEFAULT_FCOSE_OPTIONS } from "./components/graph/layout/cytoscapeLayout";
 
 export default function App() {
   const [leftWidth, setLeftWidth] = useState(66.6);
   const containerRef = useRef(null);
   const [data, setData] = useState(null);
-  const refetchTrigger = useAtomValue(graphRefetchTriggerAtom); //Read only to trigger refetch when ai signals done
+  const refetchTrigger = useAtomValue(graphRefetchTriggerAtom);
+
+  const [menuState, setMenuState] = useState("CONSTRAINT"); // "CONSTRAINTS" or "LAYOUT"
+
+  const [fixedNodes, setFixedNodes] = useState([]);
+
+  const [alignmentConstraints, setAlignmentConstraints] = useState([]);
+
+  const [relativePlacementConstraints, setRelativePlacementConstraints] =
+    useState([]); //Read only to trigger refetch when ai signals done
+
+  const [options, setOptions] = useState(DEFAULT_FCOSE_OPTIONS);
 
   // Load graph once on mount or when center node changes for the first time
   useEffect(() => {
@@ -57,9 +71,46 @@ export default function App() {
   return (
     <div ref={containerRef} className="flex h-screen w-screen">
       <div
-        className={`h-full overflow-hidden bg-gray-100 width-[${leftWidth}%]`}>
+        className="h-full overflow-hidden bg-gray-100"
+        style={{ width: `${leftWidth}%` }}>
         <ReactFlowProvider>
-          <Graph data={data} width={leftWidth} />
+          {/* Kijk dan, dit is die Flex-bak die de boel neitjes naas mekaar zet */}
+          <div className="flex h-full w-full">
+            {/* Dit is je menuutje, die blijft strak 450px en krimp nie inmekaar */}
+            <div className="flex-shrink-0">
+              {menuState === "CONSTRAINTS" ? (
+                <LayoutMenu
+                  fixedNodes={fixedNodes}
+                  setFixedNodes={setFixedNodes}
+                  alignmentConstraints={alignmentConstraints}
+                  setAlignmentConstraints={setAlignmentConstraints}
+                  relativePlacementConstraints={relativePlacementConstraints}
+                  setRelativePlacementConstraints={
+                    setRelativePlacementConstraints
+                  }
+                  setMenuState={setMenuState}
+                />
+              ) : (
+                <LayoutMenu2
+                  options={options}
+                  setOptions={setOptions}
+                  setMenuState={setMenuState}
+                />
+              )}
+            </div>
+
+            {/* En dit is die grafiek-bak, die pakt rücksichtslos alle ruimte die overblijft */}
+            <div className="relative h-full flex-grow">
+              <Graph
+                data={data}
+                width={leftWidth}
+                fixedNodes={fixedNodes}
+                alignmentConstraints={alignmentConstraints}
+                relativePlacementConstraints={relativePlacementConstraints}
+                options={options}
+              />
+            </div>
+          </div>
         </ReactFlowProvider>
       </div>
 
