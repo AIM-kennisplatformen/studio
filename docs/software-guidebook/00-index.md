@@ -10,6 +10,8 @@ This Software Guidebook follows [Simon Brown's methodology](https://softwarearch
 
 **Audience**: Developers, architects, and operations staff working with the Studio application.
 
+**Disclaimer**: this document is partly generaterd by artificial intelligence. This follows a design pattern: **Chapter 1. Context** and **Chapter 2. Funcitonal Overview** are written by human stakeholders as input for the GenAI. Then, a lead developer specilised in agentic AI, uses this input and the codebase to generate and redact a first version of the software guidebook. After that this redacted, generated version is transferred to the development team for redaction. After this stage, the software guidebook is accepted for the current state of the application and automatically updated with GenAI with the same human in the loop principles.
+
 ## Table of Contents
 
 ### Context and Scope
