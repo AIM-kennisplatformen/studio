@@ -4,42 +4,82 @@ This chapter provides the big picture view of the Studio application, including 
 
 ## 1.1 System Purpose
 
-**Studio** is an interactive knowledge exploration platform that combines a visual knowledge graph with AI-powered information retreival. It enables non-experts (laymen) to explore complex topics through an intuitive interface while receiving evidence-based answers backed by expert knowledge.
+**Studio** is an interactive knowledge platform that combines a domain specific knowledge graph with AI-driven information retreival. The application combines the "human in the loop" design principle, by curating data and information via domain experts on the ingestion side, with emerging possibilities of generative artificial intelligience on the output side. In this way, the application aims to provide intuitive and easy access to trivial data and information, stored accross different source databases. 
 
-### 1.1.1 Problem Statement --> needs revision
+Furthermore, it aims to enable non-expert users to explore complex topics and connected data through an intuitive user interface. Receiving evidence-based, and verifiable answers, backed by curated, expert knowledge and information. The design of the application intends to make otherwise hard to obtain data and information, stored in different sources, accessible in the context of where and when non-experts users need (pieces of) it.
 
-Researchers and domain experts often struggle to:
-- Navigate complex relationships between concepts in their field
-- Find relevant academic literature efficiently
-- Get synthesized answers that cite authoritative sources
-- Explore topics from multiple perspectives (best practices, target groups, strategy)
+For this design principle a knowledge graph is manually constructed based on qualitative research such as interviews with domain experts, surveys, and UX-testing. This model is used to provide context to an LLM by Retrieval Augmented Generation (RAG). The domain specific concepts and relationships modeled in the knwoledge graph, are also leveraged as a "roadmap" in the UI. This should enable users to explore and provides context to the data and information needed to answer their questions.
+## 1.2 Problem Space
 
-### 1.1.2 Solution
+### 1.2.1 High access tresholds 
 
-Studio addresses these challenges by providing:
-- A visual knowledge graph for intuitive concept navigation
-- AI-powered chat that synthesizes answers from academic literature
-- Integration with a graph database for acecess to curated and maintanded data (non-generated information)
-- Semantic search via vector embeddings for relevant content retrieval **???**
+The tresholds to access data and information for non-expert users about your own organisation, projects, themes, expertise, problem domains, etc. are often high. They require a lot of navigation and clicks, going back and forth through folders and teams in Microsoft SharePoint. Or they are "hidden" by overly complex and archaic user interfaces of ERP, CRM or e-HRM systems. All with their own individual interface. Or you simply do not know where to look for certain pieces of information and it takes  weeks of (luke)warm networking to know where to look or who to talk to.
 
-## 1.2 Users and Stakeholders
+### 1.2.2 Answering questions requires exploration
 
-### 1.2.1 Primary Users --> revise
+One of the assumptions behind the applicaton is that many questions require exploration and that many answers lead to new questions. Straighforward questions might not need much exploration. How many vacation days you have left, is a simple number. But many other questions require different pieces of information to be related to each other, so that the person asking the question can interpretate the information to form an answer.
+
+Take for example policy makers on energy poverty working for a municipality. They might want to know what other municipalites are doing to counter it. To start from an overview in which general paths, directions and themes are explored, then narrow down to intervention strategies that fit the specific problem and circumstances, requires interactive exploration and interpretation of different kinds of information. Currently, this way of interacting with domain specific data and information is very time consuming and often  requires lot's of (domain) expertise.
+
+The same problem also also manifests in the situation of the of the employee, who might want to know with what partners its orginasation works with in the energy sector. An overview of the projects that the organisation is doing with an interesting partner, might lead the employee in the right direction to contact the right person much faster then he would be able normally. 
+
+### 1.2.3 Distance of Information is often large
+
+Data and information about a certain topic might be scattered among many places and people. Take for example policy makers on a topic such as energy poverty in Europe. Through their warm social network they can share experiences, knowledge, information and somtimes maybe even data, but there are many different approaches and methods all over Europe. Applied by national, regional and local government. Lot's of NGO's are involved. All researched by research insitutions, publishing scientific articles on the subject. Sharing and accessing this kind of knowledge and information on specific domains is currently (humanly) impossible for these policy makers.
+
+Again, the same principle holds for the employee in an organisation. Often, different departments or other seperated entities within a company do not share knolwedge and expertise in an interactive and continuous way, leading to working accross purpose, opportinities being missed and time delays in all kind of simple operations. This all depends on social distance of information. Exaggerating somewhat: if you do not work in related fields, you do not know what others are doing, what they are working on and with whom they are collaborating. If these distances are digitally reduced and (partly) automated, simple problems like knowing who to contact for what, as mentioned above, would take factors less time.
+
+## 1.3 Solution Space
+
+### 1.3.1 Lowering tresholds
+
+
+
+
+
+The pupose of the user interface of the application is have one single interface from which you can access multiple data sources, connected by the knowledge graph. The knowledge graph is tailored on the use cases and user stories of a specific domain, fetching and connecting the specificity of relevant data and information. The user interface of the application consists of two main modalities: a chat interface and a visualisation of the knowledge graph next to it, by which the user can navigate the connection of data and information.
+
+Take for axample an projectlead of a large orginsation, who wants to know what employee has worked how many hours on a certain project adn how many hours remain in the project. Often, this means that the projectlead needs to ask an ERP expert to pull the needed data out of the ERP and deliver it to him. Or, in a less bad scenario, the projectlead has been educated in the user interface of the ERP and he/she/them can do it autonomously by clicking through an often overly complicated and arcaic UI. Having a single landingplatform where this data is connected as a proces or scenario, the project lead only needs to ask the question in the chat and the application does the rest in providing an answer.
+
+In this way, the application lowers tresholds of labour intensive user interfaces and gatekeepers.
+
+### 1.3.2 Faciltate exploration and navigation of data and information
+
+Isolated data and infromation do not have meaning. In the example given above, a number doesn't mean anything to the project lead if it is not situated within the context information that this numbers are hours worked, of the specific employee  on the specific project. The same number would have different meeaning to the projectlead if it was another project or another employee.
+
+And this is a relative simple question, revolving around numbers. Imagine the same projectlead, needing specfic data scientist for a project in the energy sector. Looking for collegues with the right profile is something that needs to be assessed and interpetated. He/she/them might need specific data science skills, like training neural networks, might also want this data scientist to have applied his skills in the energy sector itseld. Or even more specific: on grid management.
+
+To get an idea on who would fit this profile, different kind of sources could contribute: previous employers, recent projects, the department a person works, etc. The application offers a change to navigate these sources of information by visualising the "data and infromation landscape" with an interactive knowledge graph, where the user can narrow or broaden the paths and directions of needed information. Secondly, the application facilitates this with chat interface in which the user can ask follow-up questions given an answer and brainstorm with the LLM on relevance, ideas and reflection.
+
+It is then up to the user when enough information is given for the user to be able act on it's question. This does not mean that the given information by the platform needs to be 100% complete or accurate, all the time. The user just needs enough information pertaining to the question(s) asked, so that the user can act faster then she/them/he would be able without the application.
+
+### Reducing data and information distance
+
+Combining the knowledge graph with retrieval augmented generation, the application should reduce the distance of information. The knowledge graph functions as a database, a map for use cases that connects the data in ameaningfull way per use case and as filter and structure for the RAG input. This ensures that the user can control the RAG context input to be be braodened or narrowed down, by navigating the knowledge graph. i
+
+Furthermore, the structure of the knowledge graph enables the connection of different kind of source databases and connects the data or information drawn from these sources in a meaningfull way for the user. So instead of netwrking and searching the internet for disconnected pieces of information, scraped from different texts and databases in order to form a picture, these connections are already facilitated to a certain degree by the knowledge graph and further refined in in interpretatin in interaction with an LLM in the chat. 
+
+Reffering to the policy maker on energy poverty example, this policy maker can navigate the graph towards specific target groups (say elderly citizens), combined with specific intervention strategies (say, financial interventions) to understand what the biggest tresholds are for this group to apply for exisiting funding for renovation. Navigating towards this specificity with the graph in the UI, inherently selects more specific context information that is feeded to the LLM, making the answers more specific and better traceable.
+
+
+
+## 1.4 Users and Stakeholders
+
+### 1.2.1 Primary Users 
 
 | User Type | Description | Goals |
 |-----------|-------------|-------|
-| Laymen | Target groups that need to to work with expert knowledge beyond their own domain of expertise | Find evidence-based answers, discover relevant literature, intuïtive access to expert databases |
-| Policy Makers | Decision makers needing strategic overviews | Access synthesized knowledge for planning |
+| non-experts | Users that need access to data and information that otherwise is highly inaccessible due to a lack of purposefull situatedness, scattered over diffent sources, and/or highly complex user interfaces. | Intuitive and easy access to data and information, scattered in different sources, pertaining to a specific domain and/or use cases and user stories.
+| ... | ... | ... |
 
 ### 1.2.2 Stakeholders --> needs revision
 
 | Stakeholder | Interest |
 |-------------|----------|
-| Development Team | Build and maintain the platform |
-| Content Curators | Manage knowledge graph content and Zotero collections |
-| IT Operations | Deploy and monitor the system |
-| Organization Leadership | ROI on knowledge management investment |
-
+| Larger orginisations | Offer easy and intuitive access for employees to data and information stored in different expert systems |
+| Research institutions, departments and projects | Fast, intuitive and easy access to literature, project docuements and information sharing |
+| IT Operations | Deploy, maintain and monitor the system |
+| Curators| Pre-selected domain experts charged with maintaining and updating the data and information quality in the graph database |
 ## 1.3 System Context Diagram
 
 ![System Context Diagram](01-context-diagram.png)
@@ -81,7 +121,7 @@ C4Context
 
 **Integration**: The backend uses Authentik for login/logout flows. When not configured, the system operates with default development credentials.
 
-**Why Authentik**: Open-source, self-hosted identity provider that supports OpenID Connect.
+**Why Authentik**: Open-source, self-hosted identity provider that supports OAuth/OpenID Connect.
 
 ### 1.4.2 Zotero
 
@@ -93,34 +133,58 @@ C4Context
 
 **Why Zotero**: Widely used in academia, good API, supports group libraries for collaborative collections.
 
-### 1.4.x TypeDB
+### 1.4.3 TypeDB
 
 **Type**: Graph database and knowledge graph
 
-**Purpose**: Stores relevant data and document reference, maps expert domain knowledge to end users
+**Purpose**: Situates relevant data and document reference into domain context, maps expert domain knowledge to end users
 
 **Integration**: The MCP server queries TypDB
 
 **Why TypeDB**: Intuitive, direct and rich knowledge graph modelling/programming
 
-### 1.4.3 LLM Provider
+### 1.4.4 Qdrant
 
-**Type**: AI Language Model
+**Type**: Vector search engine and database
 
-**Purpose**: Generates natural language responses to user questions.
+**Purpose**: Used to relate documents stored in the graph database with it's vectorised version and feed as RAG input 
+
+**Integration**: The MCP server queries the graph database. Related vectors are retrieved and use as RAG input 
+
+**Why Qdrant**: Open source, convienient API
+
+### 1.4.5 Large Language Model
+
+**Type**: Cloud hardware provider for running large language models. 
+
+**Purpose**: Used to implement retrieval augmented generation and interact with users in natural language.
 
 **Supported Providers**:
-- **Ollama** (default) - Local inference, no API key needed
-- **OpenAI** - Cloud-based, requires API key
-- **Nebius** - Alternative cloud provider
+
+- **Nebius** - Cloud hardware provider, hosting open source large language models
 
 **Integration**: The LLM Worker uses the OpenAI-compatible API to communicate with any provider.
 
-### 1.4.4 Langfuse (Optional)
+
+### 1.4.6 LLM Provider
+
+**Type**: Cloud hardware provider for running large language models. 
+
+**Purpose**: To have the hardware available to run market leading LLM's, providing significally better performance over models that can run locally
+
+**Supported Models**:
+
+- All opens source models
+- Any commercial model with licensed API-key
+ 
+
+**Integration**: ???
+
+### 1.4.7 Langfuse 
 
 **Type**: LLM Observability Platform
 
-**Purpose**: Traces LLM calls for debugging, analytics, and cost tracking.
+**Purpose**: Traces LLM and logs calls for debugging, analytics, and cost tracking. Used to perform (UX and data science) research on infromation accuracy and user satisfaction. 
 
 **Integration**: The LLM Worker sends traces via Langfuse callbacks. When not configured, tracing is disabled.
 
@@ -130,10 +194,13 @@ C4Context
 
 | Capability | Description |
 |------------|-------------|
-| Knowledge Graph Visualization | Display and navigate domain concepts |
+| Graph database and knowledge graph | Situates data and information in the context domain and providing RAG-input |
+| Knowledge Graph Visualization | Display and navigate domain concepts situated in the knowledge graph  |
+| Vector search | Vector search on data, information and structure stored in the knowledge graph, based on user questions |
+| Retrieval augmented generation| Feed large language model with context information to improve informsation quality in generated answers |
 | AI Chat Interface | Natural language question answering |
-| Literature-Backed Answers | Integrate Zotero and vector search |
-| User Authentication | OAuth-based access control |
+| Upload interface for curators | Document upload interface for curators (domain experts) enabling them to position new documents in the knowledge graph |
+| User Authentication | OAuth/OpenID-based access control |
 | Real-time Streaming | Stream LLM responses to users |
 
 ### 1.5.2 Out of Scope
@@ -143,14 +210,13 @@ C4Context
 | Graph Editing | Read-only for initial release |
 | Multi-tenant Support | Single organization deployment |
 | Mobile App | Web-first approach |
-| Content Ingestion | Papers are pre-indexed externally |
 | Export/Reporting | Focus on interactive exploration |
 
 ## 1.6 Key Quality Goals
 
 | Priority | Quality | Description |
 |----------|---------|-------------|
-| 1 | Usability | Intuitive interface for non-technical users |
+| 1 | Usability | Intuitive interface for non-expert users |
 | 2 | Responsiveness | Fast perceived performance via streaming |
 | 3 | Accuracy | Evidence-based answers with citations |
 | 4 | Flexibility | Support multiple LLM providers |
