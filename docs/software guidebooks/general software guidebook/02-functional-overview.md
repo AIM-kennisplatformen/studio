@@ -1,10 +1,16 @@
 # 2. Functional Overview
 
-This chapter provides an overview of the key features and capabilities of the Studio application.
+This chapter provides an overview of the key features and capabilities of the generic features of the application.
 
 ## 2.1 Core Features
 
-The Studio application provides an interactive knowledge exploration platform with AI-powered question answering.
+The application provides an interactive knowledge platform with AI-powered (RAG) question answering.
+
+**NB: TODO1: Missing connectivity to different  source databases, needs to be added**
+
+**NB: TODO2: literature search needs to be changed into "Upload interface for curators**
+
+**NB: TODO3: RAG needs to be added somewhere. Could be under "AI Chat" but could also be a individual "node"
 
 ![Studio Features Mindmap](02-features-mindmap.png)
 
@@ -33,65 +39,72 @@ mindmap
 
 </details>
 
-## 2.2 Feature Details --> needs revision
+## 2.2 Feature Details 
+### 2.2.1 Graph database and Knowledge Graph: back-end
 
-### 2.2.1 Interactive Knowledge Graph
+On the back-end side the TypeDB schema provides a manually constructed knowledge graph database. This models the domain and it's specific userpersonas, processes, theme's, organisational forms, documentation, etc.: it models the domain specific situatedness of the data and information. As such, it extracts this form different sources and pipelines and structures it. I may duplicate data form source or query the source at run time.
 
-The application displays a knowledge graph that users can explore visually.
+A user question is matched with a specific tool call of the MCP-server. The graph database is queried by this MCP-tool. The retrieved data and information is then send as input for use with RAG to generate a response based on this narrowed information (i.e. information contained in the selected sub graph).
 
 **Capabilities**:
-- View domain concepts as nodes
-- See relationships between concepts as edges
+
+- Connects and structures data from different source databases
+- References vectorized texts stored in Qdrant through hash values 
+- Feeds RAG with queried data, information and related texts
+
+**Implementation**:
+
+- TypeDB 
+
+### 2.2.2 Graph database and Knowledge Graph: front end
+The front end of the application renders a visualisation of the knowledge graph, relevant to the question of the user in the chat interface. Users can explore this graph visually and dynamically by clicking on nodes, navigating their path trough the information  the graph database, hereby automatically "selecting a sub graph of information", specific to their question and information needs. 
+
+**Capabilities**:
+- View TypeDB enities as nodes
+- See relationships (and optionally roles) between entities as edges
 - Click nodes to navigate and get context
+- Selected sub graph (pathways) determine contextual RAG input 
+- Responsive chat messages upon node clicks used to determine (sub graph) choices (and vice versa)
 - Resizable split-panel layout
 
 **Implementation**:
 - React Flow for graph rendering ([`src/frontend/src/graph.jsx`](https://github.com/AIM-kennisplatformen/studio/blob/main/src/frontend/src/graph.jsx))
 - Graph data loaded from JSON ([`example-data.json`](https://github.com/AIM-kennisplatformen/studio/blob/main/src/frontend/src/knowledge-graph/example-data.json))
 
-**Current Graph Structure** (Energy Poverty domain) Wrong graph:
+### 2.2.2 Retrieval augmented generation chat interface
 
-![Knowledge Graph Structure](02-knowledge-graph.png)
-
-<details>
-<summary>Mermaid source</summary>
-
-```mermaid
-flowchart TB
-    1[Energy Poverty: Intervention strategies]
-    2[Best practices]
-    3[Target groups]
-    4[Strategic overview]
-    5[Scientific literature]
-    6[Grey literature]
-    7[Project reports]
-
-    1 --> 2
-    1 --> 3
-    1 --> 4
-    2 --> 5
-    2 --> 6
-    2 --> 7
-```
-
-</details>
-
-### 2.2.2 AI-Powered Chat
-
-Users can ask natural language questions and receive evidence-informed answers.
+Parallel to the graph interface the application has chat interface, in which the user can interact with an LLM in natural language. The interaction between the graph and chat interfaces determines the subset of information that will be used as contextual RAG input from which the answer to a question is generated. 
 
 **Capabilities**:
-- Type questions in natural language
+- Users can ask natural language questions
 - Receive streaming responses in real-time
-- See "thinking" indicator while processing
-- Responses cite relevant literature
+- Responses cite relevant texts
+- Cited texts can be viewed
+- [under development] Chat dynamically interacts with graph UI (an vice versa) and refines sub-graph selection 
 
-**User Flow**:
+
+- Logs chat sessions and sessions can be re-selected
+
+
+### 2.2.4 Integrated AI-powered tutorials
+
+### 2.2.5 User Authentication
+
+Optional OAuth authentication via Authentik.
+
+**Capabilities**:
+- Login via external identity provider
+- Session-based authentication
+- Automatic redirect for protected resources
+- Logout functionality
+
+## 2.3 User Flow
 
 ![Chat Sequence Diagram](02-chat-sequence.png)
 
 <details>
 <summary>Mermaid source</summary>
+### 2.2.3 Curated upload interface
 
 ```mermaid
 sequenceDiagram
@@ -116,52 +129,9 @@ sequenceDiagram
 
 </details>
 
-### 2.2.3 Literature-Backed Responses
+## 2.4 User Journeys
 
-The AI assistant searches academic literature to support its answers.
-
-**Capabilities**:
-- Automatic literature search via MCP tool
-- Semantic matching using vector embeddings
-- Bibliography metadata from Zotero
-- Relevance scores for citations
-
-**How It Works**: --> is this how it works?
-
-1. User asks a question
-2. LLM invokes `paper_search` tool with question + keywords
-3. MCP server queries Zotero for papers matching keywords
-4. Qdrant performs semantic search on paper content
-5. Results returned to LLM for synthesis
-6. LLM generates answer citing relevant sources
-
-### 2.2.4 Prefetched Subnode Answers --> not relevant
-
-When a user asks a question at the root node, the system prefetches answers for subnodes in the background.
-
-**Subnodes**:
-- Best practices
-- Target groups
-- Strategic overview
-
-**Benefits**:
-- Instant responses when navigating to subnodes
-- Improved perceived performance
-- Better user experience
-
-### 2.2.5 User Authentication
-
-Optional OAuth authentication via Authentik.
-
-**Capabilities**:
-- Login via external identity provider
-- Session-based authentication
-- Automatic redirect for protected resources
-- Logout functionality
-
-## 2.3 User Journeys
-
-### 2.3.1 First-Time User --> reverse ask quesiton and explore or better: To seperate but interacting paths
+### 2.3.1 First-Time User --> reverse ask question and explore or better: To separate but interacting paths
 
 ![First-Time User Journey](02-first-time-user-journey.png)
 
@@ -225,31 +195,24 @@ journey
 | Node click navigation | Complete | Graph endpoint |
 | AI chat interface | Complete | Socket.IO + LLM Worker |
 | Streaming responses | Complete | SSE + WebSocket |
-| Literature search | Complete | Zotero + Qdrant |
-| Subnode prefetching | Complete | Async tasks |
+| Vector search | Complete | Zotero + Qdrant |
+| MCP-tools | Complete | Chat interface calls MCP tools, MCP queries TyeDB |
 | OAuth authentication | Complete | Authentik |
-| Chat history persistence | Not implemented | In-memory only |
+| Chat history persistence | Complete | User can select precious sessions |
 | Multi-user rooms | Not implemented | Single user per session |
-| Graph editing | Not implemented | Read-only |
+| Graph database editing | Complete | Users can upload and situate new documents |
 
 ## 2.5 Domain Context
 
-The current deployment focuses on **Energy Poverty** research:
+The application is domain agnostic. The knowledge graph database, modelled in TypeDB, determines what is included in the domain of an instance of the application. The knowledge graph is constructed based on qualitative (user) research, modelling the contextually and situatedness of the data and information needed by the user. This design principle determines the scope of the domain.
 
 | Concept | Description |
 |---------|-------------|
-| Energy Poverty | Inability to afford adequate energy services |
-| Intervention Strategies | Approaches to address energy poverty |
-| Best Practices | Proven effective methods |
-| Target Groups | Populations most affected |
-| Strategic Overview | Policy and planning perspectives |
-
-The system is domain-agnostic; replacing the knowledge graph JSON and Qdrant collection would adapt it to other domains.
+| Knowledge graph | Models the domain context, based on qualitative user research |
+| Connected vector store | The knowledge graph interfaces with a vector store, relating relevant text to concepts, objects and their relations |
+| Upload interface documents | Expert users can upload and situate new documentation, refining, updating enriching the domain |
 
 ## 2.6 Limitations
 
 1. **Read-only graph**: Users cannot modify the knowledge graph through the UI
-2. **No persistent history**: Chat sessions are lost on server restart
-3. **Single collection**: Only one Qdrant collection is supported
-4. **Fixed subnodes**: Prefetch targets are hardcoded to three specific nodes
-5. **No multi-turn context**: Each question is processed independently (no conversation memory passed to LLM)
+2. **Single collection**: Only one Qdrant collection is supported
