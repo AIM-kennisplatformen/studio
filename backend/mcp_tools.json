@@ -1,0 +1,8 @@
+{
+"mcpServers": {
+        "paper": {
+                "url": "https://kp.mads-han.src.surf-hosted.nl/mcp",
+                "auth": null
+        }
+}
+}

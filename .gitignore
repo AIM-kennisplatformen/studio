@@ -218,11 +218,10 @@ llm_worker_config.toml
 
 node_modules/
 
-tests/bdd/report/
-
-# Remove auto-generated pycache folder
-src/studio
-
 # Nix shell
 shell.nix
+
+# secretspec
+secretspec.toml
+
 .vscode/settings.json

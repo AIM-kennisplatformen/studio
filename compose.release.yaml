@@ -1,0 +1,16 @@
+include:
+  - compose.yaml
+
+services:
+  backend:
+    build:
+      target: release
+    volumes: !reset []
+
+  frontend:
+    build:
+      target: release
+    environment: !reset {}
+    ports: !override
+      - "${FRONTEND_PORT:-10090}:80"
+    volumes: !reset []
