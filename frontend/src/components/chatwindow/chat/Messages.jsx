@@ -24,9 +24,9 @@ import AiMessage from "./message/AiMessage";
 
 export default function Messages({
   feedbackText,
-  showFeedback,
+  // showFeedback,
   setFeedbackText,
-  setShowFeedback,
+  // setShowFeedback,
   shouldLog,
   showSystemMessages,
 }) {
@@ -104,10 +104,10 @@ export default function Messages({
                     status={status}
                     lastDoneMessage={lastDoneMessage}
                     questionForFeedback={questionForFeedback}
-                    setShowFeedback={setShowFeedback}
+                    // setShowFeedback={setShowFeedback}
                     setFeedbackText={setFeedbackText}
                     feedbackText={feedbackText}
-                    showFeedback={showFeedback}
+                    // showFeedback={showFeedback}
                   />
                 );
               case "session_title_updated":

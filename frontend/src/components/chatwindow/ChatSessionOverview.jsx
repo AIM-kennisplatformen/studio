@@ -223,9 +223,9 @@ function SessionDeleteConfirmCard({
         <div className="grid translate-x-3 grid-cols-[0fr] opacity-0 transition-all duration-300 ease-out group-hover:translate-x-0 group-hover:grid-cols-[1fr] group-hover:opacity-100">
           <div className="flex items-center overflow-hidden">
             <button
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.stopPropagation();
-                deleteSession(chat.session_id).then((ok) => {
+                await deleteSession(chat.session_id).then((ok) => {
                   if (!ok) return;
                   if (currentChat?.session_id === chat.session_id) {
                     setCurrentChat(null);

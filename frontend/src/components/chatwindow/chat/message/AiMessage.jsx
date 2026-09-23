@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Response } from "@/components/shadcn-io/ai/response";
 import { logResponseFeedback } from "../../../../data/api";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import CopyButton from "@/components/CopyButton";
 
 export default function AiMessage({
@@ -18,10 +18,10 @@ export default function AiMessage({
   status,
   lastDoneMessage,
   questionForFeedback,
-  setShowFeedback,
+  // setShowFeedback,
   setFeedbackText,
   feedbackText,
-  showFeedback,
+  // showFeedback,
 }) {
   const isFeedbackVisible =
     index === lastDoneKey &&
@@ -58,10 +58,10 @@ export default function AiMessage({
               <MessageOptions
                 value={value}
                 index={index}
-                setShowFeedback={setShowFeedback}
+                // setShowFeedback={setShowFeedback}
                 setFeedbackText={setFeedbackText}
                 feedbackText={feedbackText}
-                showFeedback={showFeedback}
+                // showFeedback={showFeedback}
               />
             </div>
           ) : (
@@ -76,9 +76,7 @@ export default function AiMessage({
 }
 
 function MessageOptions({ value, index, feedbackText, setFeedbackText }) {
-  const [copied, setCopied] = useState(false);
   const [activeFeedback, setActiveFeedback] = useState(null);
-  const timeoutRef = useRef(null);
 
   async function handleFeedback(messageKey, feedback) {
     if (activeFeedback === feedback) {
@@ -98,32 +96,7 @@ function MessageOptions({ value, index, feedbackText, setFeedbackText }) {
 
   return (
     <Actions>
-      <Action
-        label="Copy Message"
-        className="!bg-white hover:!bg-gray-200"
-        onClick={() => {
-          navigator.clipboard.writeText(value);
-          setCopied(true);
-          clearTimeout(timeoutRef.current);
-          timeoutRef.current = setTimeout(() => setCopied(false), 2000);
-        }}>
-        <div className="relative flex size-4 items-center justify-center">
-          <Copy
-            className={`text-primary absolute size-4 transition-all duration-300 ease-in-out ${
-              copied
-                ? "pointer-events-none scale-75 rotate-45 opacity-0"
-                : "scale-100 rotate-0 opacity-100"
-            }`}
-          />
-          <Check
-            className={`text-primary absolute size-4 transition-all duration-300 ease-in-out ${
-              copied
-                ? "scale-100 rotate-0 opacity-100"
-                : "pointer-events-none scale-75 -rotate-45 opacity-0"
-            }`}
-          />
-        </div>
-      </Action>
+      <CopyButton value={value} />
       <div className="flex items-center gap-2">
         <div className="flex items-center">
           <Action

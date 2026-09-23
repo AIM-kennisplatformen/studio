@@ -1,11 +1,18 @@
 import { ChevronUp } from "lucide-react";
 
-export default function ChatSelectionToggle({ setChatActive, chatActive }) {
+export default function ChatSelectionToggle({
+  setChatActive,
+  chatActive,
+  setIsEditing,
+}) {
   return (
     <>
       <div className="relative inline-block text-left">
         <button
-          onClick={() => setChatActive(!chatActive)}
+          onClick={() => {
+            setChatActive(!chatActive);
+            setIsEditing(false);
+          }}
           className="flex items-center gap-1 rounded-md p-2 text-white"
           aria-expanded={chatActive}
           title="Open chat history"

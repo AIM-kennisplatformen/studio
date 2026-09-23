@@ -86,6 +86,7 @@ function ChatHeader({
       <ChatSelectionToggle
         setChatActive={setChatActive}
         chatActive={chatActive}
+        setIsEditing={setIsEditing}
       />
       {chatActive && (
         <div className="group inline-flex items-center gap-2">

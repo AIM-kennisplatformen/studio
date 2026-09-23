@@ -35,7 +35,7 @@ export default function Chat({
   onTitleUpdate,
 }) {
   const [feedbackText, setFeedbackText] = useState("");
-  const [showFeedback, setShowFeedback] = useState(true);
+  // const [showFeedback, setShowFeedback] = useState(true);
   const [sessionReady, setSessionReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const shouldLog = useRef(false);
@@ -63,7 +63,7 @@ export default function Chat({
       setStatus("ready");
       setLastDoneMessageKey(null);
       setFeedbackText("");
-      setShowFeedback(true);
+      // setShowFeedback(true);
       setSessionReady(false);
       shouldLog.current = false;
 
@@ -117,9 +117,9 @@ export default function Chat({
         ) : (
           <Messages
             feedbackText={feedbackText}
-            showFeedback={showFeedback}
+            // showFeedback={showFeedback}
             setFeedbackText={setFeedbackText}
-            setShowFeedback={setShowFeedback}
+            // setShowFeedback={setShowFeedback}
             shouldLog={shouldLog}
             showSystemMessages={false} //TODO: controlled by settings menu
           />
@@ -130,7 +130,7 @@ export default function Chat({
           <p className="italic">Focus: {focusNodeLabel}</p>
         </div>
         <InputArea
-          setShowFeedback={setShowFeedback}
+          // setShowFeedback={setShowFeedback}
           shouldLog={shouldLog}
           initialText={pendingMessage}
           setPendingMessage={setPendingMessage}

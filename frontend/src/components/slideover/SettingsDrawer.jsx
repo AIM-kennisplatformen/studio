@@ -148,7 +148,7 @@ export default function SettingsDrawer({ setIsOpen, isOpen }) {
         <div className="ms-6 flex items-center justify-between">
           <div>
             <label
-              htmlFor="title-gen-toggle"
+              htmlFor="title-gen-notification-toggle"
               className={`+ block cursor-pointer font-semibold ${
                 isDynamicTitle ? `text-black` : `text-neutral-500`
               }`}>
@@ -157,7 +157,7 @@ export default function SettingsDrawer({ setIsOpen, isOpen }) {
           </div>
           <label className="relative inline-flex cursor-pointer items-center">
             <input
-              id="title-gen-toggle"
+              id="title-gen-notification-toggle"
               type="checkbox"
               disabled={!isDynamicTitle}
               checked={showTitleNotifications}

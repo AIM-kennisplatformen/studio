@@ -12,7 +12,7 @@ import { newSession, setActiveChatSession } from "../../../data/api";
 import { messagesAtom, textAtom, textStatusAtom } from "@/lib/atoms";
 
 export default function ChatInput({
-  setShowFeedback,
+  // setShowFeedback,
   shouldLog,
   initialText,
   setPendingMessage,
@@ -63,7 +63,7 @@ export default function ChatInput({
     send(message);
     setPendingMessage?.(null);
     setText("");
-    setShowFeedback(true);
+    // setShowFeedback(true);
   };
 
   useEffect(() => {
