@@ -38,8 +38,8 @@ export default function Messages({
   const emitRevertTitle = useAtomValue(revertTitleEmitAtom);
   const prevStatusRef = useRef(null);
 
-  const handleUndoTitle = (key, sessionId, previousName) => {
-    emitRevertTitle?.(sessionId, previousName);
+  const handleUndoTitle = async (key, sessionId, previousName) => {
+    await emitRevertTitle?.(sessionId, previousName);
     setMessages((prev) =>
       prev.map((m) => (m.key === key ? { ...m, reverted: true } : m))
     );
@@ -123,21 +123,6 @@ export default function Messages({
                         : undefined
                     }
                     type={"adaptiveTitleMessage"}
-                  />
-                );
-              case "session_title_candidate":
-                return (
-                  <SystemMessage
-                    key={key}
-                    value={value}
-                    reverted={reverted}
-                    previousName={previousName}
-                    onButtonClick={
-                      previousName && !reverted
-                        ? () => handleUndoTitle(key, sessionId, previousName)
-                        : undefined
-                    }
-                    type={"candidateTitleMessage"}
                   />
                 );
             }

@@ -18,6 +18,18 @@ export default function SettingsDrawer({ setIsOpen, isOpen }) {
   useEffect(() => {
     if (!isOpen) return;
     getSettings().then((res) => setIsDynamicTitle(res.dynamic_title));
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [isOpen]);
 
   const handleDynamicTitleChange = (checked) => {
@@ -129,12 +141,12 @@ export default function SettingsDrawer({ setIsOpen, isOpen }) {
               className="block cursor-pointer font-semibold text-black">
               Dynamic Titles
             </label>
-            <span className="text-sm text-gray-500">
+            <span className="max-w-xs text-sm text-clip text-gray-500">
               When enabled, ChatEP updates the title of a conversation regularly
               to reflect it's content
             </span>
           </div>
-          <label className="relative inline-flex cursor-pointer items-center">
+          <label className="relative ml-1 inline-flex cursor-pointer items-center">
             <input
               id="title-gen-toggle"
               type="checkbox"
