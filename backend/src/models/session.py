@@ -29,11 +29,6 @@ class SessionDetail(BaseModel):
     messages: list[SessionMessage]
 
 
-class UpdateSessionRequest(BaseModel):
-    name: str | None = None
-    title_type: Literal["static", "dynamic"] | None = None
-
-
 class TitleCandidate(BaseModel):
     user_id: str
     session_id: UUID

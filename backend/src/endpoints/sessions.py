@@ -2,14 +2,10 @@ from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from pydantic import BaseModel
 
 from src.endpoints.auth import get_current_user
-from src.models.session import (
-    Session,
-    SessionDetail,
-    SessionMessage,
-    UpdateSessionRequest,
-)
+from src.models.session import Session, SessionDetail, SessionMessage
 from src.stores.postgres import postgres_store
 from src.utility.session_store import (
     ACTIVE_SESSION_KEY,
@@ -17,6 +13,11 @@ from src.utility.session_store import (
 )
 
 sessions_router: APIRouter = APIRouter(tags=["sessions"])
+
+
+class UpdateSessionRequest(BaseModel):
+    name: str | None = None
+    title_type: Literal["static", "dynamic"] | None = None
 
 
 @sessions_router.get("/sessions", response_model=list[Session])
