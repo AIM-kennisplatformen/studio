@@ -54,7 +54,7 @@ class _FakeSessionStore:
         self,
         user_id,
         name="New session",
-        title_type: Literal["static", "adaptive"] = "static",
+        title_type: Literal["static", "dynamic"] = "static",
     ):
         self.created_session = Session(
             session_id=uuid4(),
@@ -192,7 +192,7 @@ def test_update_session_name_sets_overwritten_flag(monkeypatch):
         fake_store = _FakeSessionStore()
         _install_fake_store(monkeypatch, fake_store)
 
-        from src.models.session import UpdateSessionRequest
+        from src.endpoints.sessions import UpdateSessionRequest
 
         body = UpdateSessionRequest(name="Custom name")
         response = await sessions_module.update_session(
@@ -213,9 +213,9 @@ def test_update_session_title_type(monkeypatch):
         fake_store = _FakeSessionStore()
         _install_fake_store(monkeypatch, fake_store)
 
-        from src.models.session import UpdateSessionRequest
+        from src.endpoints.sessions import UpdateSessionRequest
 
-        body = UpdateSessionRequest(title_type="adaptive")
+        body = UpdateSessionRequest(title_type="dynamic")
         response = await sessions_module.update_session(
             fake_store.session.session_id,
             body,
@@ -223,7 +223,7 @@ def test_update_session_title_type(monkeypatch):
         )
 
         assert response is not None
-        assert response.title_type == "adaptive"
+        assert response.title_type == "dynamic"
         assert response.title_overwritten is False  # not changed
 
     asyncio.run(exercise_endpoint())
@@ -234,7 +234,7 @@ def test_update_session_returns_404_for_foreign_session(monkeypatch):
         fake_store = _FakeSessionStore()
         _install_fake_store(monkeypatch, fake_store)
 
-        from src.models.session import UpdateSessionRequest
+        from src.endpoints.sessions import UpdateSessionRequest
 
         body = UpdateSessionRequest(name="Hack")
         with pytest.raises(HTTPException) as exc:

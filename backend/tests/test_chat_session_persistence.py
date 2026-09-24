@@ -18,7 +18,7 @@ class _FakeSessionStore:
         self,
         user_id,
         name="New session",
-        title_type: Literal["static", "adaptive"] = "static",
+        title_type: Literal["static", "dynamic"] = "static",
     ):
         session = Session(
             session_id=uuid4(),
@@ -185,12 +185,12 @@ def test_store_chat_message_increments_counter(monkeypatch):
     asyncio.run(exercise())
 
 
-def test_adaptive_approval_mode_emits_candidate_without_applying(monkeypatch):
+def test_dynamic_approval_mode_emits_candidate_without_applying(monkeypatch):
     async def exercise():
         fake_store = _FakeSessionStore()
         monkeypatch.setattr(chat_module, "postgres_store", fake_store)
         monkeypatch.setattr(
-            chat_module, "_generate_adaptive_title", _async_title("Suggested title")
+            chat_module, "_generate_dynamic_title", _async_title("Suggested title")
         )
         emissions: list[tuple[str, str, dict[str, object]]] = []
         monkeypatch.setattr(
@@ -198,7 +198,7 @@ def test_adaptive_approval_mode_emits_candidate_without_applying(monkeypatch):
         )
 
         session = await fake_store.create_session("user-1")
-        session.title_type = "adaptive"
+        session.title_type = "dynamic"
         session.name = "Existing title"
         session.message_count = 25
         session.last_title_message_count = 5
@@ -206,7 +206,7 @@ def test_adaptive_approval_mode_emits_candidate_without_applying(monkeypatch):
         chat_module.user_title_settings["user-1"] = False
         chat_module._pending_title_candidates.clear()
         try:
-            await chat_module._update_session_title_adaptive(
+            await chat_module._update_session_title_dynamic(
                 "user-1", session.session_id
             )
             updated = await fake_store.get_session("user-1", session.session_id)
@@ -229,12 +229,12 @@ def test_adaptive_approval_mode_emits_candidate_without_applying(monkeypatch):
     asyncio.run(exercise())
 
 
-def test_adaptive_autoapply_mode_applies_and_emits(monkeypatch):
+def test_dynamic_autoapply_mode_applies_and_emits(monkeypatch):
     async def exercise():
         fake_store = _FakeSessionStore()
         monkeypatch.setattr(chat_module, "postgres_store", fake_store)
         monkeypatch.setattr(
-            chat_module, "_generate_adaptive_title", _async_title("Auto title")
+            chat_module, "_generate_dynamic_title", _async_title("Auto title")
         )
         emissions: list[tuple[str, str, dict[str, object]]] = []
         monkeypatch.setattr(
@@ -242,7 +242,7 @@ def test_adaptive_autoapply_mode_applies_and_emits(monkeypatch):
         )
 
         session = await fake_store.create_session("user-1")
-        session.title_type = "adaptive"
+        session.title_type = "dynamic"
         session.name = "Existing title"
         session.message_count = 25
         session.last_title_message_count = 5
@@ -250,7 +250,7 @@ def test_adaptive_autoapply_mode_applies_and_emits(monkeypatch):
         chat_module.user_title_settings["user-1"] = True
         chat_module._pending_title_candidates.clear()
         try:
-            await chat_module._update_session_title_adaptive(
+            await chat_module._update_session_title_dynamic(
                 "user-1", session.session_id
             )
             updated = await fake_store.get_session("user-1", session.session_id)
@@ -453,7 +453,7 @@ def test_maybe_generate_title_skips_when_overwritten(monkeypatch):
     asyncio.run(exercise())
 
 
-def test_maybe_generate_title_skips_when_not_default_and_not_adaptive(monkeypatch):
+def test_maybe_generate_title_skips_when_not_default_and_not_dynamic(monkeypatch):
     async def exercise():
         fake_store = _FakeSessionStore()
         monkeypatch.setattr(chat_module, "postgres_store", fake_store)
@@ -472,14 +472,14 @@ def test_maybe_generate_title_skips_when_not_default_and_not_adaptive(monkeypatc
     asyncio.run(exercise())
 
 
-def test_maybe_generate_title_skips_when_adaptive_below_threshold(monkeypatch):
+def test_maybe_generate_title_skips_when_dynamic_below_threshold(monkeypatch):
     async def exercise():
         fake_store = _FakeSessionStore()
         monkeypatch.setattr(chat_module, "postgres_store", fake_store)
 
         session = await fake_store.create_session("user-1")
         session.name = "Existing title"
-        session.title_type = "adaptive"
+        session.title_type = "dynamic"
         session.title_overwritten = False
         session.message_count = 15
         session.last_title_message_count = 0
@@ -511,14 +511,14 @@ def test_maybe_generate_title_triggers_for_default_session(monkeypatch):
     asyncio.run(exercise())
 
 
-def test_maybe_generate_title_triggers_for_adaptive_at_threshold(monkeypatch):
+def test_maybe_generate_title_triggers_for_dynamic_at_threshold(monkeypatch):
     async def exercise():
         fake_store = _FakeSessionStore()
         monkeypatch.setattr(chat_module, "postgres_store", fake_store)
 
         session = await fake_store.create_session("user-1")
         session.name = "Existing title"
-        session.title_type = "adaptive"
+        session.title_type = "dynamic"
         session.message_count = 25
         session.last_title_message_count = 5
 
