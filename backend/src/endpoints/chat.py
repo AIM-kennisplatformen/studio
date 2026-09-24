@@ -2,6 +2,11 @@ import asyncio
 import time
 from uuid import UUID, uuid4
 
+import socketio
+from fastapi import APIRouter
+from langchain_openai import ChatOpenAI
+from langfuse import get_client
+from loguru import logger
 from openai import (
     APIConnectionError,
     APITimeoutError,
@@ -11,49 +16,44 @@ from openai import (
     PermissionDeniedError,
     RateLimitError,
 )
-import socketio
-from fastapi import APIRouter
-from langchain_openai import ChatOpenAI
-from langfuse import get_client
-from loguru import logger
 
 from src.config import (
-    ADAPTIVE_TITLE_PROMPT,
+    DYNAMIC_TITLE_PROMPT,
     STATIC_TITLE_PROMPT,
     config,
-    root_question_prompt,
     node_no_question_prompt,
     node_repeat_question_prompt,
+    root_question_prompt,
     subnode_no_question_prompt,
     subnode_repeat_question_prompt,
 )
 from src.endpoints.graph import (
-    user_graph_contexts,
+    SUBNODE_MAP,
     _default_user_graph_context,
     fetch_subnode_stream,
-    SUBNODE_MAP,
+    user_graph_contexts,
 )
+from src.models.chat_message import ChatMessage
 from src.models.session import Session as ChatSession
 from src.models.session import SessionMessage, TitleCandidate
-from src.models.chat_message import ChatMessage
 from src.stores.postgres import DEFAULT_SESSION_NAME, postgres_store
 from src.stores.redis import redis_store
+from src.utility.chat_util import (
+    bind_user,
+    emit_to_user,
+    push_chat_message,
+    push_chat_message_stream,
+    register_socketio,
+    sid_connections,
+    stream_agent_events,
+    unbind_sid,
+)
 from src.utility.log_util import end_session, start_session
 from src.utility.session_store import (
     ACTIVE_SESSION_KEY,
     get_active_session_id,
     parse_session_id,
     set_active_session_id,
-)
-from src.utility.chat_util import (
-    emit_to_user,
-    push_chat_message,
-    register_socketio,
-    bind_user,
-    stream_agent_events,
-    unbind_sid,
-    push_chat_message_stream,
-    sid_connections,
 )
 
 cors_origins = [config["frontend_base_url"]]
@@ -151,13 +151,13 @@ async def _generate_session_title(user_msg: str, ai_response: str) -> str | None
     return _sanitize_session_title(result.content)
 
 
-async def _generate_adaptive_title(conversation_text: str) -> str | None:
+async def _generate_dynamic_title(conversation_text: str) -> str | None:
     llm = ChatOpenAI(
         model=config["llm_model"],
         base_url=config["openai_host"],
     )
     result = await llm.ainvoke(
-        ADAPTIVE_TITLE_PROMPT.format(conversation_text=conversation_text)
+        DYNAMIC_TITLE_PROMPT.format(conversation_text=conversation_text)
     )
     return _sanitize_session_title(result.content)
 
@@ -209,7 +209,7 @@ async def _update_session_title(
         logger.warning(f"Failed to update session title: {exc}")
 
 
-async def _update_session_title_adaptive(
+async def _update_session_title_dynamic(
     user_id: str,
     session_id: UUID,
 ) -> None:
@@ -221,12 +221,12 @@ async def _update_session_title_adaptive(
             f"{labels.get(m.role, m.role)}: {m.content}" for m in messages
         )
         title = _fallback_session_title(messages[0].content if messages else "")
-        generated_title = await _generate_adaptive_title(conversation_text)
+        generated_title = await _generate_dynamic_title(conversation_text)
         if generated_title:
             title = generated_title
     except (APIConnectionError, APITimeoutError, RateLimitError) as exc:
         logger.warning(
-            f"Temporary OpenAI failure while generating adaptive title: {exc}"
+            f"Temporary OpenAI failure while generating dynamic title: {exc}"
         )
     except (
         AuthenticationError,
@@ -235,10 +235,10 @@ async def _update_session_title_adaptive(
         PermissionDeniedError,
     ) as exc:
         logger.error(
-            f"OpenAI configuration error while generating adaptive title: {exc}"
+            f"OpenAI configuration error while generating dynamic title: {exc}"
         )
     except Exception as exc:
-        logger.warning(f"Unexpected failure while generating adaptive title: {exc}")
+        logger.warning(f"Unexpected failure while generating dynamic title: {exc}")
 
     if user_title_settings.get(user_id, True):
         try:
@@ -262,7 +262,7 @@ async def _update_session_title_adaptive(
                     previous_name=previous_name,
                 )
         except Exception as exc:
-            logger.warning(f"Failed to update adaptive session title: {exc}")
+            logger.warning(f"Failed to update dynamic session title: {exc}")
         return
 
     # Advance generation counter so a rejected candidate isn't re-offered every message.
@@ -295,7 +295,7 @@ async def _update_session_title_adaptive(
             },
         )
     except Exception as exc:
-        logger.warning(f"Failed to queue adaptive session title candidate: {exc}")
+        logger.warning(f"Failed to queue dynamic session title candidate: {exc}")
 
 
 def _purge_expired_title_candidates() -> None:
@@ -317,8 +317,8 @@ def _schedule_session_title(
     )
 
 
-def _schedule_adaptive_title(user_id: str, session_id: UUID) -> None:
-    asyncio.create_task(_update_session_title_adaptive(user_id, session_id))
+def _schedule_dynamic_title(user_id: str, session_id: UUID) -> None:
+    asyncio.create_task(_update_session_title_dynamic(user_id, session_id))
 
 
 async def _maybe_generate_title(
@@ -335,10 +335,10 @@ async def _maybe_generate_title(
     if lock_key in _title_generation_locks:
         return
 
-    if session.name != DEFAULT_SESSION_NAME and session.title_type != "adaptive":
+    if session.name != DEFAULT_SESSION_NAME and session.title_type != "dynamic":
         return
 
-    if session.name != DEFAULT_SESSION_NAME and session.title_type == "adaptive":
+    if session.name != DEFAULT_SESSION_NAME and session.title_type == "dynamic":
         if session.message_count < session.last_title_message_count + 20:
             return
 
@@ -346,8 +346,8 @@ async def _maybe_generate_title(
     try:
         if session.name == DEFAULT_SESSION_NAME:
             _schedule_session_title(user_id, session_id, user_msg, ai_response)
-        elif session.title_type == "adaptive":
-            _schedule_adaptive_title(user_id, session_id)
+        elif session.title_type == "dynamic":
+            _schedule_dynamic_title(user_id, session_id)
     finally:
         _title_generation_locks.discard(lock_key)
 

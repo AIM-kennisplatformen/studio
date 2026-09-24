@@ -1,6 +1,7 @@
 import os
 import secrets
 from pathlib import Path
+
 from dotenv import load_dotenv
 from loguru import logger
 
@@ -82,8 +83,12 @@ def require_env(name: str, default: str | None = None) -> str:
 
 
 config: dict = {
-    "base_url": require_env("BACKEND_BASE_URL", "http://localhost:10090/api").rstrip("/"),
-    "frontend_base_url": require_env("FRONTEND_BASE_URL", "http://localhost:10090").rstrip("/"),
+    "base_url": require_env("BACKEND_BASE_URL", "http://localhost:10090/api").rstrip(
+        "/"
+    ),
+    "frontend_base_url": require_env(
+        "FRONTEND_BASE_URL", "http://localhost:10090"
+    ).rstrip("/"),
     "discovery_url": require_env(
         "OAUTH_DISCOVERY_URL",
         "http://auth.localhost:10091/application/o/kg/.well-known/openid-configuration",
@@ -124,7 +129,7 @@ STATIC_TITLE_PROMPT = (
     "First user message:\n{question}\n\nAI response:\n{answer}"
 )
 
-ADAPTIVE_TITLE_PROMPT = (
+DYNAMIC_TITLE_PROMPT = (
     "Create a concise title for this chat session based on the "
     "latest conversation.\nRules: maximum 6 words, no quotation marks, "
     "no trailing punctuation, and no extra text.\n\n"

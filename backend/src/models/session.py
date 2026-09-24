@@ -11,7 +11,7 @@ class Session(BaseModel):
     name: str
     updated_at: datetime
     message_count: int = 0
-    title_type: Literal["static", "adaptive"] = "adaptive"
+    title_type: Literal["static", "dynamic"] = "dynamic"
     title_overwritten: bool = False
     last_title_message_count: int = 0
 
@@ -31,7 +31,7 @@ class SessionDetail(BaseModel):
 
 class UpdateSessionRequest(BaseModel):
     name: str | None = None
-    title_type: Literal["static", "adaptive"] | None = None
+    title_type: Literal["static", "dynamic"] | None = None
 
 
 class TitleCandidate(BaseModel):
