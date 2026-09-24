@@ -110,6 +110,12 @@ export default function Messages({
                     // showFeedback={showFeedback}
                   />
                 );
+              case "tour_message":
+                return (
+                  <div key={key} data-tour="selection-message">
+                    <SystemMessage value={value} />
+                  </div>
+                );
               case "session_title_updated":
                 return (
                   <SystemMessage

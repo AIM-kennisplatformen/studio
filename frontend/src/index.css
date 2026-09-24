@@ -202,3 +202,8 @@ button:hover {
   background: var(--primary);
   color: var(--primary-foreground);
 }
+
+/* Onboarding tour: final step floats near the graph without dimming the page */
+body.tour-no-overlay .driver-overlay {
+  display: none;
+}

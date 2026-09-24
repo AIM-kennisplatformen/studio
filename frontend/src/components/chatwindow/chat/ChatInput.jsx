@@ -10,6 +10,7 @@ import { useAtom, useSetAtom } from "jotai";
 import { useChatWebSocket } from "../../../data/chatWebsocket";
 import { newSession, setActiveChatSession } from "../../../data/api";
 import { messagesAtom, textAtom, textStatusAtom } from "@/lib/atoms";
+import { startTour, TOUR_QUESTION } from "@/lib/tour";
 
 export default function ChatInput({
   // setShowFeedback,
@@ -77,7 +78,12 @@ export default function ChatInput({
     e.preventDefault();
     if (!text || status !== "ready") return;
 
-    sendMessage(text);
+    if (text === TOUR_QUESTION) {
+      setText("");
+      startTour();
+    } else {
+      sendMessage(text);
+    }
   };
 
   return (
