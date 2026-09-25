@@ -2,20 +2,20 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python Debugger: studio.main",
+      "name": "Python Debugger: src.main",
       "type": "debugpy",
       "request": "launch",
-      "module": "studio.main",
+      "module": "src.main",
       // This makes imports work
       "env": {
-        "PYTHONPATH": "src"
+        "PYTHONPATH": "backend"
       },
 
       // Optional: pick up your .env
       "envFile": "${workspaceFolder}/.env",
 
       // Optional: enforce Pixi env interpreter
-      "python": "${workspaceFolder}/.pixi/envs/default/bin/python"
+      "python": "${workspaceFolder}/backend/.pixi/envs/default/bin/python"
     }
   ]
 }
