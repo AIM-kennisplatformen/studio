@@ -1,8 +1,8 @@
 {
-"mcpServers": {
-        "paper": {
-                "url": "https://kp.mads-han.src.surf-hosted.nl/mcp",
-                "auth": null
-        }
-}
+  "mcpServers": {
+    "paper": {
+      "url": "https://kp.mads-han.src.surf-hosted.nl/mcp",
+      "auth": null
+    }
+  }
 }
