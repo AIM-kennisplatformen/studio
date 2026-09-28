@@ -227,3 +227,4 @@ secretspec.toml
 .vscode/settings.json
 
 .vite
+/.data/
