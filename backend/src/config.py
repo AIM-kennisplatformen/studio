@@ -63,29 +63,31 @@ def subnode_question_prompt(question: str, subnode: str, history_text: str = "")
 
 def node_no_question_prompt() -> str:
     return (
-        "Do you want to ask a question, answered by the full body of literature? "
+        "Do you want to ask a question, answered by the full body of literature?\n"
         "Please proceed, by asking me your question?"
     )
 
 
 def node_repeat_question_prompt(question: str) -> str:
     return (
-        "Answer a question by using the full body of literature. "
-        f"Would you like to ask a different question than: '{question}'? "
+        "Answer a question by using the full body of literature.\n"
+        f"Would you like to ask a different question than: '{question}'?\n"
         "**Respond with another question** or type **yes** to repeat the previous question."
     )
 
 
 def subnode_no_question_prompt(subnode: str) -> str:
-    return f"You've selected subset {subnode}. Please ask me your question?"
+    return (
+        f"You've selected subset {subnode}.\n"
+        "Please ask me your question?"
+    )
 
 
 def subnode_repeat_question_prompt(subnode: str, question: str) -> str:
     return (
-        f"You've selected subset {subnode}. "
-        "Please ask me your question using this subset. "
-        f"If you want to repeat your previous question: `{question}` "
-        "type **yes**, otherwise **Respond with another question**."
+        f"You've selected subset {subnode}.\n"
+        "Please ask me your question using this subset.\n"
+        f"If you want to repeat your previous question: `{question}` type **yes**, otherwise **Respond with another question**."
     )
 
 
@@ -140,14 +142,12 @@ config: dict = {
 
 STATIC_TITLE_PROMPT = (
     "Create a concise title for this chat session.\n"
-    "Rules: maximum 6 words, no quotation marks, no trailing punctuation, "
-    "and no extra text.\n\n"
+    "Rules: maximum 6 words, no quotation marks, no trailing punctuation, and no extra text.\n\n"
     "First user message:\n{question}\n\nAI response:\n{answer}"
 )
 
 DYNAMIC_TITLE_PROMPT = (
-    "Create a concise title for this chat session based on the "
-    "latest conversation.\nRules: maximum 6 words, no quotation marks, "
-    "no trailing punctuation, and no extra text.\n\n"
+    "Create a concise title for this chat session based on the latest conversation.\n"
+    "Rules: maximum 6 words, no quotation marks, no trailing punctuation, and no extra text.\n\n"
     "Recent conversation:\n{conversation_text}"
 )
