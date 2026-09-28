@@ -10,17 +10,32 @@ load_dotenv(backend_root / ".env")
 load_dotenv(backend_root.parent / ".env")
 
 
+CITATION_INSTRUCTIONS = (
+    "Use only the returned passages as evidence.\n"
+    "After deciding which documents you actually use, assign them consecutive citation numbers in order of first citation.\n"
+    "Cite supported claims in the answer with bracketed numbers such as [1], and reuse the same number whenever you cite the same document.\n"
+    "Separate the references from the answer body with a blank line and the exact Markdown heading `## References`.\n"
+    "After the heading, add another blank line and format the references as an ordered Markdown list with one reference per line (`1. ...`, `2. ...`).\n"
+    "Never place a reference on the same line as the heading, and never combine multiple references on one line.\n"
+    "Include only cited documents, exactly once each and in first-citation order.\n"
+    "For each list item, copy the document's `ieee_reference` verbatim after the list marker.\n"
+    "Never show `pdf_hash` values or relevance scores.\n"
+)
+
+
 def root_question_prompt(question: str, history_text: str = "") -> str:
     history_section = (
         f"Conversation History:\n{history_text}\n\n" if history_text else ""
     )
     return (
         "SYSTEM META-INSTRUCTION:\n"
-        "Use the `get_literature_supported_knowledge` MCP tool to identify sources relevant to the question.\n\n"
+        "Use the `search_literature` MCP tool before answering.\n"
+        "Search for evidence that addresses the full question, with particular attention to best practices, target groups, and strategic considerations.\n"
+        "Only apply publication-date, document-type, or organization filters when the user explicitly requests them.\n"
+        f"{CITATION_INSTRUCTIONS}"
+        "If the search returns no relevant evidence, say so rather than inventing support.\n\n"
         f"{history_section}"
-        f'full_question:\n"{question}"\n\n'
-        'keywords_related_to_question="Best practices || Target groups || Strategic overview"\n'
-        "Provide an evidence-informed explanation when possible.\n"
+        f'Question:\n"{question}"\n'
     )
 
 
@@ -28,20 +43,21 @@ def subnode_question_prompt(question: str, subnode: str, history_text: str = "")
     history_section = (
         f"Conversation History:\n{history_text}\n\n" if history_text else ""
     )
-    keyword = (
+    focus = (
         subnode
         if subnode != "root"
         else "Best practices || Target groups || Strategic overview"
     )
     return (
         "SYSTEM META-INSTRUCTION:\n"
-        "If relevant, use the `paper_search` MCP tool to identify scientific "
-        "literature or studies relevant to the question.\n\n"
-        "Don't alter question and keywords below — insert them straight into the tool.\n"
+        "Use the `search_literature` MCP tool before answering.\n"
+        "Form its natural-language `query` from the full question and the selected focus below, without changing the user's intent.\n"
+        "Only apply publication-date, document-type, or organization filters when the user explicitly requests them.\n"
+        f"{CITATION_INSTRUCTIONS}"
+        "If the search returns no relevant evidence, say so rather than inventing support.\n\n"
         f"{history_section}"
-        f'full_question:\n"{question}"\n\n'
-        f'keywords_related_to_question="{keyword}" '
-        "Provide an evidence-informed explanation when possible.\n"
+        f'Question:\n"{question}"\n\n'
+        f'Selected focus:\n"{focus}"\n'
     )
 
 
