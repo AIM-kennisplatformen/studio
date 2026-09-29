@@ -228,3 +228,5 @@ secretspec.toml
 
 .vite
 /.data/
+
+/backend/mcp_tools.local.json
