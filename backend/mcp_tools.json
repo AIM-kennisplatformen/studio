@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "scepa-literature": {
-      "url": "http://host.docker.internal:8002/mcp",
-      "auth": "change-me-local"
+      "url": "https://kp.mads-han.src.surf-hosted.nl/mcp",
+      "auth": null
     }
   }
 }
