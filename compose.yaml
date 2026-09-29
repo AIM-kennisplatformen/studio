@@ -4,15 +4,14 @@ services:
       context: ./backend
       target: development
     environment:
-      - BACKEND_BASE_URL=${BACKEND_BASE_URL:-http://localhost:10090/chatep/api}
-      - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:10090/chatep/}
-      - FRONTEND_ORIGIN=${FRONTEND_ORIGIN:-http://localhost:10090}
+      - BACKEND_BASE_URL=${BACKEND_BASE_URL:-http://localhost:10090/api}
+      - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:10090}
       - MCP_USE_OAUTH=${MCP_USE_OAUTH:-false}
       - OAUTH_DISCOVERY_URL
       - OAUTH_CLIENT_ID
       - OAUTH_CLIENT_SECRET
       - OAUTH_LOGOUT_URL
-      - OAUTH_REDIRECT_URI=${OAUTH_REDIRECT_URI:-http://localhost:10090/chatep/api/auth/callback}
+      - OAUTH_REDIRECT_URI=${OAUTH_REDIRECT_URI:-http://localhost:10090/api/auth/callback}
       - SESSION_SECRET
       - LANGFUSE_SECRET_KEY
       - LANGFUSE_PUBLIC_KEY
@@ -21,10 +20,10 @@ services:
       - OPENAI_API_KEY
       - LLM_MODEL
       - MCP_TOOL_CONFIG_PATH=${MCP_TOOL_CONFIG_PATH:-mcp_tools.json}
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - REDIS_EXPIRATION_TIME=${REDIS_EXPIRATION_TIME:-86400}
       - CHAT_HISTORY_LIMIT=${CHAT_HISTORY_LIMIT:-10}
-      - POSTGRES_URL=${POSTGRES_URL:-postgresql://studio:studio@studio_postgres:5432/studio}
+      - POSTGRES_URL=${POSTGRES_URL}
       - QDRANT_URL
       - QDRANT_PORT=${QDRANT_PORT:-6333}
       - ZOTERO_API_KEY
@@ -61,10 +60,13 @@ services:
 
   redis:
     image: redis:8-alpine
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
       - "${REDIS_PORT:-6379}:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -73,9 +75,9 @@ services:
   studio_postgres:
     image: postgres:18-alpine
     environment:
-      POSTGRES_DB: studio
-      POSTGRES_USER: studio
-      POSTGRES_PASSWORD: studio
+      POSTGRES_DB: ${STUDIO_POSTGRES_DB}
+      POSTGRES_USER: ${STUDIO_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${STUDIO_POSTGRES_PASSWORD}
       PGDATA: /var/lib/postgresql/18/docker
     ports:
       - "${POSTGRES_PORT:-5433}:5432"
