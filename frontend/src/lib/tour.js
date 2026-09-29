@@ -1,7 +1,11 @@
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import { getDefaultStore } from "jotai";
-import { messagesAtom, selectedNodeAtom } from "./atoms";
+import {
+  messagesAtom,
+  selectedNodeAtom,
+  graphMoveEndTriggerAtom,
+} from "./atoms";
 
 export const TOUR_QUESTION = "How can I navigate through the graph?";
 export const TOUR_MESSAGE_NAME = "tour_message";
@@ -18,8 +22,9 @@ const DOCUMENT_TYPES = [
   "Project reports",
 ];
 
-// Time for the graph to re-layout and finish its re-centering animation
-const GRAPH_SETTLE_MS = 800;
+// Safety cap while waiting for the graph's real "settled" signal (moveend),
+// in case it never fires for some reason
+const GRAPH_SETTLE_TIMEOUT_MS = 1500;
 
 let activeTour = null;
 let anchorEl = null;
@@ -108,12 +113,32 @@ function removeTourMessages() {
   );
 }
 
-/** Simulates a user click on a node through React Flow's own click handling */
+/** Hides the highlight overlay + popover so they don't render mid-animation */
+function hideDuringTransition() {
+  document.body.classList.add("tour-transitioning");
+}
+
+/** Reveals the highlight overlay + popover again; call once a step is active */
+function showAfterTransition() {
+  document.body.classList.remove("tour-transitioning");
+}
+
+/**
+ * Simulates a user click on a node through React Flow's own click handling,
+ * then waits for the graph's real moveend signal (not a guessed delay)
+ * before letting the caller advance to the next step.
+ */
 async function clickNode(label) {
   const node = await waitFor(() => findNode(label));
   if (!node) return false;
+
+  hideDuringTransition();
+  const before = store.get(graphMoveEndTriggerAtom);
   node.click();
-  await sleep(GRAPH_SETTLE_MS);
+  await waitFor(
+    () => store.get(graphMoveEndTriggerAtom) !== before,
+    GRAPH_SETTLE_TIMEOUT_MS
+  );
   return true;
 }
 
@@ -233,6 +258,11 @@ export function startTour() {
 
   activeTour = driver({
     steps: buildSteps(),
+    // driver.js's own built-in ~400ms highlight-glide/popover-fade would run
+    // *after* our hide/show handling below, adding a second, uncoordinated
+    // animation on top of the real "graph settled" signal. We already
+    // control exactly when a step's highlight appears, so switch it off.
+    animate: false,
     showProgress: true,
     progressText: "{{current}} of {{total}}",
     showButtons: ["next", "close"],
@@ -242,12 +272,14 @@ export function startTour() {
     disableActiveInteraction: true,
     stagePadding: 6,
     onHighlightStarted: (_element, step) => {
+      showAfterTransition();
       document.body.classList.toggle(
         "tour-no-overlay",
         step.popover?.popoverClass === "tour-floating"
       );
     },
     onDestroyed: () => {
+      showAfterTransition();
       document.body.classList.remove("tour-no-overlay");
       removeAnchor();
       removeTourMessages();

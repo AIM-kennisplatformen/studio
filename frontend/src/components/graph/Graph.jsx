@@ -13,6 +13,7 @@ import {
   centerNodeAtom,
   layoutNodesAtom,
   selectNodeEmitAtom,
+  graphMoveEndTriggerAtom,
 } from "../../lib/atoms";
 
 function getSubgraph(data, nodeId) {
@@ -36,6 +37,7 @@ export default function Graph({ data, width }) {
   const [, setCenterNodeId] = useAtom(centerNodeAtom);
   const [layoutNodes, setLayoutNodes] = useAtom(layoutNodesAtom);
   const emitSelectNode = useAtomValue(selectNodeEmitAtom);
+  const [, setGraphMoveEndTrigger] = useAtom(graphMoveEndTriggerAtom);
 
   const { getViewport, setViewport, fitView } = useReactFlow();
   const containerRef = useRef(null);
@@ -209,6 +211,11 @@ export default function Graph({ data, width }) {
     ]
   );
 
+  /** Signal that the viewport's pan/zoom animation (e.g. from centerNodeInView) has finished */
+  const onMoveEnd = useCallback(() => {
+    setGraphMoveEndTrigger((t) => t + 1);
+  }, [setGraphMoveEndTrigger]);
+
   /** Fit view on container resize */
   useEffect(() => {
     const container = containerRef.current;
@@ -229,6 +236,7 @@ export default function Graph({ data, width }) {
         nodeTypes={{ custom: CustomNode }}
         edgeTypes={{ solid: SolidEdge }}
         onNodeClick={onNodeClick}
+        onMoveEnd={onMoveEnd}
         selectNodesOnDrag={false}
         fitView
         attributionPosition="bottom-left"

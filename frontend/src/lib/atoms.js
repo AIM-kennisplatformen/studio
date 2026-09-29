@@ -47,6 +47,11 @@ export const layoutNodesAtom = atom([]);
 export const graphRefetchTriggerAtom = atom(0);
 export const selectNodeEmitAtom = atom(null);
 
+// Bumped whenever the graph's viewport pan/zoom animation ends, so other
+// parts of the app (e.g. the onboarding tour) can wait for the graph to
+// actually finish moving instead of guessing with a timer.
+export const graphMoveEndTriggerAtom = atom(0);
+
 // Atom holding (sessionId, name) => void, wired up in useChatWebSocket,
 // so components outside the socket-owning tree can trigger a title revert.
 export const revertTitleEmitAtom = atom(null);

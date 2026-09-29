@@ -207,3 +207,34 @@ button:hover {
 body.tour-no-overlay .driver-overlay {
   display: none;
 }
+
+/* Onboarding tour: hide the highlight + popover while the graph is still
+   panning/re-laying out, so nothing renders pointing at a stale position.
+   Opacity (not display) so the highlight can fade out smoothly too. */
+.driver-overlay {
+  transition: opacity 200ms ease;
+}
+body.tour-transitioning .driver-overlay,
+body.tour-transitioning .driver-popover {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Each step's popover is a freshly-created element (driver.js doesn't
+   reuse the old one), so it always mounts at opacity: 1 with nothing to
+   transition from - an `animation` (plays on mount) eases it in instead
+   of a `transition` (needs a prior state), giving a gradual entrance
+   rather than an instant flash once the graph has settled. */
+@keyframes tour-popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.driver-popover {
+  animation: tour-popover-in 240ms ease-out;
+}
