@@ -5,6 +5,8 @@ services:
   backend:
     build:
       target: release
+    ports: !override
+      - "127.0.0.1:${BACKEND_PORT:-10092}:10090"
     volumes: !reset []
 
   frontend:
@@ -12,5 +14,13 @@ services:
       target: release
     environment: !reset {}
     ports: !override
-      - "${FRONTEND_PORT:-10090}:80"
+      - "127.0.0.1:${FRONTEND_PORT:-10090}:80"
     volumes: !reset []
+
+  redis:
+    ports: !override
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+
+  studio_postgres:
+    ports: !override
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"

@@ -65,6 +65,54 @@ docker compose -f compose.release.yaml up --build
 
 Nginx serves the SPA and proxies `/api` to the backend container.
 
+### Release networking and administrative access
+
+The release Compose configuration builds the backend and frontend `release`
+stages and binds every published port to `127.0.0.1`. This keeps the services
+reachable from the deployment host without exposing them through the VM's
+public network interfaces.
+
+The frontend loopback port is intended as the upstream for a reverse proxy such
+as Caddy, which should provide public HTTPS on ports 80 and 443. The direct
+backend, Redis, and PostgreSQL ports are for administration and diagnostics;
+do not change them to `0.0.0.0`. Access them remotely through SSH tunnels.
+
+| Service | Release endpoint on the VM |
+|---|---|
+| Frontend and proxied API | `http://127.0.0.1:10090` |
+| Backend, for direct diagnostics | `http://127.0.0.1:10092/api` |
+| Redis | `127.0.0.1:6379` |
+| PostgreSQL | `127.0.0.1:5433` |
+
+For example, forward PostgreSQL to port `5433` on an administrator workstation:
+
+```bash
+ssh -N -L 5433:127.0.0.1:5433 user@your-vm
+```
+
+Multiple services can be forwarded in one SSH session:
+
+```bash
+ssh -N \
+  -L 10092:127.0.0.1:10092 \
+  -L 6379:127.0.0.1:6379 \
+  -L 5433:127.0.0.1:5433 \
+  user@your-vm
+```
+
+Keep the SSH session open while using the forwarded services. Replace
+`user@your-vm` with the deployment account and VM hostname. If a local port is
+already occupied, change only the first port in its rule; for example,
+`-L 15433:127.0.0.1:5433` exposes PostgreSQL locally on port `15433`.
+
+Port variables in `.env` change both the VM loopback port and the corresponding
+SSH-tunnel source port. Inspect the effective release configuration before
+deployment with:
+
+```bash
+docker compose -f compose.release.yaml config
+```
+
 ## Backend development
 
 Run backend tooling from the backend Pixi project:
