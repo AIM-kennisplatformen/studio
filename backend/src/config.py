@@ -124,11 +124,14 @@ def require_env(name: str, default: str | None = None) -> str:
 
 
 config: dict = {
-    "base_url": require_env("BACKEND_BASE_URL", "http://localhost:10090/api").rstrip(
-        "/"
-    ),
+    "base_url": require_env(
+        "BACKEND_BASE_URL", "http://localhost:10090/chatep/api"
+    ).rstrip("/"),
     "frontend_base_url": require_env(
-        "FRONTEND_BASE_URL", "http://localhost:10090"
+        "FRONTEND_BASE_URL", "http://localhost:10090/chatep/"
+    ).rstrip("/"),
+    "frontend_origin": require_env(
+        "FRONTEND_ORIGIN", "http://localhost:10090"
     ).rstrip("/"),
     "discovery_url": require_env(
         "OAUTH_DISCOVERY_URL",
@@ -139,7 +142,8 @@ config: dict = {
         "https://authscepa.mads-han.src.surf-hosted.nl/application/o/kg-dev/end-session/",
     ),
     "oauth_redirect_uri": require_env(
-        "OAUTH_REDIRECT_URI", "http://localhost:10090/api/auth/callback"
+        "OAUTH_REDIRECT_URI",
+        "http://localhost:10090/chatep/api/auth/callback",
     ),
     "client_id": require_env(
         "OAUTH_CLIENT_ID", "rkuclih8uzm44nTUvwasexioUKFk5aG1zhG8jcJX"

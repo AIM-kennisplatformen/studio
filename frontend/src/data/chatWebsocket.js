@@ -12,7 +12,7 @@ import {
 import { io } from "socket.io-client";
 
 export function useChatWebSocket(setStatus, onTitleUpdate) {
-  const SOCKET_PATH = "/api/socket.io";
+  const SOCKET_PATH = `${import.meta.env.BASE_URL}api/socket.io`;
 
   const setMessages = useSetAtom(messagesAtom);
   const setLastDoneMessageKey = useSetAtom(lastDoneMessageKeyAtom);

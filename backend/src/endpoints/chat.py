@@ -56,7 +56,7 @@ from src.utility.session_store import (
     set_active_session_id,
 )
 
-cors_origins = [config["frontend_base_url"]]
+cors_origins = [config["frontend_origin"]]
 
 sio = socketio.AsyncServer(
     async_mode="asgi",
