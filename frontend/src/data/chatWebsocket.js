@@ -8,11 +8,12 @@ import {
   selectNodeEmitAtom,
   revertTitleEmitAtom,
   showTitleNotificationsAtom,
+  selectedNodeAtom,
 } from "../lib/atoms";
 import { io } from "socket.io-client";
 
 export function useChatWebSocket(setStatus, onTitleUpdate) {
-  const SOCKET_PATH = "/api/socket.io";
+  const SOCKET_PATH = `${import.meta.env.BASE_URL}api/socket.io`;
 
   const setMessages = useSetAtom(messagesAtom);
   const setLastDoneMessageKey = useSetAtom(lastDoneMessageKeyAtom);
@@ -20,6 +21,7 @@ export function useChatWebSocket(setStatus, onTitleUpdate) {
   const setSelectedNodeEmit = useSetAtom(selectNodeEmitAtom);
   const setRevertTitleEmit = useSetAtom(revertTitleEmitAtom);
   const showTitleNotifications = useAtomValue(showTitleNotificationsAtom);
+  const selectedNode = useAtomValue(selectedNodeAtom);
   const socketRef = useRef(null);
   const streamingKeyRef = useRef(null);
   const chatModelStartCountRef = useRef(0);
@@ -154,7 +156,10 @@ export function useChatWebSocket(setStatus, onTitleUpdate) {
     streamingKeyRef.current = null;
     chatModelStartCountRef.current = 0;
     setStatus("thinking");
-    socketRef.current?.emit("send_message", { message: msg });
+    socketRef.current?.emit("send_message", {
+      message: msg,
+      selected_node_id: selectedNode?.id ? Number(selectedNode.id) : 1,
+    });
   };
 
   return { send };

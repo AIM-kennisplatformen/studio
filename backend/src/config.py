@@ -1,4 +1,5 @@
 import os
+import re
 import secrets
 from pathlib import Path
 
@@ -10,66 +11,143 @@ load_dotenv(backend_root / ".env")
 load_dotenv(backend_root.parent / ".env")
 
 
+CITATION_INSTRUCTIONS = (
+    "Use only the returned passages as evidence.\n"
+    "After deciding which documents you actually use, assign them consecutive citation numbers in order of first citation.\n"
+    "Cite supported claims in the answer with bracketed numbers such as [1], and reuse the same number whenever you cite the same document.\n"
+    "Separate the references from the answer body with a blank line and the exact Markdown heading `## References`.\n"
+    "After the heading, add another blank line and format the references as an ordered Markdown list with one reference per line (`1. ...`, `2. ...`).\n"
+    "Never place a reference on the same line as the heading, and never combine multiple references on one line.\n"
+    "Include only cited documents, exactly once each and in first-citation order.\n"
+    "For each list item, copy the document's `ieee_reference` verbatim after the list marker.\n"
+    "Never show `pdf_hash` values or relevance scores.\n"
+)
+
+USER_PERSONA_BY_FOCUS = {
+    "Best practices": "best_practices",
+    "Target groups": "target_groups",
+    "Strategic overview": "strategic_overview",
+}
+USER_PERSONA_TERMS = {
+    "best_practices": (r"\bbest[ -]practices?\b",),
+    "target_groups": (r"\btarget[ -]groups?\b",),
+    "strategic_overview": (r"\bstrategic[ -]overview\b",),
+}
+LITERATURE_KIND_TERMS = {
+    "grey_literature": (r"\bgr[ae]y[ -]literature\b",),
+    "scientific_literature": (r"\bscientific[ -]literature\b",),
+    "project_report": (r"\bproject[ -]reports?\b",),
+}
+
+
+def _matching_classifications(
+    question: str, terms: dict[str, tuple[str, ...]]
+) -> list[str]:
+    return [
+        value
+        for value, patterns in terms.items()
+        if any(
+            re.search(pattern, question, flags=re.IGNORECASE) for pattern in patterns
+        )
+    ]
+
+
+def _tool_filter_instructions(
+    question: str,
+    required_user_personas: list[str] | None = None,
+    required_literature_kinds: list[str] | None = None,
+) -> str:
+    user_personas = required_user_personas or _matching_classifications(
+        question, USER_PERSONA_TERMS
+    )
+    literature_kinds = required_literature_kinds or _matching_classifications(
+        question, LITERATURE_KIND_TERMS
+    )
+
+    persona_instruction = (
+        f"user_personas={user_personas!r}" if user_personas else "omit `user_personas`"
+    )
+    literature_instruction = (
+        f"literature_kinds={literature_kinds!r}"
+        if literature_kinds
+        else "omit `literature_kinds`"
+    )
+    return (
+        "Call the tool with these resolved classification filters exactly as shown; "
+        "they already combine the selected graph node with explicit classifications in the question:\n"
+        f"{persona_instruction}\n"
+        f"{literature_instruction}\n"
+    )
+
+
 def root_question_prompt(question: str, history_text: str = "") -> str:
     history_section = (
         f"Conversation History:\n{history_text}\n\n" if history_text else ""
     )
     return (
         "SYSTEM META-INSTRUCTION:\n"
-        "Use the `get_literature_supported_knowledge` MCP tool to identify sources relevant to the question.\n\n"
+        "Use the `search_literature` MCP tool before answering.\n"
+        "Search for evidence that addresses the full question, with particular attention to best practices, target groups, and strategic considerations.\n"
+        f"{_tool_filter_instructions(question)}"
+        "Only apply publication-date, document-type, or organization filters when the user explicitly requests them.\n"
+        f"{CITATION_INSTRUCTIONS}"
+        "If the search returns no relevant evidence, say so rather than inventing support.\n\n"
         f"{history_section}"
-        f'full_question:\n"{question}"\n\n'
-        'keywords_related_to_question="Best practices || Target groups || Strategic overview"\n'
-        "Provide an evidence-informed explanation when possible.\n"
+        f'Question:\n"{question}"\n'
     )
 
 
-def subnode_question_prompt(question: str, subnode: str, history_text: str = "") -> str:
+def subnode_question_prompt(
+    question: str,
+    subnode: str,
+    history_text: str = "",
+    required_user_personas: list[str] | None = None,
+    required_literature_kinds: list[str] | None = None,
+) -> str:
     history_section = (
         f"Conversation History:\n{history_text}\n\n" if history_text else ""
     )
-    keyword = (
-        subnode
-        if subnode != "root"
-        else "Best practices || Target groups || Strategic overview"
-    )
+    focus = subnode if subnode != "root" else "all user personas"
+    if required_user_personas is None and subnode in USER_PERSONA_BY_FOCUS:
+        required_user_personas = [USER_PERSONA_BY_FOCUS[subnode]]
     return (
         "SYSTEM META-INSTRUCTION:\n"
-        "If relevant, use the `paper_search` MCP tool to identify scientific "
-        "literature or studies relevant to the question.\n\n"
-        "Don't alter question and keywords below — insert them straight into the tool.\n"
+        "Use the `search_literature` MCP tool before answering.\n"
+        "Form its natural-language `query` from the full question and the selected focus below, without changing the user's intent.\n"
+        f"{_tool_filter_instructions(question, required_user_personas, required_literature_kinds)}"
+        "Only apply publication-date, document-type, or organization filters when the user explicitly requests them.\n"
+        f"{CITATION_INSTRUCTIONS}"
+        "If the search returns no relevant evidence, say so rather than inventing support.\n\n"
         f"{history_section}"
-        f'full_question:\n"{question}"\n\n'
-        f'keywords_related_to_question="{keyword}" '
-        "Provide an evidence-informed explanation when possible.\n"
+        f'Question:\n"{question}"\n\n'
+        f'Selected focus:\n"{focus}"\n'
     )
 
 
 def node_no_question_prompt() -> str:
     return (
-        "Do you want to ask a question, answered by the full body of literature? "
+        "Do you want to ask a question, answered by the full body of literature?\n"
         "Please proceed, by asking me your question?"
     )
 
 
 def node_repeat_question_prompt(question: str) -> str:
     return (
-        "Answer a question by using the full body of literature. "
-        f"Would you like to ask a different question than: '{question}'? "
+        "Answer a question by using the full body of literature.\n"
+        f"Would you like to ask a different question than: '{question}'?\n"
         "**Respond with another question** or type **yes** to repeat the previous question."
     )
 
 
 def subnode_no_question_prompt(subnode: str) -> str:
-    return f"You've selected subset {subnode}. Please ask me your question?"
+    return f"You've selected subset {subnode}.\nPlease ask me your question?"
 
 
 def subnode_repeat_question_prompt(subnode: str, question: str) -> str:
     return (
-        f"You've selected subset {subnode}. "
-        "Please ask me your question using this subset. "
-        f"If you want to repeat your previous question: `{question}` "
-        "type **yes**, otherwise **Respond with another question**."
+        f"You've selected subset {subnode}.\n"
+        "Please ask me your question using this subset.\n"
+        f"If you want to repeat your previous question: `{question}` type **yes**, otherwise **Respond with another question**."
     )
 
 
@@ -83,12 +161,15 @@ def require_env(name: str, default: str | None = None) -> str:
 
 
 config: dict = {
-    "base_url": require_env("BACKEND_BASE_URL", "http://localhost:10090/api").rstrip(
+    "base_url": require_env(
+        "BACKEND_BASE_URL", "http://localhost:10090/chatep/api"
+    ).rstrip("/"),
+    "frontend_base_url": require_env(
+        "FRONTEND_BASE_URL", "http://localhost:10090/chatep/"
+    ).rstrip("/"),
+    "frontend_origin": require_env("FRONTEND_ORIGIN", "http://localhost:10090").rstrip(
         "/"
     ),
-    "frontend_base_url": require_env(
-        "FRONTEND_BASE_URL", "http://localhost:10090"
-    ).rstrip("/"),
     "discovery_url": require_env(
         "OAUTH_DISCOVERY_URL",
         "http://auth.localhost:10091/application/o/kg/.well-known/openid-configuration",
@@ -98,7 +179,8 @@ config: dict = {
         "https://authscepa.mads-han.src.surf-hosted.nl/application/o/kg-dev/end-session/",
     ),
     "oauth_redirect_uri": require_env(
-        "OAUTH_REDIRECT_URI", "http://localhost:10090/api/auth/callback"
+        "OAUTH_REDIRECT_URI",
+        "http://localhost:10090/chatep/api/auth/callback",
     ),
     "client_id": require_env(
         "OAUTH_CLIENT_ID", "rkuclih8uzm44nTUvwasexioUKFk5aG1zhG8jcJX"
@@ -124,14 +206,12 @@ config: dict = {
 
 STATIC_TITLE_PROMPT = (
     "Create a concise title for this chat session.\n"
-    "Rules: maximum 6 words, no quotation marks, no trailing punctuation, "
-    "and no extra text.\n\n"
+    "Rules: maximum 6 words, no quotation marks, no trailing punctuation, and no extra text.\n\n"
     "First user message:\n{question}\n\nAI response:\n{answer}"
 )
 
 DYNAMIC_TITLE_PROMPT = (
-    "Create a concise title for this chat session based on the "
-    "latest conversation.\nRules: maximum 6 words, no quotation marks, "
-    "no trailing punctuation, and no extra text.\n\n"
+    "Create a concise title for this chat session based on the latest conversation.\n"
+    "Rules: maximum 6 words, no quotation marks, no trailing punctuation, and no extra text.\n\n"
     "Recent conversation:\n{conversation_text}"
 )

@@ -1,7 +1,7 @@
 {
   "mcpServers": {
-    "paper": {
-      "url": "https://kp.mads-han.src.surf-hosted.nl/mcp",
+    "scepa-literature": {
+      "url": "https://scepakp.mads-han.src.surf-hosted.nl/mcp",
       "auth": null
     }
   }

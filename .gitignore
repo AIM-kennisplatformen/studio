@@ -227,3 +227,8 @@ secretspec.toml
 .vscode/settings.json
 
 .vite
+/.data/
+
+/backend/mcp_tools.local.json
+.env.*
+!.env.sample

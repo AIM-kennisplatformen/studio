@@ -157,6 +157,21 @@ def test_format_history_text_uses_api_roles():
     assert chat_module._format_history_text(messages) == "User: Question\nAI: Answer"
 
 
+def test_message_selection_is_authoritative_and_invalid_values_preserve_context():
+    assert chat_module._resolve_selected_subnode(
+        {"selected_node_id": 4}, 1, "root"
+    ) == (4, "Strategic overview")
+    assert chat_module._resolve_selected_subnode(
+        {"selected_node_id": "1"}, 4, "Strategic overview"
+    ) == (1, "root")
+    assert chat_module._resolve_selected_subnode(
+        {"selected_node_id": "unknown"}, 4, "Strategic overview"
+    ) == (4, "Strategic overview")
+    assert chat_module._resolve_selected_subnode(
+        {"selected_node_id": 11}, 4, "Strategic overview"
+    ) == (11, "Strategic overview / Scientific literature")
+
+
 def test_store_chat_message_increments_counter(monkeypatch):
     async def exercise():
         fake_store = _FakeSessionStore()
@@ -259,9 +274,7 @@ def test_dynamic_autoapply_mode_applies_and_emits(monkeypatch):
             assert updated.last_title_message_count == 25
             assert len(chat_module._pending_title_candidates) == 0
 
-            updated_emits = [
-                e for e in emissions if e[1] == "session_title_updated"
-            ]
+            updated_emits = [e for e in emissions if e[1] == "session_title_updated"]
             assert len(updated_emits) == 1
             assert updated_emits[0][2]["name"] == "Auto title"
             assert updated_emits[0][2]["previous_name"] == "Existing title"
@@ -298,9 +311,7 @@ def test_title_revert_restores_previous_name(monkeypatch):
             assert updated.title_overwritten is False
             assert updated.last_title_message_count == 25
 
-            updated_emits = [
-                e for e in emissions if e[1] == "session_title_updated"
-            ]
+            updated_emits = [e for e in emissions if e[1] == "session_title_updated"]
             assert len(updated_emits) == 1
             assert updated_emits[0][2]["name"] == "Existing title"
             assert "previous_name" not in updated_emits[0][2]
@@ -339,9 +350,7 @@ def test_title_candidate_accept_applies_and_emits(monkeypatch):
             assert updated.name == "Accepted title"
             assert candidate_id not in chat_module._pending_title_candidates
 
-            updated_emits = [
-                e for e in emissions if e[1] == "session_title_updated"
-            ]
+            updated_emits = [e for e in emissions if e[1] == "session_title_updated"]
             assert len(updated_emits) == 1
             assert updated_emits[0][2]["name"] == "Accepted title"
         finally:
