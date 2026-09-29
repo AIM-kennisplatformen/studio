@@ -230,3 +230,5 @@ secretspec.toml
 /.data/
 
 /backend/mcp_tools.local.json
+.env.*
+!.env.sample
