@@ -6,6 +6,7 @@ services:
     environment:
       - BACKEND_BASE_URL=${BACKEND_BASE_URL:-http://localhost:10090/chatep/api}
       - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:10090/chatep/}
+      - FRONTEND_ORIGIN=${FRONTEND_ORIGIN:-http://localhost:10090}
       - MCP_USE_OAUTH=${MCP_USE_OAUTH:-false}
       - OAUTH_DISCOVERY_URL
       - OAUTH_CLIENT_ID
