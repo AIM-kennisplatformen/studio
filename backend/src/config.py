@@ -1,4 +1,5 @@
 import os
+import re
 import secrets
 from pathlib import Path
 
@@ -22,24 +23,60 @@ CITATION_INSTRUCTIONS = (
     "Never show `pdf_hash` values or relevance scores.\n"
 )
 
-ALL_USER_PERSONAS = ["best_practices", "target_groups", "strategic_overview"]
-ALL_LITERATURE_KINDS = [
-    "grey_literature",
-    "scientific_literature",
-    "project_report",
-]
 USER_PERSONA_BY_FOCUS = {
     "Best practices": "best_practices",
     "Target groups": "target_groups",
     "Strategic overview": "strategic_overview",
 }
+USER_PERSONA_TERMS = {
+    "best_practices": (r"\bbest[ -]practices?\b",),
+    "target_groups": (r"\btarget[ -]groups?\b",),
+    "strategic_overview": (r"\bstrategic[ -]overview\b",),
+}
+LITERATURE_KIND_TERMS = {
+    "grey_literature": (r"\bgr[ae]y[ -]literature\b",),
+    "scientific_literature": (r"\bscientific[ -]literature\b",),
+    "project_report": (r"\bproject[ -]reports?\b",),
+}
 
 
-def _tool_filter_instructions(user_personas: list[str]) -> str:
+def _matching_classifications(
+    question: str, terms: dict[str, tuple[str, ...]]
+) -> list[str]:
+    return [
+        value
+        for value, patterns in terms.items()
+        if any(
+            re.search(pattern, question, flags=re.IGNORECASE) for pattern in patterns
+        )
+    ]
+
+
+def _tool_filter_instructions(
+    question: str,
+    required_user_personas: list[str] | None = None,
+    required_literature_kinds: list[str] | None = None,
+) -> str:
+    user_personas = required_user_personas or _matching_classifications(
+        question, USER_PERSONA_TERMS
+    )
+    literature_kinds = required_literature_kinds or _matching_classifications(
+        question, LITERATURE_KIND_TERMS
+    )
+
+    persona_instruction = (
+        f"user_personas={user_personas!r}" if user_personas else "omit `user_personas`"
+    )
+    literature_instruction = (
+        f"literature_kinds={literature_kinds!r}"
+        if literature_kinds
+        else "omit `literature_kinds`"
+    )
     return (
-        "Call the tool with these classification filters exactly as shown:\n"
-        f"user_personas={user_personas!r}\n"
-        f"literature_kinds={ALL_LITERATURE_KINDS!r}\n"
+        "Call the tool with these resolved classification filters exactly as shown; "
+        "they already combine the selected graph node with explicit classifications in the question:\n"
+        f"{persona_instruction}\n"
+        f"{literature_instruction}\n"
     )
 
 
@@ -51,7 +88,7 @@ def root_question_prompt(question: str, history_text: str = "") -> str:
         "SYSTEM META-INSTRUCTION:\n"
         "Use the `search_literature` MCP tool before answering.\n"
         "Search for evidence that addresses the full question, with particular attention to best practices, target groups, and strategic considerations.\n"
-        f"{_tool_filter_instructions(ALL_USER_PERSONAS)}"
+        f"{_tool_filter_instructions(question)}"
         "Only apply publication-date, document-type, or organization filters when the user explicitly requests them.\n"
         f"{CITATION_INSTRUCTIONS}"
         "If the search returns no relevant evidence, say so rather than inventing support.\n\n"
@@ -60,21 +97,24 @@ def root_question_prompt(question: str, history_text: str = "") -> str:
     )
 
 
-def subnode_question_prompt(question: str, subnode: str, history_text: str = "") -> str:
+def subnode_question_prompt(
+    question: str,
+    subnode: str,
+    history_text: str = "",
+    required_user_personas: list[str] | None = None,
+    required_literature_kinds: list[str] | None = None,
+) -> str:
     history_section = (
         f"Conversation History:\n{history_text}\n\n" if history_text else ""
     )
     focus = subnode if subnode != "root" else "all user personas"
-    user_personas = (
-        [USER_PERSONA_BY_FOCUS[subnode]]
-        if subnode in USER_PERSONA_BY_FOCUS
-        else ALL_USER_PERSONAS
-    )
+    if required_user_personas is None and subnode in USER_PERSONA_BY_FOCUS:
+        required_user_personas = [USER_PERSONA_BY_FOCUS[subnode]]
     return (
         "SYSTEM META-INSTRUCTION:\n"
         "Use the `search_literature` MCP tool before answering.\n"
         "Form its natural-language `query` from the full question and the selected focus below, without changing the user's intent.\n"
-        f"{_tool_filter_instructions(user_personas)}"
+        f"{_tool_filter_instructions(question, required_user_personas, required_literature_kinds)}"
         "Only apply publication-date, document-type, or organization filters when the user explicitly requests them.\n"
         f"{CITATION_INSTRUCTIONS}"
         "If the search returns no relevant evidence, say so rather than inventing support.\n\n"
@@ -100,10 +140,7 @@ def node_repeat_question_prompt(question: str) -> str:
 
 
 def subnode_no_question_prompt(subnode: str) -> str:
-    return (
-        f"You've selected subset {subnode}.\n"
-        "Please ask me your question?"
-    )
+    return f"You've selected subset {subnode}.\nPlease ask me your question?"
 
 
 def subnode_repeat_question_prompt(subnode: str, question: str) -> str:
@@ -130,9 +167,9 @@ config: dict = {
     "frontend_base_url": require_env(
         "FRONTEND_BASE_URL", "http://localhost:10090/chatep/"
     ).rstrip("/"),
-    "frontend_origin": require_env(
-        "FRONTEND_ORIGIN", "http://localhost:10090"
-    ).rstrip("/"),
+    "frontend_origin": require_env("FRONTEND_ORIGIN", "http://localhost:10090").rstrip(
+        "/"
+    ),
     "discovery_url": require_env(
         "OAUTH_DISCOVERY_URL",
         "http://auth.localhost:10091/application/o/kg/.well-known/openid-configuration",

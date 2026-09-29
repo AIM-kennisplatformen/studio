@@ -80,6 +80,22 @@ _pending_title_candidates: dict[str, TitleCandidate] = {}
 CANDIDATE_TITLE_TIMEOUT_SECONDS = 20.0
 
 
+def _resolve_selected_subnode(
+    data: dict, current_node_id: int, current: str
+) -> tuple[int, str]:
+    selected_node_id = data.get("selected_node_id")
+    try:
+        selected_node_id = int(selected_node_id)
+    except (TypeError, ValueError):
+        return current_node_id, current
+
+    if selected_node_id == 1:
+        return selected_node_id, "root"
+    if selected_node_id in SUBNODE_MAP:
+        return selected_node_id, SUBNODE_MAP[selected_node_id]
+    return current_node_id, current
+
+
 async def _resolve_active_session(
     user_id: str,
     session_state: dict | None = None,
@@ -387,7 +403,9 @@ async def connect(sid, environ, auth):
     bind_user(user_id, sid)
     user_title_settings[user_id] = bool(session.get("dynamic_title", True))
     await _resolve_active_session(user_id, session, create=False)
-    user_graph_contexts[user_id] = _default_user_graph_context()
+    # Preserve graph focus across reconnects and additional tabs. The client also
+    # sends its current selection with every message, which remains authoritative.
+    user_graph_contexts.setdefault(user_id, _default_user_graph_context())
     start_session(user_id, sid)
     print(f"✓ Socket connected: {sid} user={user_id}")
 
@@ -447,13 +465,27 @@ async def send_message(sid, data):
 
         ctx = user_graph_contexts[user_id]
 
-        selected_subnode = ctx.get("selected_subnode", "root")
+        selected_node_id, selected_subnode = _resolve_selected_subnode(
+            data,
+            ctx.get("selected_node_id", 1),
+            ctx.get("selected_subnode", "root"),
+        )
+        ctx["selected_node_id"] = selected_node_id
+        ctx["selected_subnode"] = selected_subnode
         dialogue_state_asked = bool(ctx.get("dialogue_state_asked", False))
         prefetched = (ctx.get("prefetched") or {}).get(selected_subnode)
 
+        trace_input = {
+            "message": user_msg,
+            "selected_node_id": selected_node_id,
+            "selected_subnode": selected_subnode,
+        }
+        root_span.update(input=trace_input)
+        root_span.update_trace(input=trace_input)
+
         full_response = ""
 
-        if dialogue_state_asked:
+        if dialogue_state_asked or selected_subnode != "root":
             try:
                 if user_msg.lower() == "yes":
                     # Use prefetched if available
@@ -503,6 +535,7 @@ async def send_message(sid, data):
                     history_text=history_text,
                     trace_id=trace_id,
                     session_id=durable_session_id_str,
+                    selected_node_id=selected_node_id,
                 )
                 full_response = ctx.get("prefetched", {}).get(selected_subnode, "")
                 await _store_chat_message(
@@ -536,7 +569,6 @@ async def send_message(sid, data):
         # --------------------------------------------------
         ctx["previous_question"] = ctx.get("latest_question")
         ctx["latest_question"] = user_msg
-        ctx["selected_subnode"] = "root"
         ctx["dialogue_state_asked"] = False
 
         synthetic_prompt = root_question_prompt(user_msg, history_text)
@@ -591,6 +623,7 @@ async def select_node(sid, data):
     question = ctx.get("latest_question")
 
     if node_id == 1:
+        ctx["selected_node_id"] = 1
         ctx["selected_subnode"] = "root"
         ctx["dialogue_state_asked"] = False
 
@@ -612,6 +645,7 @@ async def select_node(sid, data):
 
     if node_id in SUBNODE_MAP:
         subnode = SUBNODE_MAP[node_id]
+        ctx["selected_node_id"] = node_id
         ctx["selected_subnode"] = subnode
         ctx["dialogue_state_asked"] = False
 
