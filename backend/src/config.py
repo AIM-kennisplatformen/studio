@@ -22,6 +22,26 @@ CITATION_INSTRUCTIONS = (
     "Never show `pdf_hash` values or relevance scores.\n"
 )
 
+ALL_USER_PERSONAS = ["best_practices", "target_groups", "strategic_overview"]
+ALL_LITERATURE_KINDS = [
+    "grey_literature",
+    "scientific_literature",
+    "project_report",
+]
+USER_PERSONA_BY_FOCUS = {
+    "Best practices": "best_practices",
+    "Target groups": "target_groups",
+    "Strategic overview": "strategic_overview",
+}
+
+
+def _tool_filter_instructions(user_personas: list[str]) -> str:
+    return (
+        "Call the tool with these classification filters exactly as shown:\n"
+        f"user_personas={user_personas!r}\n"
+        f"literature_kinds={ALL_LITERATURE_KINDS!r}\n"
+    )
+
 
 def root_question_prompt(question: str, history_text: str = "") -> str:
     history_section = (
@@ -31,6 +51,7 @@ def root_question_prompt(question: str, history_text: str = "") -> str:
         "SYSTEM META-INSTRUCTION:\n"
         "Use the `search_literature` MCP tool before answering.\n"
         "Search for evidence that addresses the full question, with particular attention to best practices, target groups, and strategic considerations.\n"
+        f"{_tool_filter_instructions(ALL_USER_PERSONAS)}"
         "Only apply publication-date, document-type, or organization filters when the user explicitly requests them.\n"
         f"{CITATION_INSTRUCTIONS}"
         "If the search returns no relevant evidence, say so rather than inventing support.\n\n"
@@ -43,15 +64,17 @@ def subnode_question_prompt(question: str, subnode: str, history_text: str = "")
     history_section = (
         f"Conversation History:\n{history_text}\n\n" if history_text else ""
     )
-    focus = (
-        subnode
-        if subnode != "root"
-        else "Best practices || Target groups || Strategic overview"
+    focus = subnode if subnode != "root" else "all user personas"
+    user_personas = (
+        [USER_PERSONA_BY_FOCUS[subnode]]
+        if subnode in USER_PERSONA_BY_FOCUS
+        else ALL_USER_PERSONAS
     )
     return (
         "SYSTEM META-INSTRUCTION:\n"
         "Use the `search_literature` MCP tool before answering.\n"
         "Form its natural-language `query` from the full question and the selected focus below, without changing the user's intent.\n"
+        f"{_tool_filter_instructions(user_personas)}"
         "Only apply publication-date, document-type, or organization filters when the user explicitly requests them.\n"
         f"{CITATION_INSTRUCTIONS}"
         "If the search returns no relevant evidence, say so rather than inventing support.\n\n"
