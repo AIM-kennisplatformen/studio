@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { ReactFlow, useReactFlow } from "@xyflow/react";
+import { ReactFlow, useReactFlow, applyNodeChanges } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { CustomNode } from "./nodes/CustomNode";
 import { SolidEdge } from "./nodes/CustomEdge";
@@ -187,6 +187,46 @@ export default function Graph({ data, width }) {
     if (isFirstLoad) prepareGraphData(getSubgraph(data, 1));
   }, [data, prepareGraphData]);
 
+  const updateEdges = useCallback((currentNodes, currentEdges) => {
+    const nodeMap = new Map(currentNodes.map((n) => [n.id, n]));
+    return currentEdges.map((edge) => {
+      const sourceNode = nodeMap.get(edge.source);
+      const targetNode = nodeMap.get(edge.target);
+      if (!sourceNode || !targetNode) return edge;
+
+      const { sourceHandle, targetHandle } = getEdgeHandles(
+        sourceNode.position.x,
+        sourceNode.position.y,
+        targetNode.position.x,
+        targetNode.position.y
+      );
+
+      return { ...edge, sourceHandle, targetHandle };
+    });
+  }, []);
+
+  /** Apply node changes (e.g. dragging) and keep edges/positions in sync */
+  const onNodesChange = useCallback(
+    (changes) => {
+      setNodes((currentNodes) => {
+        const updatedNodes = applyNodeChanges(changes, currentNodes);
+
+        // Persist dragged positions so they survive subgraph changes
+        changes.forEach((change) => {
+          if (change.type === "position" && change.position) {
+            allPositionsRef.current.set(change.id, change.position);
+          }
+        });
+
+        nodesRef.current = updatedNodes;
+        edgesRef.current = updateEdges(updatedNodes, edgesRef.current);
+        setEdges(edgesRef.current);
+        return updatedNodes;
+      });
+    },
+    [updateEdges, setEdges, setNodes]
+  );
+
   const onNodeClick = useCallback(
     (_, node) => {
       setCenterNodeId(Number(node.id));
@@ -228,6 +268,7 @@ export default function Graph({ data, width }) {
         edges={edges}
         nodeTypes={{ custom: CustomNode }}
         edgeTypes={{ solid: SolidEdge }}
+        onNodesChange={onNodesChange}
         onNodeClick={onNodeClick}
         selectNodesOnDrag={false}
         fitView
