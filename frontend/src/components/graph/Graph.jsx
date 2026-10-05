@@ -4,7 +4,7 @@ import "@xyflow/react/dist/style.css";
 import { CustomNode } from "./nodes/CustomNode";
 import { SolidEdge } from "./nodes/CustomEdge";
 import { getEdgeHandles } from "./graphUtils";
-import { applyDagreLayout } from "./layout/cytoscapeLayout";
+import { applyFcoseLayout } from "./layout/cytoscapeLayout";
 import { useAtom, useAtomValue } from "jotai";
 import {
   nodesAtom,
@@ -131,7 +131,7 @@ export default function Graph({ data, width }) {
       const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
 
       // Apply dagre layout to new nodes, keeping fixed nodes in place
-      const layoutPositions = applyDagreLayout(newNodes, newEdges, {
+      const layoutPositions = applyFcoseLayout(newNodes, newEdges, {
         quality: "proof",
         nodeSeparation: 200,
         idealEdgeLength: 300,

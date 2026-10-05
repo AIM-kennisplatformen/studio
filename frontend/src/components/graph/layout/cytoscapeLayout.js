@@ -211,7 +211,8 @@ export function applyFcoseLayout(nodes, edges, options = {}) {
   // Run fcose layout with options
   const layout = cy.layout({
     name: "fcose",
-    // Disable animations - layout runs synchronously
+    // Must stay false: a headless instance has no renderer, so cytoscape can't
+    // animate it (throws "ani.play is not a function"). Graph.jsx animates instead.
     animate: false,
     // Default options for fcose
     quality: options.quality || "default", // 'draft', 'default', or 'proof'
