@@ -1,5 +1,20 @@
-import React from "react";
-import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath } from "@xyflow/react";
+import {
+  BaseEdge,
+  EdgeLabelRenderer,
+  getBezierPath,
+  getSmoothStepPath,
+  getStraightPath,
+} from "@xyflow/react"; // of '@xyflow/react'
+
+const getStepPath = (params) =>
+  getSmoothStepPath({ ...params, borderRadius: 0 });
+
+const pathGenerators = {
+  straight: getStraightPath,
+  step: getStepPath,
+  smoothstep: getSmoothStepPath,
+  bezier: getBezierPath,
+};
 
 export const SolidEdge = ({
   id,
@@ -14,8 +29,13 @@ export const SolidEdge = ({
   label,
   labelStyle,
   labelBgStyle,
+  data,
 }) => {
-  const [edgePath, labelX, labelY] = getSmoothStepPath({
+  // Selecteer de gewenste path-generator (default is 'smoothstep')
+  const pathType = data?.pathType || "smoothstep";
+  const getPath = pathGenerators[pathType] || getSmoothStepPath;
+
+  const [edgePath, labelX, labelY] = getPath({
     sourceX,
     sourceY,
     sourcePosition,
@@ -29,6 +49,7 @@ export const SolidEdge = ({
       <BaseEdge
         id={id}
         path={edgePath}
+        className="custom-solid-edge"
         style={{
           ...style,
           stroke: "var(--primary)",

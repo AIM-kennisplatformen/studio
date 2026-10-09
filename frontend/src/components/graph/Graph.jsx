@@ -4,7 +4,7 @@ import "@xyflow/react/dist/style.css";
 import { CustomNode } from "./nodes/CustomNode";
 import { SolidEdge } from "./nodes/CustomEdge";
 import { getEdgeHandles } from "./graphUtils";
-import { applyDagreLayout } from "./layout/cytoscapeLayout";
+import { applyFcoseLayout } from "./layout/cytoscapeLayout";
 import { useAtom, useAtomValue } from "jotai";
 import {
   nodesAtom,
@@ -29,11 +29,18 @@ function getSubgraph(data, nodeId) {
   };
 }
 
-export default function Graph({ data, width }) {
+export default function Graph({
+  data,
+  width,
+  fixedNodes,
+  alignmentConstraints,
+  relativePlacementConstraints,
+  options,
+}) {
   const [nodes, setNodes] = useAtom(nodesAtom);
   const [edges, setEdges] = useAtom(edgesAtom);
   const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom);
-  const [, setCenterNodeId] = useAtom(centerNodeAtom);
+  const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom);
   const [layoutNodes, setLayoutNodes] = useAtom(layoutNodesAtom);
   const emitSelectNode = useAtomValue(selectNodeEmitAtom);
 
@@ -90,7 +97,10 @@ export default function Graph({ data, width }) {
         const reactFlowNode = {
           id: String(node.id),
           type: "custom",
-          position: previousPositions.get(String(node.id)) || { x: 0, y: 0 },
+          position: /*previousPositions.get(String(node.id)) || */ {
+            x: 0,
+            y: 0,
+          },
           data: {
             label: node.title,
             isFocused: isCenter,
@@ -111,7 +121,8 @@ export default function Graph({ data, width }) {
             sourceNode.position.x,
             sourceNode.position.y,
             targetNode.position.x,
-            targetNode.position.y
+            targetNode.position.y,
+            options.middleHandles
           );
 
           return {
@@ -120,6 +131,9 @@ export default function Graph({ data, width }) {
             target: String(edge.target_id),
             label: edge.labelToTarget,
             type: "solid",
+            data: {
+              pathType: options?.edgeStyle || edge.pathType || "smoothstep",
+            },
             sourceHandle,
             targetHandle,
             labelStyle: { fill: "#666", fontSize: 10 },
@@ -128,34 +142,90 @@ export default function Graph({ data, width }) {
         })
         .filter(Boolean);
 
-      const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
+      // const fixedNodes = newNodes.filter((n) => previousPositions.has(n.id));
+      const activeNodeIds = new Set(newNodes.map((node) => String(node.id)));
 
-      // Apply dagre layout to new nodes, keeping fixed nodes in place
-      const layoutPositions = applyDagreLayout(newNodes, newEdges, {
-        quality: "proof",
-        nodeSeparation: 200,
-        idealEdgeLength: 300,
-        nodeRepulsion: 50000,
-        maxIterations: 2000,
-        animationDuration: 1000,
-        gravity: 0.05,
-        numIter: 5000,
-        tile: true,
-        tilingPaddingVertical: 20,
-        tilingPaddingHorizontal: 20,
-        incremental: true,
-        nodeDimensionsIncludeLabels: true,
-        fixedNodeConstraint: fixedNodes.map((n) => ({
-          nodeId: n.id,
-          position: n.position,
-        })),
+      const layoutPositions = applyFcoseLayout(newNodes, newEdges, {
+        ...options,
+
+        // Map Fixed Constraints
+        fixedNodeConstraint: fixedNodes
+          .filter((node) => activeNodeIds.has(String(node.nodeId)))
+          .map((node) => ({
+            nodeId: String(node.nodeId),
+            position: node.position,
+          })),
+
+        // Map Alignment Constraints directly into the expected library object format
+        alignmentConstraint: alignmentConstraints.reduce(
+          (acc, constraint) => {
+            const activeIds = constraint.nodeIds.filter((id) =>
+              activeNodeIds.has(String(id))
+            );
+            if (activeIds.length >= 2) {
+              if (constraint.type === "horizontal") {
+                acc.horizontal.push(activeIds);
+              } else if (constraint.type === "vertical") {
+                acc.vertical.push(activeIds);
+              }
+            }
+            return acc;
+          },
+          { horizontal: [], vertical: [] }
+        ),
+
+        // Map Relative Placement Constraints
+        relativePlacementConstraint: relativePlacementConstraints
+          .filter((constraint) => {
+            const sourceId = constraint.left || constraint.top;
+            const targetId = constraint.right || constraint.bottom;
+            return (
+              activeNodeIds.has(String(sourceId)) &&
+              activeNodeIds.has(String(targetId))
+            );
+          })
+          .map((constraint) => {
+            if (constraint.left && constraint.right) {
+              return {
+                left: String(constraint.left),
+                right: String(constraint.right),
+                gap: Number(constraint.gap) || 20,
+              };
+            } else {
+              return {
+                top: String(constraint.top),
+                bottom: String(constraint.bottom),
+                gap: Number(constraint.gap) || 20,
+              };
+            }
+          }),
       });
+
+      const updatedEdges = newEdges.map((edge) => {
+        const sourcePos = layoutPositions[edge.source] || { x: 0, y: 0 };
+        const targetPos = layoutPositions[edge.target] || { x: 0, y: 0 };
+
+        const { sourceHandle, targetHandle } = getEdgeHandles(
+          sourcePos.x,
+          sourcePos.y,
+          targetPos.x,
+          targetPos.y
+        );
+
+        return {
+          ...edge,
+          sourceHandle,
+          targetHandle,
+        };
+      });
+
+      setEdges(updatedEdges);
 
       // Merge positions: keep old positions, use layout positions for new nodes
       const mergedNodes = newNodes.map((n) => ({
         ...n,
         position:
-          previousPositions.get(n.id) || layoutPositions[n.id] || n.position,
+          layoutPositions[n.id] || previousPositions.get(n.id) || n.position,
       }));
 
       // Persist positions for all seen nodes across subgraph changes
@@ -165,7 +235,6 @@ export default function Graph({ data, width }) {
       nodesRef.current = mergedNodes;
       edgesRef.current = newEdges;
       setNodes(mergedNodes);
-      setEdges(newEdges);
 
       // Center node 1 on first load only
       if (!selectedNodeRef.current) {
@@ -176,15 +245,27 @@ export default function Graph({ data, width }) {
         }
       }
     },
-    [centerNodeInView, setEdges, setLayoutNodes, setNodes, setSelectedNode]
+    [
+      centerNodeInView,
+      setEdges,
+      setLayoutNodes,
+      setNodes,
+      setSelectedNode,
+      options,
+      alignmentConstraints,
+      relativePlacementConstraints,
+    ]
   );
 
   // On first load show node 1's neighbourhood; on refetch just update fullDataRef
   useEffect(() => {
     if (!data) return;
-    const isFirstLoad = fullDataRef.current === null;
+
     fullDataRef.current = data;
-    if (isFirstLoad) prepareGraphData(getSubgraph(data, 1));
+    const currentCenterId = selectedNodeRef.current
+      ? selectedNodeRef.current.id
+      : 1;
+    prepareGraphData(getSubgraph(data, currentCenterId));
   }, [data, prepareGraphData]);
 
   const onNodeClick = useCallback(

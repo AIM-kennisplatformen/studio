@@ -71,7 +71,6 @@ export function CustomNode({ data, isConnectable }) {
         isConnectable={isConnectable}
         className="pointer-events-none opacity-0"
       />
-
       {/* Target handles on all sides */}
       <Handle
         type="target"
