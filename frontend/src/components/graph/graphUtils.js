@@ -1,8 +1,39 @@
 /* Copied from PoC-Robert-React-Flow */
 // Helper function to calculate which handles to connect to based on shortest distance
-export function getEdgeHandles() {
-  // Always use bottom for source and top for target
-  return { sourceHandle: "bottom", targetHandle: "target-top" };
+
+//  const { sourceHandle, targetHandle } = getEdgeHandles(
+//             sourceNode.position.x,
+//             sourceNode.position.y,
+//             targetNode.position.x,
+//             targetNode.position.y
+//           );
+
+export function getEdgeHandles(SourceX, SourceY, TargetX, TargetY) {
+  const difX = Math.abs(SourceX - TargetX);
+  const difY = Math.abs(SourceY - TargetY);
+  const sourceLeft = SourceX < TargetX;
+  const sourceTop = SourceY < TargetY;
+
+  // Horizontal alignment (difY <= 50)
+  if (difY <= 100) {
+    return sourceLeft
+      ? { sourceHandle: "right", targetHandle: "target-left" }
+      : { sourceHandle: "left", targetHandle: "target-right" };
+  }
+
+  // Diagonal / slight vertical offset (50 < difY < 100)
+  if (difY < 300 && difX > 100) {
+    const targetHandle = sourceLeft ? "target-left" : "target-right";
+    const sourceHandle = sourceTop ? "bottom" : "top";
+    return { sourceHandle: sourceHandle, targetHandle: targetHandle };
+  }
+
+  // Major vertical separation (difY >= 100)
+  if (sourceTop) {
+    return { sourceHandle: "bottom", targetHandle: "target-top" };
+  } else {
+    return { sourceHandle: "top", targetHandle: "target-bottom" };
+  }
 }
 
 // Helper function to get emoji and color based on entity type
