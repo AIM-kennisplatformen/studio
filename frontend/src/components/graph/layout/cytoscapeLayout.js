@@ -11,6 +11,20 @@ cytoscape.use(cola);
 cytoscape.use(fcose);
 cytoscape.use(dagre);
 
+// cytoscape-fcose has no seed option and calls the global Math.random()
+// directly, so this is the only way to make its output reproducible.
+function mulberry32(seed) {
+  return function () {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const FCOSE_LAYOUT_SEED = 42;
+
 /**
  * Convert React Flow nodes and edges to Cytoscape format
  * @param {Array} nodes - React Flow nodes
@@ -194,6 +208,29 @@ export function applyColaLayout(
 }
 
 /**
+ * fCoSE's own library defaults, used as the guardrail baseline for the
+ * layout options panel (initial state + reset button).
+ */
+export const DEFAULT_FCOSE_OPTIONS = {
+  quality: "default",
+  nodeSeparation: 200,
+  idealEdgeLength: 300,
+  nodeRepulsion: 45000,
+  gravity: 0.25,
+  gravityRange: 3.8,
+  numIter: 2500,
+  nodeDimensionsIncludeLabels: false,
+  tile: true,
+  initialEnergyOnIncremental: 0.3,
+  deterministic: false,
+  edgeElasticity: 0.45,
+  edgeStyle: "smoothstep", // Custom option for edge style
+  animate: false,
+  animationDuration: 1000,
+  animationEasing: "ease-out",
+};
+
+/**
  * Apply fcose layout using cytoscape.js in headless mode
  * fCoSE (fast Compound Spring Embedder) is a fast, high-quality layout algorithm
  * @param {Array} nodes - React Flow nodes
@@ -202,6 +239,10 @@ export function applyColaLayout(
  * @returns {Object} Map of node IDs to new positions
  */
 export function applyFcoseLayout(nodes, edges, options = {}) {
+  // Pull our own custom flag out before it's spread into the cytoscape-fcose
+  // config, since that library doesn't know what to do with it.
+  const { deterministic, ...fcoseOptions } = options;
+
   // Create headless cytoscape instance with node dimensions
   const cy = cytoscape({
     headless: true,
@@ -211,26 +252,39 @@ export function applyFcoseLayout(nodes, edges, options = {}) {
   // Run fcose layout with options
   const layout = cy.layout({
     name: "fcose",
-    // Disable animations - layout runs synchronously
-    animate: false,
     // Default options for fcose
-    quality: options.quality || "default", // 'draft', 'default', or 'proof'
+    quality: options.quality || "proof", // 'draft', 'default', or 'proof'
     randomize: options.randomize !== undefined ? options.randomize : true,
-    nodeSeparation: options.nodeSeparation || 75,
-    idealEdgeLength: options.idealEdgeLength || 150,
+    nodeSeparation: options.nodeSeparation || 200,
+    idealEdgeLength: options.idealEdgeLength || 300,
     edgeElasticity: options.edgeElasticity || 0.45,
     nestingFactor: options.nestingFactor || 0.1,
     gravity: options.gravity || 0.25,
     numIter: options.numIter || 2500,
+    animate: options.animate || false,
+    animationDuration: 1000,
+    animationEasing: "ease-out",
     // Enable node dimensions to prevent overlaps
     nodeDimensionsIncludeLabels: false,
     uniformNodeDimensions: false,
     packComponents: true, // Pack connected components
-    ...options,
+    ...fcoseOptions,
   });
 
-  // Run the layout synchronously
-  layout.run();
+  // cytoscape-fcose has no seed option and calls Math.random() directly, so
+  // reproducibility is opt-in via a temporary patch around the synchronous
+  // run. Left unpatched, fCoSE's native random behavior is used.
+  if (deterministic) {
+    const originalRandom = Math.random;
+    Math.random = mulberry32(FCOSE_LAYOUT_SEED);
+    try {
+      layout.run();
+    } finally {
+      Math.random = originalRandom;
+    }
+  } else {
+    layout.run();
+  }
 
   // Extract new positions
   const newPositions = {};
