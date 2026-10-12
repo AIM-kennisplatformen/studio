@@ -25,6 +25,15 @@ container.
 Copy `.env.sample` to `.env` and supply the OAuth, LLM, and other service
 credentials needed by your environment.
 
+For Langfuse tracing, set `LANGFUSE_HOST`, `LANGFUSE_PUBLIC_KEY`, and
+`LANGFUSE_SECRET_KEY` to the instance URL and the deployment's project credentials.
+Use project `scepa-staging` with `LANGFUSE_TRACING_ENVIRONMENT=staging` for staging,
+and project `scepa-production` with `LANGFUSE_TRACING_ENVIRONMENT=production`
+for production. Never reuse production project credentials in staging.
+The credentials select the project; the environment value labels traces within it.
+Both development and release Compose configurations pass this value to the backend.
+See the [Langfuse environment documentation](https://langfuse.com/docs/observability/features/environments).
+
 The default OAuth redirect URI is
 `http://localhost:10090/chatep/api/auth/callback`. The frontend's
 `/chatep/api` proxy forwards that callback to the backend; the backend does not
