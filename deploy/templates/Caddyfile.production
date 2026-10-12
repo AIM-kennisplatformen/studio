@@ -1,0 +1,21 @@
+scepakp.mads-han.src.surf-hosted.nl {
+	encode zstd gzip
+
+	@studio path /chatep /chatep/*
+	handle @studio {
+		reverse_proxy 127.0.0.1:10090
+	}
+
+	@upload path /upload /upload/*
+	handle @upload {
+		reverse_proxy 127.0.0.1:5173
+	}
+
+	@mcp path /mcp /mcp/*
+	handle @mcp {
+		reverse_proxy 127.0.0.1:8002
+	}
+
+	@fallback not path /chatep* /upload* /mcp*
+	redir @fallback /chatep 302
+}

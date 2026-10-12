@@ -232,3 +232,6 @@ secretspec.toml
 /backend/mcp_tools.local.json
 .env.*
 !.env.sample
+
+# Records written by deploy/deploy.sh when run from the repository root
+/deployment-records/
