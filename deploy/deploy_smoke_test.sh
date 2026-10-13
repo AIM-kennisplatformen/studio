@@ -39,10 +39,32 @@ report() { # status name detail
   printf '%-5s %-36s %s\n' "$1" "$2" "${3:-}"
 }
 
+# probe <url>: prints "<http code> <redirect url>", or curl's error text when curl
+# failed (and returns its status). A request is tried up to three times, three
+# seconds apart, when curl itself fails or the answer is 502, 503 or 504. A
+# service that was just recreated can drop a request for a moment, and a
+# persistent fault still fails after about six seconds.
+probe() {
+  local out rc attempt
+  for attempt in 1 2 3; do
+    out=$(curl -sS --max-time 20 -o /dev/null -w '%{http_code} %{redirect_url}' "$1" 2>&1)
+    rc=$?
+    if [[ $rc -eq 0 ]]; then
+      case "${out%% *}" in
+        502 | 503 | 504) ;;
+        *) printf '%s' "$out"; return 0 ;;
+      esac
+    fi
+    [[ $attempt -lt 3 ]] && sleep 3
+  done
+  printf '%s' "$out"
+  return "$rc"
+}
+
 expect_http() { # name url expected-code [expected-redirect]
   local out code loc
-  if ! out=$(curl -sS --max-time 20 -o /dev/null -w '%{http_code} %{redirect_url}' "$2" 2>&1); then
-    report FAIL "$1" "curl failed: $out"
+  if ! out=$(probe "$2"); then
+    report FAIL "$1" "curl failed: ${out%%$'\n'*}"
     return
   fi
   code=${out%% *}
@@ -89,10 +111,13 @@ else
 fi
 
 # Studio login must send users to the right Authentik client and callback.
-login=$(curl -sS --max-time 20 -o /dev/null -w '%{http_code} %{redirect_url}' "$BASE_URL/chatep/api/auth/login" 2>&1)
+login_failed=0
+login=$(probe "$BASE_URL/chatep/api/auth/login") || login_failed=1
 login_code=${login%% *}
 login_url=${login#* }
-if [[ "$login_code" != 302 ]]; then
+if [[ $login_failed -eq 1 ]]; then
+  report FAIL "oauth login redirect" "curl failed: ${login%%$'\n'*}"
+elif [[ "$login_code" != 302 ]]; then
   report FAIL "oauth login redirect" "HTTP $login_code, expected 302"
 elif [[ "$login_url" != "https://$AUTH_HOST/application/o/authorize/"* ]]; then
   report FAIL "oauth login redirect" "redirects to an unexpected place: ${login_url%%\?*}"
