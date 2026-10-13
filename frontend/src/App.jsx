@@ -101,6 +101,7 @@ export default function App() {
       <div
         className="flex h-full flex-1 flex-col overflow-hidden bg-gray-50"
         style={{ minWidth: CHAT_MIN_WIDTH }}>
+        <div>hi there!</div>
         <ChatWindow />
       </div>
     </div>
