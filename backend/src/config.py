@@ -57,12 +57,8 @@ def _tool_filter_instructions(
     required_user_personas: list[str] | None = None,
     required_literature_kinds: list[str] | None = None,
 ) -> str:
-    user_personas = required_user_personas or _matching_classifications(
-        question, USER_PERSONA_TERMS
-    )
-    literature_kinds = required_literature_kinds or _matching_classifications(
-        question, LITERATURE_KIND_TERMS
-    )
+    user_personas = sorted(set(required_user_personas or []) | set(_matching_classifications(question, USER_PERSONA_TERMS)))
+    literature_kinds = sorted(set(required_literature_kinds or []) | set(_matching_classifications(question, LITERATURE_KIND_TERMS)))
 
     persona_instruction = (
         f"user_personas={user_personas!r}" if user_personas else "omit `user_personas`"
