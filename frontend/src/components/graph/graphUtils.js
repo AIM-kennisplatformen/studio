@@ -8,6 +8,17 @@ export function getEdgeHandles(SourceX, SourceY, TargetX, TargetY) {
 
   // Horizontal alignment (difY <= 50)
   if (difY <= 100) {
+    if (difY < 50) {
+      return sourceLeft
+        ? { sourceHandle: "right", targetHandle: "target-left" }
+        : { sourceHandle: "left", targetHandle: "target-right" };
+    }
+    if (difX < 200) {
+      return {
+        sourceHandle: sourceTop ? "bottom" : "top",
+        targetHandle: sourceTop ? "target-top" : "target-bottom",
+      };
+    }
     return sourceLeft
       ? { sourceHandle: "right", targetHandle: "target-left" }
       : { sourceHandle: "left", targetHandle: "target-right" };

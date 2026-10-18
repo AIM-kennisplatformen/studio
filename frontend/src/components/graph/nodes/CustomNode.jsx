@@ -2,7 +2,7 @@
 import { Handle, Position } from "@xyflow/react";
 import { useRef, useLayoutEffect, useState } from "react";
 
-export function CustomNode({ data, isConnectable }) {
+export function CustomNode({ data, draggable, isConnectable }) {
   const distance = data.distance ?? null;
   const contentRef = useRef(null);
   const [contentHeight, setContentHeight] = useState(80); // Default height
@@ -119,13 +119,15 @@ export function CustomNode({ data, isConnectable }) {
         {/* Flexbox container with drag handle and content */}
         <div className="flex h-full">
           {/* First child: Drag Handle - fixed width */}
-          <div className="group/handle -my-2 -ml-2 mr-2 flex w-6 shrink-0 cursor-move items-center justify-center rounded-l-[6px] transition-colors duration-200 hover:bg-black/10">
-            <div className="flex flex-col gap-0.5 opacity-40">
-              <div className="h-[3px] w-[3px] rounded-full bg-current transition-[width] duration-500 ease-in-out group-hover/handle:w-[15px]" />
-              <div className="h-[3px] w-[3px] rounded-full bg-current transition-[width] duration-500 ease-in-out group-hover/handle:w-[15px]" />
-              <div className="h-[3px] w-[3px] rounded-full bg-current transition-[width] duration-500 ease-in-out group-hover/handle:w-[15px]" />
+          {draggable && (
+            <div className="drag-handle group/handle -my-2 mr-2 -ml-2 flex w-6 shrink-0 cursor-move items-center justify-center rounded-l-[6px] transition-colors duration-200 hover:bg-black/10">
+              <div className="flex flex-col gap-0.5 opacity-40">
+                <div className="h-[3px] w-[3px] rounded-full bg-current transition-[width] duration-500 ease-in-out group-hover/handle:w-[15px]" />
+                <div className="h-[3px] w-[3px] rounded-full bg-current transition-[width] duration-500 ease-in-out group-hover/handle:w-[15px]" />
+                <div className="h-[3px] w-[3px] rounded-full bg-current transition-[width] duration-500 ease-in-out group-hover/handle:w-[15px]" />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Second child: Content - takes remaining space */}
           <div className="nodrag flex-1 cursor-default text-left">

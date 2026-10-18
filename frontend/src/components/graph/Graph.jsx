@@ -95,6 +95,8 @@ export default function Graph({ data, width }) {
             label: node.title,
             isFocused: isCenter,
           },
+          draggable: !isCenter,
+          dragHandle: ".drag-handle",
         };
         nodeMap.set(reactFlowNode.id, reactFlowNode);
         return reactFlowNode;
