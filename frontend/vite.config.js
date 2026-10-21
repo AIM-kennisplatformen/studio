@@ -6,6 +6,7 @@ import react from "@vitejs/plugin-react";
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: "/chatep/",
   // eslint-disable-next-line no-undef
   ...(process.env.VITE_CACHE_DIR
     ? // eslint-disable-next-line no-undef
@@ -28,11 +29,12 @@ export default defineConfig({
       interval: 100,
     },
     proxy: {
-      "/api": {
+      "/chatep/api": {
         // eslint-disable-next-line no-undef
         target: process.env.VITE_API_PROXY_TARGET || "http://localhost:10092",
         changeOrigin: true,
         ws: true,
+        rewrite: (path) => path.replace(/^\/chatep\/api/, "/api"),
       },
     },
   },

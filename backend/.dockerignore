@@ -5,3 +5,4 @@
 **/__pycache__
 **/*.pyc
 tests
+mcp_tools.local.json

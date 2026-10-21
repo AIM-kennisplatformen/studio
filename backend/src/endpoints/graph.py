@@ -22,9 +22,33 @@ SUBNODE_MAP = {
     2: "Best practices",
     3: "Target groups",
     4: "Strategic overview",
+    5: "Best practices / Scientific literature",
+    6: "Best practices / Grey literature",
+    7: "Best practices / Project reports",
+    8: "Target groups / Scientific literature",
+    9: "Target groups / Grey literature",
+    10: "Target groups / Project reports",
+    11: "Strategic overview / Scientific literature",
+    12: "Strategic overview / Grey literature",
+    13: "Strategic overview / Project reports",
 }
 
 SUBNODES = list(SUBNODE_MAP.values())
+
+NODE_CLASSIFICATION_FILTERS = {
+    2: (["best_practices"], None),
+    3: (["target_groups"], None),
+    4: (["strategic_overview"], None),
+    5: (["best_practices"], ["scientific_literature"]),
+    6: (["best_practices"], ["grey_literature"]),
+    7: (["best_practices"], ["project_report"]),
+    8: (["target_groups"], ["scientific_literature"]),
+    9: (["target_groups"], ["grey_literature"]),
+    10: (["target_groups"], ["project_report"]),
+    11: (["strategic_overview"], ["scientific_literature"]),
+    12: (["strategic_overview"], ["grey_literature"]),
+    13: (["strategic_overview"], ["project_report"]),
+}
 
 # =====================================================
 # Per-user Graph Context
@@ -34,6 +58,7 @@ SUBNODES = list(SUBNODE_MAP.values())
 def _default_user_graph_context() -> Dict[str, Any]:
     return {
         "selected_subnode": "root",
+        "selected_node_id": 1,
         "latest_question": None,
         "previous_question": None,
         "latest_keywords": [],
@@ -41,7 +66,6 @@ def _default_user_graph_context() -> Dict[str, Any]:
         "pending": {},  # subnode_name → asyncio.Task
         "dialogue_state_asked": False,
     }
-
 
 
 user_graph_contexts: DefaultDict[str, Dict[str, Any]] = defaultdict(
@@ -61,6 +85,7 @@ async def fetch_subnode_stream(
     history_text: str = "",
     trace_id: str | None = None,
     session_id: str | None = None,
+    selected_node_id: int | None = None,
 ):
     """
     Stream an LLM response for a subnode question.
@@ -76,19 +101,24 @@ async def fetch_subnode_stream(
     ctx = user_graph_contexts[user_id]
 
     try:
-        keyword = (
-            subnode
-            if subnode != "root"
-            else "Best practices || Target groups || Strategic overview"
+        required_user_personas, required_literature_kinds = (
+            NODE_CLASSIFICATION_FILTERS.get(selected_node_id, (None, None))
         )
-
-        synthetic_prompt = subnode_question_prompt(question, keyword, history_text)
+        synthetic_prompt = subnode_question_prompt(
+            question,
+            subnode,
+            history_text,
+            required_user_personas=required_user_personas,
+            required_literature_kinds=required_literature_kinds,
+        )
 
         full_response = ""
 
         # ← Direct generator call — no HTTP, no SSE parsing
         async for evt in stream_agent_events(
-            synthetic_prompt, user_id=user_id, trace_id=trace_id,
+            synthetic_prompt,
+            user_id=user_id,
+            trace_id=trace_id,
             session_id=session_id,
         ):
             event_type = evt["type"]
@@ -111,13 +141,11 @@ async def fetch_subnode_stream(
 # =====================================================
 
 
-#Full graph endpoint, to be called on session start and after each question is answered
+# Full graph endpoint, to be called on session start and after each question is answered
+
 
 @graph_router.get("/graph")
-async def get_full_graph(
-        request: Request,
-        user=Depends(get_current_user)):
-   
+async def get_full_graph(request: Request, user=Depends(get_current_user)):
     user_id = user["sub"]
     ctx = user_graph_contexts[user_id]
 
@@ -129,19 +157,16 @@ async def get_full_graph(
             edges=[],
             error="not_loaded",
         )
-    
-    subnode_name = ctx["selected_subnode"]
-    if subnode_name == "root":
+
+    selected_node_id = ctx.get("selected_node_id", 1)
+    if selected_node_id == 1:
         selected_subnode = None
     else:
-        selected_subnode = next(
-        (n for n in kg_data.entities.values() if n.title == subnode_name),
-        None,
-    )
-    
+        selected_subnode = kg_data.entities.get(selected_node_id)
+
     return GraphResponse(
         nodes=list(kg_data.entities.values()),
         edges=list(kg_data.relations.values()),
-        selected_subnode= selected_subnode,
+        selected_subnode=selected_subnode,
         error=None,
-    ) 
+    )

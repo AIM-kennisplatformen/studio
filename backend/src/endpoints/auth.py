@@ -31,7 +31,10 @@ def get_current_user(request: Request):
     """
     user = request.session.get("user")
     if not user:
-        raise HTTPException(status_code=307, headers={"Location": "/api/auth/login"})
+        raise HTTPException(
+            status_code=307,
+            headers={"Location": f'{config["base_url"]}/auth/login'},
+        )
     return user
 
 
@@ -56,7 +59,7 @@ async def callback(request: Request):
     """
     token = await oauth.authentik.authorize_access_token(request)
     request.session["user"] = dict(token["userinfo"])
-    return RedirectResponse("/")
+    return RedirectResponse(f'{config["frontend_base_url"]}/')
 
 
 @auth_router.get("/auth/logout")
