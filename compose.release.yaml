@@ -1,0 +1,27 @@
+include:
+  - compose.yaml
+
+services:
+  backend:
+    build:
+      target: release
+    ports: !override
+      - "127.0.0.1:${BACKEND_PORT:-10092}:10090"
+    volumes: !override
+      - ./backend/mcp_tools.local.json:/app/mcp_tools.local.json:ro
+
+  frontend:
+    build:
+      target: release
+    environment: !reset {}
+    ports: !override
+      - "127.0.0.1:${FRONTEND_PORT:-10090}:80"
+    volumes: !reset []
+
+  redis:
+    ports: !override
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+
+  studio_postgres:
+    ports: !override
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"

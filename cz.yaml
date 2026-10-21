@@ -1,0 +1,94 @@
+commitizen:
+  name: cz_customize
+  version_provider: cargo
+  version_scheme: semver2
+  tag_format: "$version"
+  update_changelog_on_bump: true
+  changelog_file: CHANGELOG.md
+  changelog_incremental: true
+  major_version_zero: true
+  use_shortcuts: true
+  bump_message: "bump: version $current_version -> $new_version"
+  allowed_prefixes:
+    - Merge
+    - Revert
+    - Pull request
+    - fixup!
+    - squash!
+    - amend!
+  customize:
+    message_template: |-
+      {{change_type}}({{scope}}){% if breaking_change %}!{% endif %}: {{subject}}{% if body %}
+
+      {{body}}{% endif %}{% if footer %}
+
+      {{footer}}{% endif %}
+    example: "feat(tei): add text extraction"
+    schema: "<type>(scope)[!]: <subject>"
+    schema_pattern: "(?s)(feat|fix|docs|refactor|test|build|ci|chore)(\\([^\\n\\r()]+\\))!?: ([^\\n\\r]+)((\\n\\n.*)|(\\s*))?$"
+    bump_pattern: "^((BREAKING[- ]CHANGE|(?:feat|fix|docs|refactor|test|build|ci|chore)\\([^\\n\\r()]+\\))!?):"
+    bump_map:
+      "^.+!$": MAJOR
+      "^BREAKING[- ]CHANGE": MAJOR
+      "^feat": MINOR
+      "^fix": PATCH
+      "^refactor": PATCH
+    changelog_pattern: "^((BREAKING[- ]CHANGE|(?:feat|fix|docs|refactor|test|build|ci|chore)\\([^\\n\\r()]+\\))!?):"
+    commit_parser: "^((?P<change_type>feat|fix|docs|refactor|test|build|ci|chore|BREAKING CHANGE)(?:(?<=BREAKING CHANGE)|\\((?P<scope>[^()\\r\\n]+)\\))(?P<breaking>!)?):\\s(?P<message>.*)?"
+    change_type_map:
+      BREAKING CHANGE: Breaking Changes
+      feat: Features
+      fix: Bug Fixes
+      docs: Documentation
+      refactor: Refactoring
+      test: Tests
+      build: Build
+      ci: CI
+      chore: Chores
+    change_type_order:
+      - Breaking Changes
+      - Features
+      - Bug Fixes
+      - Refactoring
+      - Documentation
+      - Tests
+      - Build
+      - CI
+      - Chores
+    questions:
+      - type: list
+        name: change_type
+        message: Select the type of change you are committing
+        choices:
+          - value: feat
+            name: "feat: A new feature"
+          - value: fix
+            name: "fix: A bug fix"
+          - value: docs
+            name: "docs: Documentation only changes"
+          - value: refactor
+            name: "refactor: Code change that neither fixes a bug nor adds a feature"
+          - value: test
+            name: "test: Adding or correcting tests"
+          - value: build
+            name: "build: Build system or external dependency changes (cargo, docker, etc.)"
+          - value: ci
+            name: "ci: CI configuration or script changes"
+          - value: chore
+            name: "chore: Developer only changes"
+      - type: input
+        name: scope
+        message: "Scope (required)"
+      - type: input
+        name: subject
+        message: "Short imperative summary"
+      - type: input
+        name: body
+        message: "Body (optional)"
+      - type: confirm
+        name: breaking_change
+        message: "Is this a breaking change?"
+        default: false
+      - type: input
+        name: footer
+        message: "Footer (optional)"

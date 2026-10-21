@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "scepa-literature": {
+      "url": "https://scepakp.mads-han.src.surf-hosted.nl/mcp",
+      "auth": null
+    }
+  }
+}

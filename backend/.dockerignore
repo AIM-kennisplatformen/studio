@@ -1,0 +1,8 @@
+.pixi
+.mypy_cache
+.pytest_cache
+.ruff_cache
+**/__pycache__
+**/*.pyc
+tests
+mcp_tools.local.json

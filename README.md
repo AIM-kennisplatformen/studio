@@ -1,172 +1,221 @@
 # Studio
 
-A chat-based knowledge graph application. A React frontend communicates over Socket.IO with a FastAPI backend. The backend uses an LLM agent (via `mcp-use`) backed by an MCP server that queries Qdrant and Zotero for literature-supported answers.
+A React frontend and FastAPI backend for chat-based knowledge graph exploration.
+The browser reaches the backend through the frontend's same-origin
+`/chatep/api` proxy.
+The backend never builds or serves frontend assets.
 
-> **Note:** The MCP server (`src/mcp_servers/`) will be moved to a separate repository in the future.
+## Project structure
 
----
-
-## Project Structure
-
-```
-src/
-  backend/          # FastAPI app (Python)
-    endpoints/      # auth, chat, graph, log_event, assets
-    utility/        # chat_util, graph_data_loader, graph_api_models
-    config.py       # env config + prompt templates
-    main.py         # app entry point
-  frontend/         # React + Vite app
-    src/
-scripts/            # build_frontend.py, setup_authentik.py, run_qava_test.py
-tests/
-  bdd/              # qavajs end-to-end tests
-docker-compose.yml
-pyproject.toml
+```text
+backend/                 # Python/Pixi project, tests, and backend Dockerfile
+  src/                   # FastAPI package and application code
+  tests/                 # Backend pytest suite
+  scripts/               # Backend support scripts
+frontend/                # React/npm project and frontend Dockerfile
+compose.yaml             # Development containers
+compose.release.yaml     # Release target overrides
 ```
 
----
+Pixi manages only the backend. The frontend uses npm directly or its Node
+container.
 
-## Prerequisites
+## Environment
 
-- [Pixi](https://pixi.sh/) — manages the Python + Node environment
-- [Docker & Docker Compose](https://docs.docker.com/get-docker/) — for containerised deployment
-- A running [Qdrant](https://qdrant.tech/) instance
-- A running [Authentik](https://goauthentik.io/) instance (OAuth2 provider)
-- A running LLM endpoint (OpenAI-compatible, e.g. Ollama or a hosted model)
-- A [Zotero](https://www.zotero.org/) library + API key
+Copy `.env.sample` to `.env` and supply the OAuth, LLM, and other service
+credentials needed by your environment.
 
----
+The default OAuth redirect URI is
+`http://localhost:10090/chatep/api/auth/callback`. The frontend's
+`/chatep/api` proxy forwards that callback to the backend; the backend does not
+serve frontend assets.
 
-## Environment Setup
+The default MCP configuration in `backend/mcp_tools.json` uses the production
+MCP server at `https://scepakp.mads-han.src.surf-hosted.nl/mcp`. Studio does not
+require Scepa's Docker network or a local Scepa MCP deployment.
 
-Copy the sample env file and fill in the required values:
+The production MCP requires a bearer token. Keep that token out of Git by
+copying the configuration to the ignored `backend/mcp_tools.local.json`, setting
+its `auth` value to the production `MCP_BEARER_TOKEN`, and selecting it in
+`.env`:
 
-```bash
-cp .env.sample .env
+```dotenv
+MCP_TOOL_CONFIG_PATH=mcp_tools.local.json
 ```
 
-Key variables:
+The release Compose configuration mounts this ignored file read-only at
+`/app/mcp_tools.local.json`; it is excluded from the Docker build context and
+is not stored in the release image. The local file should contain:
 
-| Variable | Description |
+```json
+{
+  "mcpServers": {
+    "scepa-literature": {
+      "url": "https://scepakp.mads-han.src.surf-hosted.nl/mcp",
+      "auth": "REPLACE_WITH_PRODUCTION_MCP_BEARER_TOKEN"
+    }
+  }
+}
+```
+
+Default published ports are deliberately distinct from Scepa:
+
+| Service | URL or host port |
 |---|---|
-| `BACKEND_BASE_URL` | Public URL of the backend, e.g. `http://localhost:10090` |
-| `OAUTH_DISCOVERY_URL` | Authentik OIDC discovery URL |
-| `OAUTH_CLIENT_ID` | Authentik OAuth2 client ID |
-| `OAUTH_CLIENT_SECRET` | Authentik OAuth2 client secret |
-| `SESSION_SECRET` | Secret key for session cookies |
-| `LLM_MODEL` | Model name, e.g. `gpt-4o` or an Ollama model |
-| `OPENAI_HOST` | Base URL of your OpenAI-compatible LLM endpoint |
-| `MCP_TOOL_CONFIG_PATH` | Path to the MCP tool config JSON file |
-| `QDRANT_URL` | Qdrant host |
-| `QDRANT_PORT` | Qdrant port (default `6333`) |
-| `ZOTERO_API_KEY` | Zotero API key |
-| `ZOTERO_LIBRARY_ID` | Zotero library ID |
-| `LANGFUSE_PUBLIC_KEY` | Langfuse public key (observability) |
-| `LANGFUSE_SECRET_KEY` | Langfuse secret key |
-| `LANGFUSE_HOST` | Langfuse host URL |
-| `PG_PASS` | PostgreSQL password (only when spinning your own authentik and not using the deployed authentik) |
-| `AUTHENTIK_SECRET_KEY` | Authentik secret key (only when spinning your own authentik and not using the deployed authentik) |
+| Frontend and proxied API | `http://localhost:10090/chatep/` |
+| Backend (direct) | `http://localhost:10092/api` |
+| Redis | `6379` |
+| PostgreSQL | `5433` |
 
----
+## Docker development
 
-## Development (without Docker)
-
-Install all dependencies (Python + Node) via Pixi:
+Start the Vite frontend, reload-enabled backend, Redis, and PostgreSQL:
 
 ```bash
-pixi install
+docker compose up --build
 ```
 
-### 1. Build the frontend
+Vite serves the application at `http://localhost:10090/chatep/` and proxies
+`/chatep/api`, including Socket.IO, to the backend. Source directories are bind-mounted, while
+`/app/node_modules` and `/app/.pixi` are anonymous volumes so host dependencies
+are never copied into the containers.
+
+## Docker release
+
+Build the backend release target and the Nginx frontend target:
 
 ```bash
-pixi run frontend_build
+docker compose -f compose.release.yaml up --build
 ```
 
-This reads `BACKEND_BASE_URL` from `.env`, writes a Vite production env file, runs `npm install` + `npm run build` inside `src/frontend/`, and moves the output to `kg/`.
+Nginx serves the SPA under `/chatep/` and proxies `/chatep/api` to the backend
+container.
 
-### 2. Start the backend
+### Release networking and administrative access
 
-```bash
-pixi run backend_no_docker
-```
+The release Compose configuration builds the backend and frontend `release`
+stages and binds every published port to `127.0.0.1`. This keeps the services
+reachable from the deployment host without exposing them through the VM's
+public network interfaces.
 
-Starts the FastAPI app with uvicorn on port `10090` with hot-reload enabled.
+The frontend loopback port is intended as the upstream for a reverse proxy such
+as Caddy, which should provide public HTTPS on ports 80 and 443. The direct
+backend, Redis, and PostgreSQL ports are for administration and diagnostics;
+do not change them to `0.0.0.0`. Access them remotely through SSH tunnels.
 
-The backend serves the frontend build from `kg/` and exposes the API at `http://localhost:10090`.
-
----
-
-## Deployment (Docker)
-
-Build the image once:
-
-```bash
-docker build -t studio-base -f dockerfiles/Dockerfile .
-```
-
-Then start all services:
-
-```bash
-docker compose up
-```
-
-This starts:
-- `backend` — builds the frontend and runs the FastAPI app on port `10090`
-- `mcp_server` — runs the MCP paper_search server on port `8000`
-
----
-
-## Authentik Setup
-
-Authentik is used as the OAuth2/OIDC provider. To set up the OAuth2 application automatically:
-
-```bash
-python scripts/setup_authentik.py
-```
-
-This requires a running Authentik instance and reads credentials from `.env`.
-
----
-
-## Testing
-
-End-to-end tests are written with [qavajs](https://qavajs.github.io/) (Cucumber + Playwright).
-
-### Run all tests (spins up containers automatically)
-
-```bash
-pixi run qava_test
-```
-
-### Run tests against already-running services
-
-From `tests/bdd/`:
-
-```bash
-npm install
-npx qavajs run --config config.mjs
-```
-
-Services must be reachable at:
-
-| Service | Default URL |
+| Service | Release endpoint on the VM |
 |---|---|
-| Backend | `http://localhost:10090` |
-| MCP Server | `http://localhost:8000` |
-| Authentik | `http://localhost:9000` |
+| Frontend and proxied API | `http://127.0.0.1:10090/chatep/` |
+| Backend, for direct diagnostics | `http://127.0.0.1:10092/api` |
+| Redis | `127.0.0.1:6379` |
+| PostgreSQL | `127.0.0.1:5433` |
 
-### Run a single feature
-
-```bash
-npx qavajs run --config config.mjs -- features/chatbot.feature
-```
-
----
-
-## Code Quality
+For example, forward PostgreSQL to port `5433` on an administrator workstation:
 
 ```bash
-pixi run lint        # ruff check
-pixi run typecheck   # mypy
+ssh -N -L 5433:127.0.0.1:5433 user@your-vm
 ```
+
+Multiple services can be forwarded in one SSH session:
+
+```bash
+ssh -N \
+  -L 10092:127.0.0.1:10092 \
+  -L 6379:127.0.0.1:6379 \
+  -L 5433:127.0.0.1:5433 \
+  user@your-vm
+```
+
+Keep the SSH session open while using the forwarded services. Replace
+`user@your-vm` with the deployment account and VM hostname. If a local port is
+already occupied, change only the first port in its rule; for example,
+`-L 15433:127.0.0.1:5433` exposes PostgreSQL locally on port `15433`.
+
+Port variables in `.env` change both the VM loopback port and the corresponding
+SSH-tunnel source port. Inspect the effective release configuration before
+deployment with:
+
+```bash
+docker compose -f compose.release.yaml config
+```
+
+### Single-host HTTPS routing
+
+Studio uses `/chatep/` as its base path in development and release builds. A
+production deployment at `scepakp.mads-han.src.surf-hosted.nl` must set:
+
+```dotenv
+BACKEND_BASE_URL=https://scepakp.mads-han.src.surf-hosted.nl/chatep/api
+FRONTEND_BASE_URL=https://scepakp.mads-han.src.surf-hosted.nl/chatep/
+FRONTEND_ORIGIN=https://scepakp.mads-han.src.surf-hosted.nl
+OAUTH_REDIRECT_URI=https://scepakp.mads-han.src.surf-hosted.nl/chatep/api/auth/callback
+```
+
+Register that exact HTTPS callback URL with the OAuth provider. The release
+Nginx container accepts `/chatep/` directly, so Caddy must preserve rather than
+strip the prefix:
+
+```caddy
+scepakp.mads-han.src.surf-hosted.nl {
+    encode zstd gzip
+
+    handle /mcp* {
+        reverse_proxy 127.0.0.1:8002 {
+            flush_interval -1
+        }
+    }
+
+    redir /upload /upload/ 308
+
+    handle /upload/* {
+        basic_auth {
+            operator REPLACE_WITH_CADDY_PASSWORD_HASH
+        }
+
+        reverse_proxy 127.0.0.1:5173
+    }
+
+    redir /chatep /chatep/ 308
+
+    handle /chatep/* {
+        reverse_proxy 127.0.0.1:10090
+    }
+
+    handle {
+        respond "Not found" 404
+    }
+}
+```
+
+## Backend development
+
+Run backend tooling from the backend Pixi project:
+
+```bash
+cd backend
+pixi run test
+pixi run lint
+pixi run typecheck
+```
+
+The optional Authentik setup helper is also backend-owned:
+
+```bash
+python backend/scripts/setup_authentik.py
+```
+
+It reads the repository `.env` and expects an Authentik container named
+`authentik-server`. `AUTHENTIK_BASE_URL` can override its default local URL,
+`http://localhost:10091`.
+
+## Frontend development
+
+For a host-native frontend workflow:
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+Frontend checks run with `npm run check`.
