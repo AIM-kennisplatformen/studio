@@ -2,6 +2,8 @@
 @import "tw-animate-css";
 @import "@xyflow/react/dist/style.css";
 
+@custom-variant dark (&:is(.dark *));
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -48,6 +50,17 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  --chat-text: #242424;
+  --chat-bg: #ffffff;
+  --graph-bg: #e5e5e5;
+  --chat-surface: #f9fafb;
+  --brand-secondary: #b91c1c;
+  --node-secondary-text: #038061;
+  --node-secondary-bg: #ffffff;
+  --node-secondary-outline: #038061;
+  --node-primary-text: #ffffff;
+  --node-primary-bg: #038061;
 }
 
 ::selection {
@@ -142,6 +155,16 @@ button:hover {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-chat-text: var(--chat-text);
+  --color-chat-bg: var(--chat-bg);
+  --color-graph-bg: var(--graph-bg);
+  --color-chat-surface: var(--chat-surface);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-node-secondary-text: var(--node-secondary-text);
+  --color-node-secondary-bg: var(--node-secondary-bg);
+  --color-node-secondary-outline: var(--node-secondary-outline);
+  --color-node-primary-text: var(--node-primary-text);
+  --color-node-primary-bg: var(--node-primary-bg);
 }
 
 .dark {
@@ -176,6 +199,20 @@ button:hover {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  --primary: #00c191;
+  --primary-dark: #038061;
+  --primary-foreground: #121212;
+  --chat-text: #dbdbdb;
+  --chat-bg: #1c1e20;
+  --graph-bg: #121212;
+  --chat-surface: #121212;
+  --brand-secondary: #ce3a3a;
+  --node-secondary-text: #00c191;
+  --node-secondary-bg: #038061;
+  --node-secondary-outline: #00c191;
+  --node-primary-text: #121212;
+  --node-primary-bg: #00c191;
 }
 
 @layer base {
