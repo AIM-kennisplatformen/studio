@@ -3,7 +3,7 @@ from typing import Optional, Dict, AsyncGenerator
 
 import socketio
 from langchain_openai import ChatOpenAI
-from langfuse import get_client
+from langfuse import get_client, propagate_attributes
 from langfuse.langchain import CallbackHandler
 from mcp_use import MCPAgent, MCPClient
 from mcp_use.client.config import load_config_file
@@ -108,8 +108,7 @@ async def run_agent(
             as_type="span",
             name="run_agent",
             trace_context={"trace_id": trace_id},
-        ) as span:
-            span.update_trace(user_id=user_id, session_id=session_id)
+        ), propagate_attributes(user_id=user_id, session_id=session_id):
             agent = await _create_agent()
             result = await agent.run(message)
         langfuse.flush()
@@ -143,8 +142,7 @@ async def stream_agent_events(
             as_type="span",
             name="stream_agent_events",
             trace_context={"trace_id": trace_id},
-        ) as span:
-            span.update_trace(user_id=user_id, session_id=session_id)
+        ), propagate_attributes(user_id=user_id, session_id=session_id):
             agent = await _create_agent()
             async for event in agent.stream_events(message):
                 event_type = event.get("event", "")

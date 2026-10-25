@@ -29,20 +29,20 @@ requires-python = ">=3.11"
 dynamic = ["version"]
 
 dependencies = [
-  "fastmcp>=2.10.1",
-  "fastapi",
-  "langfuse==3.13",
-  "openai",
+  "fastmcp>=3.4.11,<4",
+  "fastapi>=0.162.0",
+  "langfuse>=5.0.4",
+  "openai>=3.37.0",
   "loguru>=0.7.3",
-  "python-dotenv>=1.0.1",
-  "uvicorn[standard]",
-  "python-socketio>=5.15.0,<6",
-  "langchain-openai",
-  "langchain",
-  "typing-extensions",
-  "mcp-use>=1.5.0,<2",
-  "redis>=5.0.0",
-  "asyncpg>=0.30.0",
+  "python-dotenv>=1.2.4",
+  "uvicorn[standard]>=0.54.0",
+  "python-socketio>=5.17.0",
+  "langchain-openai>=1.7.2",
+  "langchain>=1.4.7",
+  "typing-extensions>=4.16.0",
+  "mcp-use>=1.7.1",
+  "redis>=8.1.0",
+  "asyncpg>=0.32.0",
 ]
 
 # ====================================
@@ -50,12 +50,12 @@ dependencies = [
 # ====================================
 [dependency-groups]
 dev = [
-  "isort>=7.0.0",
-  "mypy>=1.18.2",
-  "nest-asyncio",
-  "pytest>=8.0.0",
-  "ruff>=0.14.5",
-  "toml-sort>=0.24.3"
+  "isort>=9.0.2",
+  "mypy>=2.4.0",
+  "nest-asyncio>=1.6.0",
+  "pytest>=9.1.1",
+  "ruff>=0.17.2",
+  "toml-sort>=0.25.0"
 ]
 
 # ====================================
@@ -70,7 +70,7 @@ addopts = ["--import-mode=importlib"]
 # ====================================
 [tool.pixi.workspace]
 channels = [
-  "https://fast.prefix.dev/conda-forge",
+  "https://conda.anaconda.org/conda-forge",
   "https://repo.prefix.dev/pypdfium2-public",
   "https://repo.prefix.dev/pytorch",
 ]
@@ -81,22 +81,22 @@ platforms = ["linux-64", "linux-aarch64", "osx-arm64", "win-64"]
 # Pixi environment dependencies
 # ====================================
 [tool.pixi.dependencies]
-python = "3.12.*"
+python = ">=3.12,<3.13"
 pkg-config = ">=0.29.2"
 
-ruff = "*"
+ruff = ">=0.17.2"
 
-mypy = "*"
-pytest = "*"
+mypy = ">=2.4.0"
+pytest = ">=9.1.1"
 # Smaller libs
-einops = ">=0.8.1"
-itsdangerous = ">=2.2.0,<3"
-pytorch = ">=2.2,<3"
-cpuonly = "*"
+einops = ">=0.8.2"
+itsdangerous = ">=2.2.0"
+pytorch = ">=2.14.1"
+cpuonly = ">=2.0"
 
 # Tools duplicated in project/dev groups (ok for Pixi env)
-loguru = ">=0.7.3,<0.8"
-python-dotenv = ">=1.1.0"
+loguru = ">=0.7.3"
+python-dotenv = ">=1.2.4"
 # ====================================
 # Pixi tasks
 # ====================================

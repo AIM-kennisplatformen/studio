@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from typing import Any
-from langfuse import get_client
+from langfuse import get_client, propagate_attributes
 
 from src.endpoints.auth import get_current_user
 from src.utility.chat_util import user_connections
@@ -23,14 +23,11 @@ async def log_event(payload: LogEventPayload, user=Depends(get_current_user)):
 
     trace_id = active_trace_ids.get(session_id, None)
 
-    langfuse.create_event(
-        trace_context={
-            "trace_id": trace_id,
-            "user_id": user_id,
-            "session_id": session_id,
-        },
-        name=payload.name,
-        metadata=payload.metadata,
-    )
+    with propagate_attributes(user_id=user_id, session_id=session_id):
+        langfuse.create_event(
+            trace_context={"trace_id": trace_id} if trace_id else None,
+            name=payload.name,
+            metadata=payload.metadata,
+        )
 
     langfuse.flush()
