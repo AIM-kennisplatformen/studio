@@ -2,6 +2,7 @@ import os
 import re
 import secrets
 from pathlib import Path
+from typing import TypedDict
 
 from loguru import logger
 
@@ -159,7 +160,29 @@ def require_env(name: str, default: str | None = None) -> str:
     return value
 
 
-config: dict[str, str | int] = {
+class AppConfig(TypedDict):
+    """Resolved application configuration."""
+
+    base_url: str
+    frontend_base_url: str
+    frontend_origin: str
+    discovery_url: str
+    logout_url: str
+    oauth_redirect_uri: str
+    client_id: str
+    client_secret: str
+    session_secret: str
+    mcp_tool_config_path: str
+    llm_model: str
+    openai_host: str
+    openai_api_key: str
+    redis_url: str
+    redis_expiration_time: int
+    chat_history_limit: int
+    postgres_url: str
+
+
+config: AppConfig = {
     "base_url": require_env(
         "BACKEND_BASE_URL", "http://localhost:10090/chatep/api"
     ).rstrip("/"),
