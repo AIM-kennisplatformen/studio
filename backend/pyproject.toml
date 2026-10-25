@@ -91,8 +91,6 @@ pytest = ">=9.1.1"
 # Smaller libs
 einops = ">=0.8.2"
 itsdangerous = ">=2.2.0"
-pytorch = ">=2.14.1"
-cpuonly = ">=2.0"
 
 # Tools duplicated in project/dev groups (ok for Pixi env)
 loguru = ">=0.7.3"
