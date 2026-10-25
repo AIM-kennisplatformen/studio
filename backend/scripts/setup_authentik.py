@@ -159,7 +159,9 @@ print(f'{{action}} application (slug={{app.slug}})')
 
 def verify_discovery() -> None:
     print("Verifying discovery endpoint...")
-    url = f"{authentik_base_url()}/application/o/studio/.well-known/openid-configuration"
+    url = (
+        f"{authentik_base_url()}/application/o/studio/.well-known/openid-configuration"
+    )
     try:
         with urlopen(url) as resp:
             if resp.status == 200:

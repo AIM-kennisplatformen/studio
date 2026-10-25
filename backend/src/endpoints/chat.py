@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 import socketio
 from fastapi import APIRouter
 from langchain_openai import ChatOpenAI
-from langfuse import get_client
+from langfuse import get_client, propagate_attributes
 from loguru import logger
 from openai import (
     APIConnectionError,
@@ -86,7 +86,7 @@ def _resolve_selected_subnode(
     selected_node_id = data.get("selected_node_id")
     try:
         selected_node_id = int(selected_node_id)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return current_node_id, current
 
     if selected_node_id == 1:
@@ -411,7 +411,7 @@ async def connect(sid, environ, auth):
 
 
 @sio.event
-async def disconnect(sid):
+async def disconnect(sid, reason=None):
     user_id = unbind_sid(sid)
     end_session(user_id, sid)
     print(f"⚠ Socket disconnected sid={sid} user={user_id}")
@@ -441,17 +441,18 @@ async def send_message(sid, data):
     trace_id = langfuse.create_trace_id()
     print(f"[TRACE] send_message trace_id={trace_id} user={user_id}")
 
-    with langfuse.start_as_current_observation(
-        as_type="span",
-        name="chat_turn",
-        trace_context={"trace_id": trace_id},
-    ) as root_span:
-        root_span.update_trace(
+    with (
+        langfuse.start_as_current_observation(
+            as_type="span",
             name="chat_turn",
+            trace_context={"trace_id": trace_id},
+        ) as root_span,
+        propagate_attributes(
             user_id=user_id,
             session_id=durable_session_id_str,
-            input={"message": user_msg},
-        )
+            trace_name="chat_turn",
+        ),
+    ):
         root_span.update(input={"message": user_msg})
 
         limit = int(config.get("chat_history_limit", 0))
@@ -481,7 +482,6 @@ async def send_message(sid, data):
             "selected_subnode": selected_subnode,
         }
         root_span.update(input=trace_input)
-        root_span.update_trace(input=trace_input)
 
         full_response = ""
 
@@ -516,7 +516,6 @@ async def send_message(sid, data):
                             selected_subnode,
                         )
                         root_span.update(output={"response": full_response})
-                        root_span.update_trace(output={"response": full_response})
                         langfuse.flush()
                         return
 
@@ -557,7 +556,6 @@ async def send_message(sid, data):
                     selected_subnode,
                 )
                 root_span.update(output={"response": full_response})
-                root_span.update_trace(output={"response": full_response})
                 langfuse.flush()
                 return
 
@@ -605,7 +603,6 @@ async def send_message(sid, data):
         ctx.setdefault("prefetched", {})["root"] = full_response
 
         root_span.update(output={"response": full_response})
-        root_span.update_trace(output={"response": full_response})
 
         await push_chat_message_stream(user_id, "done", full_response, "root")
 

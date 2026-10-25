@@ -22,5 +22,5 @@ def parse_session_id(value: Any) -> UUID | None:
         return value
     try:
         return UUID(str(value))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None

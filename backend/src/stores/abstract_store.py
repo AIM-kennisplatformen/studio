@@ -7,7 +7,7 @@ from src.models.chat_message import ChatMessage
 class AbstractStore(ABC):
     """
     Abstract persistence layer for storing and retrieving ChatMessages.
-    
+
     A Store represents a backend capable of pushing chat history logs
     and retrieving them per user.
     """

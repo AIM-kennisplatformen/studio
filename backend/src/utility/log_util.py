@@ -1,4 +1,4 @@
-from langfuse import get_client
+from langfuse import get_client, propagate_attributes
 
 active_trace_ids: dict[str, str] = {}
 
@@ -14,19 +14,21 @@ def _log_session_event(
 ):
     langfuse = get_client()
 
-    with langfuse.start_as_current_observation(
-        as_type="span",
-        name=name,
-        trace_context={"trace_id": trace_id},
-    ) as observation:
-        observation.update(
-            input={"event": event, "user_id": user_id, "sid": sid},
-            output={"status": event, "message": message},
-        )
-        observation.update_trace(
+    with (
+        langfuse.start_as_current_observation(
+            as_type="span",
+            name=name,
+            trace_context={"trace_id": trace_id},
+        ) as observation,
+        propagate_attributes(
             user_id=user_id,
             session_id=sid,
             metadata={"message": message},
+        ),
+    ):
+        observation.update(
+            input={"event": event, "user_id": user_id, "sid": sid},
+            output={"status": event, "message": message},
         )
 
     langfuse.flush()

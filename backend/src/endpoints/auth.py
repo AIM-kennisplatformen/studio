@@ -24,6 +24,7 @@ auth_router = APIRouter()
 # Helpers
 # -------------------------------------------------------
 
+
 def get_current_user(request: Request):
     """
     Load the authenticated user from the session for HTTP requests.
@@ -33,7 +34,7 @@ def get_current_user(request: Request):
     if not user:
         raise HTTPException(
             status_code=307,
-            headers={"Location": f'{config["base_url"]}/auth/login'},
+            headers={"Location": f"{config['base_url']}/auth/login"},
         )
     return user
 
@@ -41,6 +42,7 @@ def get_current_user(request: Request):
 # -------------------------------------------------------
 # HTTP Authentication Flow
 # -------------------------------------------------------
+
 
 @auth_router.get("/auth/login")
 async def login(request: Request):
@@ -59,7 +61,7 @@ async def callback(request: Request):
     """
     token = await oauth.authentik.authorize_access_token(request)
     request.session["user"] = dict(token["userinfo"])
-    return RedirectResponse(f'{config["frontend_base_url"]}/')
+    return RedirectResponse(f"{config['frontend_base_url']}/")
 
 
 @auth_router.get("/auth/logout")
@@ -81,9 +83,11 @@ async def me(request: Request):
         raise HTTPException(status_code=401, detail="Not authenticated")
     return {"authenticated": True, "user": user}
 
+
 # -------------------------------------------------------
 # WebSocket Authentication
 # -------------------------------------------------------
+
 
 async def get_current_user_ws(websocket: WebSocket):
     """
