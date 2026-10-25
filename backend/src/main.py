@@ -15,6 +15,7 @@ from src.endpoints.settings import settings_router
 from src.stores.postgres import postgres_store
 from src.stores.redis import redis_store
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     kg_data = load_knowledge_graph()
@@ -23,17 +24,22 @@ async def lifespan(app: FastAPI):
     print(f"✓ Loaded {len(kg_data.entities)} entities")
     print(f"✓ Loaded {len(kg_data.relations)} relations")
     print(f"✓ Loaded {len(kg_data.questions)} questions")
-    await redis_store.connect({
-        "redis_url": config["redis_url"],
-        "redis_expiration_time": config["redis_expiration_time"]
-    })
-    await postgres_store.connect({
-        "postgres_url": config["postgres_url"],
-    })
+    await redis_store.connect(
+        {
+            "redis_url": config["redis_url"],
+            "redis_expiration_time": config["redis_expiration_time"],
+        }
+    )
+    await postgres_store.connect(
+        {
+            "postgres_url": config["postgres_url"],
+        }
+    )
     yield
 
     await postgres_store.close()
     await redis_store.close()
+
 
 app = FastAPI(
     title="Knowledge Graph API",
@@ -49,8 +55,8 @@ app = FastAPI(
 app.add_middleware(
     SessionMiddleware,
     secret_key=config["session_secret"],
-    same_site="lax",        # REQUIRED for cross-site requests
-    https_only=False,        # Only True if you deploy with HTTPS
+    same_site="lax",  # REQUIRED for cross-site requests
+    https_only=False,  # Only True if you deploy with HTTPS
 )
 
 app.mount("/api/socket.io", socket_app)

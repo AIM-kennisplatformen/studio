@@ -86,7 +86,7 @@ def _resolve_selected_subnode(
     selected_node_id = data.get("selected_node_id")
     try:
         selected_node_id = int(selected_node_id)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return current_node_id, current
 
     if selected_node_id == 1:
@@ -441,14 +441,17 @@ async def send_message(sid, data):
     trace_id = langfuse.create_trace_id()
     print(f"[TRACE] send_message trace_id={trace_id} user={user_id}")
 
-    with langfuse.start_as_current_observation(
-        as_type="span",
-        name="chat_turn",
-        trace_context={"trace_id": trace_id},
-    ) as root_span, propagate_attributes(
-        user_id=user_id,
-        session_id=durable_session_id_str,
-        trace_name="chat_turn",
+    with (
+        langfuse.start_as_current_observation(
+            as_type="span",
+            name="chat_turn",
+            trace_context={"trace_id": trace_id},
+        ) as root_span,
+        propagate_attributes(
+            user_id=user_id,
+            session_id=durable_session_id_str,
+            trace_name="chat_turn",
+        ),
     ):
         root_span.update(input={"message": user_msg})
 

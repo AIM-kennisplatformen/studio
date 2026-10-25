@@ -104,11 +104,14 @@ async def run_agent(
     langfuse = get_client()
 
     if trace_id is not None:
-        with langfuse.start_as_current_observation(
-            as_type="span",
-            name="run_agent",
-            trace_context={"trace_id": trace_id},
-        ), propagate_attributes(user_id=user_id, session_id=session_id):
+        with (
+            langfuse.start_as_current_observation(
+                as_type="span",
+                name="run_agent",
+                trace_context={"trace_id": trace_id},
+            ),
+            propagate_attributes(user_id=user_id, session_id=session_id),
+        ):
             agent = await _create_agent()
             result = await agent.run(message)
         langfuse.flush()
@@ -138,11 +141,14 @@ async def stream_agent_events(
     langfuse = get_client()
 
     if trace_id is not None:
-        with langfuse.start_as_current_observation(
-            as_type="span",
-            name="stream_agent_events",
-            trace_context={"trace_id": trace_id},
-        ), propagate_attributes(user_id=user_id, session_id=session_id):
+        with (
+            langfuse.start_as_current_observation(
+                as_type="span",
+                name="stream_agent_events",
+                trace_context={"trace_id": trace_id},
+            ),
+            propagate_attributes(user_id=user_id, session_id=session_id),
+        ):
             agent = await _create_agent()
             async for event in agent.stream_events(message):
                 event_type = event.get("event", "")
