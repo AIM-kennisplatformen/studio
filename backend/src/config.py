@@ -3,12 +3,9 @@ import re
 import secrets
 from pathlib import Path
 
-from dotenv import load_dotenv
 from loguru import logger
 
 backend_root = Path(__file__).resolve().parents[1]
-load_dotenv(backend_root / ".env")
-load_dotenv(backend_root.parent / ".env")
 
 
 CITATION_INSTRUCTIONS = (
@@ -83,7 +80,7 @@ def _tool_filter_instructions(
 
 
 def root_question_prompt(question: str, history_text: str = "") -> str:
-    history_section = (
+    history_section: str = (
         f"Conversation History:\n{history_text}\n\n" if history_text else ""
     )
     return (
@@ -162,7 +159,7 @@ def require_env(name: str, default: str | None = None) -> str:
     return value
 
 
-config: dict = {
+config: dict[str, str | int] = {
     "base_url": require_env(
         "BACKEND_BASE_URL", "http://localhost:10090/chatep/api"
     ).rstrip("/"),
