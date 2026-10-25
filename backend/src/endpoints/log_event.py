@@ -13,7 +13,7 @@ log_event_router = APIRouter()
 
 class LogEventPayload(BaseModel):
     name: str
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)  # pyright: ignore[reportExplicitAny]
 
 
 @log_event_router.post("/log_event", status_code=204)
