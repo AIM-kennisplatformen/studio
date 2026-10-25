@@ -23,9 +23,9 @@ authors = [
 classifiers = [
   "Environment :: Console",
   "Framework :: FastAPI",
-  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.15",
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.15,<3.16"
 dynamic = ["version"]
 
 dependencies = [
@@ -81,7 +81,7 @@ platforms = ["linux-64", "linux-aarch64", "osx-arm64", "win-64"]
 # Pixi environment dependencies
 # ====================================
 [tool.pixi.dependencies]
-python = ">=3.12,<3.13"
+python = ">=3.15,<3.16"
 pkg-config = ">=0.29.2"
 
 ruff = ">=0.17.2"
@@ -89,8 +89,8 @@ ruff = ">=0.17.2"
 mypy = ">=2.4.0"
 pytest = ">=9.1.1"
 # Smaller libs
-einops = ">=0.8.2"
-itsdangerous = ">=2.2.0"
+zstandard = ">=0.25.0"
+orjson = ">=3.13.0"
 
 # Tools duplicated in project/dev groups (ok for Pixi env)
 loguru = ">=0.7.3"
