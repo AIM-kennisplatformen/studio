@@ -1,16 +1,16 @@
-from typing import DefaultDict, Dict, Any
 from collections import defaultdict
+from typing import Any, cast
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, FastAPI, Request
 
-from src.utility.graph_api_models import GraphResponse
-from src.endpoints.auth import get_current_user
 from src.config import subnode_question_prompt
-
+from src.endpoints.auth import CurrentUser
 from src.utility.chat_util import (
     push_chat_message_stream,
     stream_agent_events,
 )
+from src.utility.graph_api_models import GraphResponse
+from src.utility.graph_data_loader import KnowledgeGraphData
 
 graph_router = APIRouter()
 
@@ -35,7 +35,7 @@ SUBNODE_MAP = {
 
 SUBNODES = list(SUBNODE_MAP.values())
 
-NODE_CLASSIFICATION_FILTERS = {
+NODE_CLASSIFICATION_FILTERS: dict[int, tuple[list[str] | None, list[str] | None]] = {
     2: (["best_practices"], None),
     3: (["target_groups"], None),
     4: (["strategic_overview"], None),
@@ -55,7 +55,7 @@ NODE_CLASSIFICATION_FILTERS = {
 # =====================================================
 
 
-def _default_user_graph_context() -> Dict[str, Any]:
+def _default_user_graph_context() -> dict[str, Any]:
     return {
         "selected_subnode": "root",
         "selected_node_id": 1,
@@ -68,7 +68,7 @@ def _default_user_graph_context() -> Dict[str, Any]:
     }
 
 
-user_graph_contexts: DefaultDict[str, Dict[str, Any]] = defaultdict(
+user_graph_contexts: defaultdict[str, dict[str, Any]] = defaultdict(
     _default_user_graph_context
 )
 
@@ -101,9 +101,12 @@ async def fetch_subnode_stream(
     ctx = user_graph_contexts[user_id]
 
     try:
-        required_user_personas, required_literature_kinds = (
-            NODE_CLASSIFICATION_FILTERS.get(selected_node_id, (None, None))
-        )
+        if selected_node_id is None:
+            required_user_personas, required_literature_kinds = None, None
+        else:
+            required_user_personas, required_literature_kinds = (
+                NODE_CLASSIFICATION_FILTERS.get(selected_node_id, (None, None))
+            )
         synthetic_prompt = subnode_question_prompt(
             question,
             subnode,
@@ -145,11 +148,12 @@ async def fetch_subnode_stream(
 
 
 @graph_router.get("/graph")
-async def get_full_graph(request: Request, user=Depends(get_current_user)):
+async def get_full_graph(request: Request, user: CurrentUser) -> GraphResponse:
     user_id = user["sub"]
     ctx = user_graph_contexts[user_id]
 
-    kg_data = request.app.state.kg_data
+    app = cast(FastAPI, request.app)
+    kg_data = cast(KnowledgeGraphData | None, app.state.kg_data)
 
     if kg_data is None:
         return GraphResponse(
@@ -158,7 +162,7 @@ async def get_full_graph(request: Request, user=Depends(get_current_user)):
             error="not_loaded",
         )
 
-    selected_node_id = ctx.get("selected_node_id", 1)
+    selected_node_id = cast(int, ctx.get("selected_node_id", 1))
     if selected_node_id == 1:
         selected_subnode = None
     else:
