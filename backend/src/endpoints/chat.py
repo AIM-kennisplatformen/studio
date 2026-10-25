@@ -1,5 +1,6 @@
 import asyncio
 import time
+from typing import cast
 from uuid import UUID, uuid4
 
 import socketio
@@ -33,6 +34,7 @@ from src.endpoints.graph import (
     fetch_subnode_stream,
     user_graph_contexts,
 )
+from src.models.auth import AuthentikUser
 from src.models.chat_message import ChatMessage
 from src.models.session import Session as ChatSession
 from src.models.session import SessionMessage, TitleCandidate
@@ -386,27 +388,31 @@ async def _store_chat_message(
 
 
 @sio.event
-async def connect(sid, environ, auth):
+async def connect(
+    sid: str,
+    environ: dict[str, object],
+    _auth: dict[str, object] | None,
+) -> None:
     """
     Called when a client initiates a Socket.IO connection.
     Loads user from ASGI session (already decoded by SessionMiddleware).
     """
-    scope = environ.get("asgi.scope") or {}
-    session = scope.get("session") or {}
+    scope = cast(dict[str, object], environ.get("asgi.scope") or {})
+    session = cast(dict[str, object], scope.get("session") or {})
     user = session.get("user")
 
     if not user:
         print("❌ Rejecting socket: no user in session")
         raise ConnectionRefusedError("unauthorized")
 
-    user_id = user["sub"]
+    user_id = cast(AuthentikUser, user)["sub"]
     bind_user(user_id, sid)
     user_title_settings[user_id] = bool(session.get("dynamic_title", True))
-    await _resolve_active_session(user_id, session, create=False)
+    _ = await _resolve_active_session(user_id, session, create=False)
     # Preserve graph focus across reconnects and additional tabs. The client also
     # sends its current selection with every message, which remains authoritative.
-    user_graph_contexts.setdefault(user_id, _default_user_graph_context())
-    start_session(user_id, sid)
+    _ = user_graph_contexts.setdefault(user_id, _default_user_graph_context())
+    _ = start_session(user_id, sid)
     print(f"✓ Socket connected: {sid} user={user_id}")
 
 
