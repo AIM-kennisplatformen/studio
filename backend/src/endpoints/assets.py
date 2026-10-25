@@ -1,13 +1,41 @@
-from fastapi import Depends, APIRouter, Request
-from src.endpoints.auth import get_current_user
+from typing import Annotated, TypedDict, cast
+
+from fastapi import APIRouter, Depends, FastAPI, Request
+
+from src.endpoints.auth import AuthentikUser, get_current_user
+from src.utility.graph_data_loader import KnowledgeGraphData
+
+
+class AssetsCounts(TypedDict):
+    entities_count: int
+    relations_count: int
+    questions_count: int
+
+
+class AssetsSuccess(TypedDict):
+    status: str
+    user: AuthentikUser
+    version: str
+    data: AssetsCounts
+
+
+class AssetsError(TypedDict):
+    status: str
+    message: str
+    version: str
 
 
 asset_router = APIRouter()
 
 
-@asset_router.get("/")
-async def root(request: Request, user=Depends(get_current_user)):
-    kg_data = request.app.state.kg_data
+# pyright: reportAny=false
+@asset_router.get("/", response_model=None)
+async def root(
+    request: Request,
+    user: Annotated[AuthentikUser, Depends(get_current_user)],
+) -> AssetsSuccess | AssetsError:
+    app = cast(FastAPI, request.app)
+    kg_data = cast(KnowledgeGraphData | None, app.state.kg_data)
     if kg_data is None:
         return {
             "status": "error",

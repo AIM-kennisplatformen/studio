@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Request, HTTPException, WebSocket
-from fastapi.responses import RedirectResponse
+from typing import TypedDict, cast
+
 from authlib.integrations.starlette_client import OAuth
+from fastapi import APIRouter, HTTPException, Request, WebSocket
+from fastapi.responses import RedirectResponse
 
 from src.config import config
 
@@ -20,12 +22,18 @@ oauth.register(
 auth_router = APIRouter()
 
 
+class AuthentikUser(TypedDict):
+    """Shape of the Authentik userinfo dict saved in the session by /auth/callback."""
+
+    sub: str
+
+
 # -------------------------------------------------------
 # Helpers
 # -------------------------------------------------------
 
 
-def get_current_user(request: Request):
+def get_current_user(request: Request) -> AuthentikUser:
     """
     Load the authenticated user from the session for HTTP requests.
     Redirects to login if missing.
@@ -36,7 +44,7 @@ def get_current_user(request: Request):
             status_code=307,
             headers={"Location": f"{config['base_url']}/auth/login"},
         )
-    return user
+    return cast(AuthentikUser, user)
 
 
 # -------------------------------------------------------
