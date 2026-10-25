@@ -102,5 +102,8 @@
     "typescript-language-server": "^6.0.2",
     "vite": "^8.3.5",
     "vscode-langservers-extracted": "^4.10.0"
+  },
+  "overrides": {
+    "katex": "$katex"
   }
 }
