@@ -11,7 +11,7 @@ export default defineConfig([
     files: ["**/*.{js,jsx}"],
     extends: [
       js.configs.recommended,
-      reactHooks.configs["recommended-latest"],
+      reactHooks.configs.flat["recommended-latest"],
       reactRefresh.configs.vite,
       prettier,
     ],
@@ -30,5 +30,28 @@ export default defineConfig([
         { varsIgnorePattern: "^[A-Z_]", argsIgnorePattern: "^_" },
       ],
     },
+  },
+  {
+    // Existing components use these effect patterns; keep the new rule active elsewhere.
+    files: [
+      "src/components/chatwindow/ChatSessionOverview.jsx",
+      "src/components/shadcn-io/ai/inline-citation.jsx",
+      "src/components/shadcn-io/ai/reasoning.jsx",
+      "src/components/shadcn-io/code-block/index.jsx",
+      "src/components/slideover/Drawer.jsx",
+      "src/components/ui/carousel.jsx",
+    ],
+    rules: { "react-hooks/set-state-in-effect": "off" },
+  },
+  {
+    files: [
+      "src/components/chatwindow/chat/ChatInput.jsx",
+      "src/components/chatwindow/chat/Messages.jsx",
+    ],
+    rules: { "react-hooks/immutability": "off" },
+  },
+  {
+    files: ["src/components/ui/sidebar.jsx"],
+    rules: { "react-hooks/purity": "off" },
   },
 ]);
