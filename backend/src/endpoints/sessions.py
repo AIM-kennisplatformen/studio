@@ -1,10 +1,10 @@
-from typing import Literal
+from typing import Literal, cast
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel
 
-from src.endpoints.auth import get_current_user
+from src.endpoints.auth import CurrentUser
 from src.models.session import Session, SessionDetail, SessionMessage
 from src.stores.postgres import postgres_store
 from src.utility.session_store import (
@@ -21,16 +21,17 @@ class UpdateSessionRequest(BaseModel):
 
 
 @sessions_router.get("/sessions", response_model=list[Session])
-async def list_sessions(user=Depends(get_current_user)) -> list[Session]:
+async def list_sessions(user: CurrentUser) -> list[Session]:
     user_id: str = user["sub"]
     return await postgres_store.list_sessions(user_id)
 
 
 @sessions_router.post("/sessions", response_model=Session)
-async def create_session(request: Request, user=Depends(get_current_user)) -> Session:
+async def create_session(request: Request, user: CurrentUser) -> Session:
     user_id: str = user["sub"]
-    title_type: Literal["static", "dynamic"] = request.session.get(
-        "title_type", "dynamic"
+    title_type = cast(
+        Literal["static", "dynamic"],
+        request.session.get("title_type", "dynamic"),
     )
     session: Session = await postgres_store.create_session(
         user_id, title_type=title_type
@@ -41,9 +42,7 @@ async def create_session(request: Request, user=Depends(get_current_user)) -> Se
 
 
 @sessions_router.get("/sessions/{session_id}", response_model=SessionDetail)
-async def get_session(
-    session_id: UUID, user=Depends(get_current_user)
-) -> SessionDetail:
+async def get_session(session_id: UUID, user: CurrentUser) -> SessionDetail:
     user_id: str = user["sub"]
     session: Session | None = await postgres_store.get_session(user_id, session_id)
     if session is None:
@@ -59,7 +58,7 @@ async def get_session(
 async def update_session(
     session_id: UUID,
     body: UpdateSessionRequest,
-    user=Depends(get_current_user),
+    user: CurrentUser,
 ) -> Session | None:
     user_id: str = user["sub"]
     session: Session | None = await postgres_store.get_session(user_id, session_id)
@@ -81,7 +80,7 @@ async def update_session(
 async def activate_session(
     session_id: UUID,
     request: Request,
-    user=Depends(get_current_user),
+    user: CurrentUser,
 ) -> Session:
     user_id: str = user["sub"]
     session: Session | None = await postgres_store.get_session(user_id, session_id)
@@ -98,7 +97,7 @@ async def activate_session(
 )
 async def delete_session(
     session_id: UUID,
-    user=Depends(get_current_user),
+    user: CurrentUser,
 ) -> Response:
     user_id: str = user["sub"]
     session: Session | None = await postgres_store.get_session(user_id, session_id)
