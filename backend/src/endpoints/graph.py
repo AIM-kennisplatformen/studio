@@ -4,6 +4,7 @@ from collections import defaultdict
 from fastapi import APIRouter, Depends, Request
 
 from src.utility.graph_api_models import GraphResponse
+from src.utility.typedb_graph import select_subgraph
 from src.endpoints.auth import get_current_user
 from src.config import subnode_question_prompt
 
@@ -34,6 +35,29 @@ SUBNODE_MAP = {
 }
 
 SUBNODES = list(SUBNODE_MAP.values())
+
+# POC(fcose): the legacy subnode map only applies to the old research dataset.
+# The bookstore payload reuses low node ids for addresses and cities, so using
+# the map against it would trigger unrelated prompts. The flag defaults to on
+# so unit tests and the old dataset keep working; the app sets it on startup.
+_legacy_subnodes_enabled = True
+
+
+def set_graph_dataset(kg_data) -> None:
+    """Disable legacy subnode ids when the loaded graph is not the old dataset."""
+    global _legacy_subnodes_enabled
+    types = {node.type for node in kg_data.entities.values()} if kg_data else set()
+    _legacy_subnodes_enabled = not bool(
+        types & {"hardback", "paperback", "ebook"}
+    )
+
+
+def lookup_subnode(node_id: int) -> str | None:
+    """Return the legacy subnode name for an id, or None when disabled."""
+    if not _legacy_subnodes_enabled:
+        return None
+    return SUBNODE_MAP.get(node_id)
+
 
 NODE_CLASSIFICATION_FILTERS = {
     2: (["best_practices"], None),
@@ -145,7 +169,12 @@ async def fetch_subnode_stream(
 
 
 @graph_router.get("/graph")
-async def get_full_graph(request: Request, user=Depends(get_current_user)):
+async def get_full_graph(
+    request: Request,
+    focus: int | None = None,
+    hops: int = 1,
+    user=Depends(get_current_user),
+):
     user_id = user["sub"]
     ctx = user_graph_contexts[user_id]
 
@@ -158,6 +187,14 @@ async def get_full_graph(request: Request, user=Depends(get_current_user)):
             error="not_loaded",
         )
 
+    full = GraphResponse(
+        nodes=list(kg_data.entities.values()),
+        edges=list(kg_data.relations.values()),
+    )
+    if focus is not None:
+        # POC(fcose): manual stand-in for the MCP server choosing a subgraph.
+        return select_subgraph(full, focus, max(1, min(hops, 3)))
+
     selected_node_id = ctx.get("selected_node_id", 1)
     if selected_node_id == 1:
         selected_subnode = None
@@ -165,8 +202,26 @@ async def get_full_graph(request: Request, user=Depends(get_current_user)):
         selected_subnode = kg_data.entities.get(selected_node_id)
 
     return GraphResponse(
-        nodes=list(kg_data.entities.values()),
-        edges=list(kg_data.relations.values()),
+        nodes=full.nodes,
+        edges=full.edges,
         selected_subnode=selected_subnode,
         error=None,
     )
+
+
+# POC(fcose): book options for the temporary focus picker. The MCP server will
+# replace this with query-driven selection.
+@graph_router.get("/graph/options")
+async def get_graph_options(request: Request, user=Depends(get_current_user)):
+    kg_data = request.app.state.kg_data
+    if kg_data is None:
+        return {"options": []}
+
+    book_types = {"hardback", "paperback", "ebook"}
+    options = [
+        {"id": node.id, "type": node.type, "title": node.title}
+        for node in kg_data.entities.values()
+        if node.type in book_types
+    ]
+    options.sort(key=lambda item: item["title"].lower())
+    return {"options": options}

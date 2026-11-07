@@ -8,7 +8,7 @@ from src.utility.graph_data_loader import load_knowledge_graph
 from src.endpoints.assets import asset_router
 from src.endpoints.auth import auth_router
 from src.endpoints.chat import chat_router, socket_app
-from src.endpoints.graph import graph_router
+from src.endpoints.graph import graph_router, set_graph_dataset
 from src.endpoints.log_event import log_event_router
 from src.endpoints.sessions import sessions_router
 from src.endpoints.settings import settings_router
@@ -20,6 +20,7 @@ from src.stores.redis import redis_store
 async def lifespan(app: FastAPI):
     kg_data = load_knowledge_graph()
     app.state.kg_data = kg_data
+    set_graph_dataset(kg_data)
 
     print(f"✓ Loaded {len(kg_data.entities)} entities")
     print(f"✓ Loaded {len(kg_data.relations)} relations")

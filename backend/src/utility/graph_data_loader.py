@@ -1,9 +1,15 @@
-"""Data loader for knowledge graph example data and QnA questions."""
+"""Data loader for the FCose graph payload and QnA questions.
+
+The payload file uses the same ``nodes``/``edges`` contract that
+``GET /api/graph`` returns, so the mock export and the future TypeDB MCP path
+share one structure.
+"""
 
 import json
 from pathlib import Path
 from typing import Dict, List, Any
-from src.utility.graph_api_models import Node, Edge
+
+from src.utility.graph_api_models import Edge, GraphResponse, Node
 
 
 class KnowledgeGraphData:
@@ -15,51 +21,15 @@ class KnowledgeGraphData:
         self.questions: List[Dict[str, Any]] = []
 
     def load_from_files(self, data_path: str) -> None:
-        """Load data from JSON files."""
-        # Load example data
+        """Load a graph payload from JSON."""
         with open(data_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
+            payload = GraphResponse.model_validate(json.load(f))
 
-        # Convert nuggets to Node models
-        for nugget in data.get("nuggets", []):
-            entity_id = nugget["id"]
+        for node in payload.nodes:
+            self.entities[node.id] = node
 
-            # Build attributes dict from all fields except id, type, and title
-            attributes = {
-                k: v for k, v in nugget.items() if k not in ["id", "type", "title"]
-            }
-
-            # Create Node
-            node = Node(
-                id=entity_id,
-                type=nugget.get("type", "nugget"),
-                title=nugget.get("title", f"Entity {entity_id}"),
-                attributes=attributes,
-            )
-
-            self.entities[entity_id] = node
-
-        # Convert relationships to Edge models
-        for relationship in data.get("relationships", []):
-            rel_id = relationship["id"]
-
-            # Build attributes dict from description if present
-            attributes = {}
-            if "description" in relationship:
-                attributes["description"] = relationship["description"]
-
-            # Create Edge
-            edge = Edge(
-                id=rel_id,
-                source_id=relationship["source_id"],
-                target_id=relationship["target_id"],
-                labelToTarget=relationship.get("label_forward"),
-                labelToSource=relationship.get("label_backward"),
-                type="relation",
-                attributes=attributes,
-            )
-
-            self.relations[rel_id] = edge
+        for edge in payload.edges:
+            self.relations[edge.id] = edge
 
     def get_entity(self, entity_id: int) -> Node | None:
         """Get entity by ID."""

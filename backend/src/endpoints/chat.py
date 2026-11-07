@@ -28,9 +28,9 @@ from src.config import (
     subnode_repeat_question_prompt,
 )
 from src.endpoints.graph import (
-    SUBNODE_MAP,
     _default_user_graph_context,
     fetch_subnode_stream,
+    lookup_subnode,
     user_graph_contexts,
 )
 from src.models.chat_message import ChatMessage
@@ -91,8 +91,9 @@ def _resolve_selected_subnode(
 
     if selected_node_id == 1:
         return selected_node_id, "root"
-    if selected_node_id in SUBNODE_MAP:
-        return selected_node_id, SUBNODE_MAP[selected_node_id]
+    subnode = lookup_subnode(selected_node_id)
+    if subnode is not None:
+        return selected_node_id, subnode
     return current_node_id, current
 
 
@@ -640,8 +641,8 @@ async def select_node(sid, data):
         ctx["previous_question"] = question
         return
 
-    if node_id in SUBNODE_MAP:
-        subnode = SUBNODE_MAP[node_id]
+    subnode = lookup_subnode(node_id)
+    if subnode is not None:
         ctx["selected_node_id"] = node_id
         ctx["selected_subnode"] = subnode
         ctx["dialogue_state_asked"] = False

@@ -4,6 +4,8 @@ import ChatWindow from "./components/chatwindow/ChatWindow.jsx";
 import Graph from "./components/graph/Graph.jsx";
 import { ReactFlowProvider } from "@xyflow/react";
 import { fetchGraphAnswer as fetchAnswer } from "./data/graphResponse.js";
+import { fetchGraphOptions } from "./data/graphResponse.js";
+import GraphFocusPicker from "./components/graph/GraphFocusPicker.jsx";
 import { useAtomValue } from "jotai";
 import { graphRefetchTriggerAtom } from "./lib/atoms";
 import { FeedbackButton } from "./components/FeedbackButton.jsx";
@@ -39,13 +41,27 @@ export default function App() {
 
   const [options, setOptions] = useState(DEFAULT_FCOSE_OPTIONS);
 
-  // Load graph once on mount or when center node changes for the first time
+  // POC(fcose): manual focus selection for the mock graph.
+  const [focusNodeId, setFocusNodeId] = useState(null);
+  const [hops, setHops] = useState(1);
+  const [focusOptions, setFocusOptions] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const options = await fetchGraphOptions();
+      if (mounted) setFocusOptions(options);
+    })();
+    return () => (mounted = false);
+  }, []);
+
+  // Load graph once on mount or when the focus changes
   useEffect(() => {
     let mounted = true;
 
     (async () => {
       try {
-        const resp = await fetchAnswer();
+        const resp = await fetchAnswer(focusNodeId, hops);
         if (!mounted) return;
         setData(resp);
       } catch (err) {
@@ -53,7 +69,7 @@ export default function App() {
       }
     })();
     return () => (mounted = false);
-  }, [refetchTrigger]);
+  }, [refetchTrigger, focusNodeId, hops]);
 
   // Re-clamp on window resize too, so shrinking the browser can't push the
   // graph/resizer/feedback-button past the chat pane's min-width either.
@@ -122,6 +138,15 @@ export default function App() {
 
             {/* Graph takes whatever horizontal space is left over */}
             <div className="relative h-full flex-grow">
+              <GraphFocusPicker
+                options={focusOptions}
+                focusId={focusNodeId}
+                hops={hops}
+                nodeCount={data?.nodes?.length ?? 0}
+                edgeCount={data?.edges?.length ?? 0}
+                onFocusChange={setFocusNodeId}
+                onHopsChange={setHops}
+              />
               <Graph
                 data={data}
                 width={leftWidth}

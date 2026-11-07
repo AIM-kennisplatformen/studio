@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 
 
@@ -8,7 +8,7 @@ class Node(BaseModel):
     id: int
     type: str = "unknown"
     title: str
-    attributes: dict  # Additional attributes for the node
+    attributes: dict = Field(default_factory=dict)  # Additional attributes for the node
 
 
 class Edge(BaseModel):
@@ -20,7 +20,7 @@ class Edge(BaseModel):
     labelToSource: Optional[str] = None
     labelToTarget: Optional[str] = None
     type: str = "unknown"
-    attributes: Optional[dict]  # Additional attributes for the edge
+    attributes: Optional[dict] = Field(default_factory=dict)  # Additional attributes for the edge
 
 
 class Source(BaseModel):
@@ -60,5 +60,7 @@ class GraphResponse(BaseModel):
     nodes: List[Node] = []
     edges: List[Edge] = []
     selected_subnode: Optional[Node] = None
+    # Node the server chose as the centre of this subgraph. None means full graph.
+    focus_node_id: Optional[int] = None
     # metadata: dict = {}
     error: Optional[str] = None

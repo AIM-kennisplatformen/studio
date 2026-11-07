@@ -29,6 +29,12 @@ function getSubgraph(data, nodeId) {
   };
 }
 
+// The backend decides the centre of the returned subgraph. When the MCP server
+// takes over it sets focus_node_id instead of the frontend choosing a node.
+function resolveInitialCenter(data) {
+  return data.focus_node_id ?? data.selected_subnode?.id ?? 1;
+}
+
 export default function Graph({
   data,
   width,
@@ -40,7 +46,7 @@ export default function Graph({
   const [nodes, setNodes] = useAtom(nodesAtom);
   const [edges, setEdges] = useAtom(edgesAtom);
   const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom);
-  const [centerNodeId, setCenterNodeId] = useAtom(centerNodeAtom);
+  const [, setCenterNodeId] = useAtom(centerNodeAtom);
   const [layoutNodes, setLayoutNodes] = useAtom(layoutNodesAtom);
   const emitSelectNode = useAtomValue(selectNodeEmitAtom);
 
@@ -85,7 +91,7 @@ export default function Graph({
   );
 
   const prepareGraphData = useCallback(
-    (graphData, centerId = 1) => {
+    (graphData, centerId = 1, forceCenter = false) => {
       if (!graphData?.nodes || !graphData?.edges) return;
 
       const previousPositions = allPositionsRef.current;
@@ -236,9 +242,9 @@ export default function Graph({
       edgesRef.current = newEdges;
       setNodes(mergedNodes);
 
-      // Center node 1 on first load only
-      if (!selectedNodeRef.current) {
-        const nodeToCenter = mergedNodes.find((n) => n.id === "1");
+      // Center the initial node on first load, or the server-selected focus
+      if (forceCenter || !selectedNodeRef.current) {
+        const nodeToCenter = mergedNodes.find((n) => n.id === String(centerId));
         if (nodeToCenter && containerRef.current) {
           centerNodeInView(nodeToCenter);
           setSelectedNode(nodeToCenter);
@@ -257,15 +263,28 @@ export default function Graph({
     ]
   );
 
-  // On first load show node 1's neighbourhood; on refetch just update fullDataRef
+  // On first load show the seed neighbourhood; on refetch just update fullDataRef
   useEffect(() => {
     if (!data) return;
 
     fullDataRef.current = data;
+    if (data.focus_node_id != null) {
+      // The backend already chose this subgraph; render all of it and do not
+      // filter again to one hop, or depth would have no visible effect.
+      prepareGraphData(
+        { nodes: data.nodes, edges: data.edges },
+        Number(data.focus_node_id),
+        true
+      );
+      return;
+    }
     const currentCenterId = selectedNodeRef.current
       ? selectedNodeRef.current.id
-      : 1;
-    prepareGraphData(getSubgraph(data, currentCenterId));
+      : resolveInitialCenter(data);
+    prepareGraphData(
+      getSubgraph(data, currentCenterId),
+      Number(currentCenterId)
+    );
   }, [data, prepareGraphData]);
 
   const onNodeClick = useCallback(
