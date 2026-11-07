@@ -3,6 +3,7 @@ import re
 import secrets
 from pathlib import Path
 from typing import TypedDict
+from urllib.parse import quote
 
 from loguru import logger
 
@@ -160,6 +161,22 @@ def require_env(name: str, default: str | None = None) -> str:
     return value
 
 
+def postgres_dsn() -> str:
+    user = os.getenv("STUDIO_POSTGRES_USER")
+    if user:
+        password = require_env("STUDIO_POSTGRES_PASSWORD")
+        database = require_env("STUDIO_POSTGRES_DB")
+        host = os.getenv("STUDIO_POSTGRES_HOST", "studio_postgres")
+        port = os.getenv("STUDIO_POSTGRES_PORT", "5432")
+        return (
+            f"postgresql://{quote(user, safe='')}:{quote(password, safe='')}"
+            f"@{host}:{port}/{quote(database, safe='')}"
+        )
+    return require_env(
+        "POSTGRES_URL", "postgresql://studio:studio@studio_postgres:5432/studio"
+    )
+
+
 class AppConfig(TypedDict):
     """Resolved application configuration."""
 
@@ -219,10 +236,7 @@ config: AppConfig = {
     "redis_url": require_env("REDIS_URL", "redis://localhost:6379/0"),
     "redis_expiration_time": int(os.getenv("REDIS_EXPIRATION_TIME", "86400")),
     "chat_history_limit": int(os.getenv("CHAT_HISTORY_LIMIT", "10")),
-    "postgres_url": require_env(
-        "POSTGRES_URL",
-        "postgresql://studio:studio@studio_postgres:5432/studio",
-    ),
+    "postgres_url": postgres_dsn(),
 }
 
 
