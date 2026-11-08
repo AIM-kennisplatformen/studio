@@ -55,7 +55,7 @@ NODE_CLASSIFICATION_FILTERS: dict[int, tuple[list[str] | None, list[str] | None]
 # =====================================================
 
 
-def _default_user_graph_context() -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
+def default_user_graph_context() -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     return {
         "selected_subnode": "root",
         "selected_node_id": 1,
@@ -69,7 +69,7 @@ def _default_user_graph_context() -> dict[str, Any]:  # pyright: ignore[reportEx
 
 
 user_graph_contexts: defaultdict[str, dict[str, Any]] = defaultdict(  # pyright: ignore[reportExplicitAny]
-    _default_user_graph_context
+    default_user_graph_context
 )
 
 

@@ -30,7 +30,7 @@ from src.config import (
 )
 from src.endpoints.graph import (
     SUBNODE_MAP,
-    _default_user_graph_context,
+    default_user_graph_context,
     fetch_subnode_stream,
     user_graph_contexts,
 )
@@ -411,7 +411,7 @@ async def connect(
     _ = await _resolve_active_session(user_id, session, create=False)
     # Preserve graph focus across reconnects and additional tabs. The client also
     # sends its current selection with every message, which remains authoritative.
-    _ = user_graph_contexts.setdefault(user_id, _default_user_graph_context())
+    _ = user_graph_contexts.setdefault(user_id, default_user_graph_context())
     _ = start_session(user_id, sid)
     print(f"✓ Socket connected: {sid} user={user_id}")
 
