@@ -1,5 +1,5 @@
 import time
-from typing import Optional, Dict, AsyncGenerator
+from typing import AsyncGenerator, Dict, Optional
 
 import socketio
 from langchain_openai import ChatOpenAI
@@ -9,6 +9,7 @@ from mcp_use import MCPAgent, MCPClient
 from mcp_use.client.config import load_config_file
 
 from src.config import config
+from src.models.chat_event import AgentEvent
 
 # =====================================================
 # Socket.IO broker state
@@ -130,7 +131,7 @@ async def stream_agent_events(
     user_id: str | None = None,
     trace_id: str | None = None,
     session_id: str | None = None,
-) -> AsyncGenerator[dict, None]:
+) -> AsyncGenerator[AgentEvent, None]:
     """
     Async generator that yields parsed event dicts:
       {"type": str, "data": str, "timestamp": float}
