@@ -86,15 +86,26 @@ _pending_title_candidates: dict[str, TitleCandidate] = {}
 CANDIDATE_TITLE_TIMEOUT_SECONDS = 20.0
 
 
+def _payload_str(data: dict[str, object], key: str) -> str | None:
+    value = data.get(key)
+    return value if isinstance(value, str) else None
+
+
+def _payload_int(data: dict[str, object], key: str) -> int | None:
+    value = data.get(key)
+    if isinstance(value, bool) or not isinstance(value, (int, str)):
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        return None
+
+
 def _resolve_selected_subnode(
     data: dict[str, object], current_node_id: int, current: str
 ) -> tuple[int, str]:
-    raw_node_id = data.get("selected_node_id")
-    if not isinstance(raw_node_id, (int, str)):
-        return current_node_id, current
-    try:
-        selected_node_id = int(raw_node_id)
-    except TypeError, ValueError:
+    selected_node_id = _payload_int(data, "selected_node_id")
+    if selected_node_id is None:
         return current_node_id, current
 
     if selected_node_id == 1:
@@ -435,8 +446,8 @@ async def send_message(sid: str, data: dict[str, object]) -> None:
     if not user_id:
         return
 
-    raw_message = data.get("message")
-    user_msg = raw_message.strip() if isinstance(raw_message, str) else ""
+    raw_message = _payload_str(data, "message")
+    user_msg = raw_message.strip() if raw_message else ""
     if not user_msg:
         return
 
@@ -630,12 +641,8 @@ async def select_node(sid: str, data: dict[str, object]) -> None:
     if not user_id:
         return
 
-    raw_node_id = data.get("node_id", 0)
-    if isinstance(raw_node_id, bool) or not isinstance(raw_node_id, (int, str)):
-        return
-    try:
-        node_id = int(raw_node_id)
-    except ValueError:
+    node_id = _payload_int(data, "node_id")
+    if node_id is None:
         return
     ctx = user_graph_contexts[user_id]
     question = ctx.get("latest_question")
@@ -705,10 +712,9 @@ async def session_title_accept(sid: str, data: dict[str, object]) -> None:
     if not user_id:
         return
 
-    raw_candidate_id = data.get("candidate_id")
-    if not isinstance(raw_candidate_id, str) or not raw_candidate_id:
+    candidate_id = _payload_str(data, "candidate_id")
+    if not candidate_id:
         return
-    candidate_id = raw_candidate_id
     candidate = await _resolve_title_candidate(user_id, candidate_id)
     if candidate is None:
         return
@@ -732,10 +738,9 @@ async def session_title_reject(sid: str, data: dict[str, object]) -> None:
     if not user_id:
         return
 
-    raw_candidate_id = data.get("candidate_id")
-    if not isinstance(raw_candidate_id, str) or not raw_candidate_id:
+    candidate_id = _payload_str(data, "candidate_id")
+    if not candidate_id:
         return
-    candidate_id = raw_candidate_id
     candidate = await _resolve_title_candidate(user_id, candidate_id)
     if candidate is None:
         return
@@ -750,8 +755,8 @@ async def session_title_revert(sid: str, data: dict[str, object]) -> None:
         return
 
     session_id = parse_session_id(data.get("session_id"))
-    raw_name = data.get("name")
-    if session_id is None or not isinstance(raw_name, str):
+    raw_name = _payload_str(data, "name")
+    if session_id is None or raw_name is None:
         return
     name = raw_name.strip()
     if not name:
