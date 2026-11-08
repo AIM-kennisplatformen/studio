@@ -86,7 +86,7 @@ async def fetch_subnode_stream(
     trace_id: str | None = None,
     session_id: str | None = None,
     selected_node_id: int | None = None,
-):
+) -> None:
     """
     Stream an LLM response for a subnode question.
 
