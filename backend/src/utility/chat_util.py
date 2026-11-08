@@ -1,12 +1,15 @@
 import time
-from typing import AsyncGenerator, Dict, Optional
+from collections.abc import AsyncGenerator
 
 import socketio
+from langchain_core.messages import AIMessageChunk
 from langchain_openai import ChatOpenAI
 from langfuse import get_client, propagate_attributes
 from langfuse.langchain import CallbackHandler
-from mcp_use import MCPAgent, MCPClient
-from mcp_use.client.config import load_config_file
+
+# py.typed is not shipped, but typed properly, so proper ignore here
+from mcp_use import MCPAgent, MCPClient  # pyright: ignore[reportMissingTypeStubs]
+from mcp_use.client.config import load_config_file  # pyright: ignore[reportMissingTypeStubs]
 
 from src.config import config
 from src.models.chat_event import AgentEvent
@@ -15,16 +18,16 @@ from src.models.chat_event import AgentEvent
 # Socket.IO broker state
 # =====================================================
 
-sio: Optional[socketio.AsyncServer] = None
+sio: socketio.AsyncServer | None = None
 
 # user_id → sid (primary, last-connected)
-user_connections: Dict[str, str] = {}
+user_connections: dict[str, str] = {}
 
 # sid → user_id
-sid_connections: Dict[str, str] = {}
+sid_connections: dict[str, str] = {}
 
 # user_id → set[sid] (multi-tab support)
-user_sids: Dict[str, set[str]] = {}
+user_sids: dict[str, set[str]] = {}
 
 
 # =====================================================
@@ -43,7 +46,7 @@ def register_socketio(server: socketio.AsyncServer):
 # =====================================================
 
 
-def bind_user(user_id: str, sid: str):
+def bind_user(user_id: str, sid: str) -> None:
     """
     Record mapping between authenticated user_id and Socket.IO sid.
     """
@@ -53,7 +56,7 @@ def bind_user(user_id: str, sid: str):
     print(f"[BIND] user={user_id} ↔ sid={sid}")
 
 
-def unbind_sid(sid: str) -> Optional[str]:
+def unbind_sid(sid: str) -> str | None:
     """
     Remove sid and reverse-mapping when client disconnects.
     """
@@ -62,7 +65,7 @@ def unbind_sid(sid: str) -> Optional[str]:
         print(f"[UNBIND] sid={sid} user=None")
         return None
 
-    user_connections.pop(user_id, None)
+    _ = user_connections.pop(user_id, None)
     sids = user_sids.get(user_id)
     if sids:
         sids.discard(sid)
@@ -155,7 +158,9 @@ async def stream_agent_events(
                 event_type = event.get("event", "")
                 data = ""
                 if event_type == "on_chat_model_stream":
-                    data = event["data"]["chunk"].content or ""
+                    chunk = event["data"].get("chunk")
+                    if isinstance(chunk, AIMessageChunk):
+                        data = chunk.content if isinstance(chunk.content, str) else ""
                 yield {
                     "type": event_type,
                     "data": data,
@@ -171,7 +176,9 @@ async def stream_agent_events(
             event_type = event.get("event", "")
             data = ""
             if event_type == "on_chat_model_stream":
-                data = event["data"]["chunk"].content or ""
+                chunk = event["data"].get("chunk")
+                if isinstance(chunk, AIMessageChunk):
+                    data = chunk.content if isinstance(chunk.content, str) else ""
             yield {
                 "type": event_type,
                 "data": data,
