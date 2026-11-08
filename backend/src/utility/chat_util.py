@@ -181,7 +181,12 @@ async def stream_agent_events(
         langfuse.flush()
 
 
-async def emit_to_user(user_id: str, event: str, payload: dict):
+type JsonValue = (
+    str | int | float | bool | None | list[JsonValue] | dict[str, JsonValue]
+)
+
+
+async def emit_to_user(user_id: str, event: str, payload: dict[str, JsonValue]):
     """
     Emit a named event to all sockets for a specific user.
     """

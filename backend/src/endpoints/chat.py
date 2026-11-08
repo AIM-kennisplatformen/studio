@@ -41,6 +41,7 @@ from src.models.session import SessionMessage, TitleCandidate
 from src.stores.postgres import DEFAULT_SESSION_NAME, postgres_store
 from src.stores.redis import redis_store
 from src.utility.chat_util import (
+    JsonValue,
     bind_user,
     emit_to_user,
     push_chat_message,
@@ -186,7 +187,7 @@ async def _emit_title_updated(
     title: str,
     previous_name: str | None = None,
 ) -> None:
-    payload: dict[str, object] = {"session_id": str(session_id), "name": title}
+    payload: dict[str, JsonValue] = {"session_id": str(session_id), "name": title}
     if previous_name is not None:
         payload["previous_name"] = previous_name
     await emit_to_user(user_id, "session_title_updated", payload)
