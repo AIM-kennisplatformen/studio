@@ -71,7 +71,10 @@ register_socketio(sio)
 
 # Starlette strips the mount prefix before forwarding requests to this app, so
 # every request reaching it is already a Socket.IO request.
-socket_app = socketio.ASGIApp(sio, socketio_path=None)
+#
+# python-socketio stubs type socketio_path as str, but runtime accepts None
+# to route all traffic here after Starlette strips the mount prefix.
+socket_app = socketio.ASGIApp(sio, socketio_path=None)  # pyright: ignore[reportArgumentType]
 chat_router = APIRouter()
 
 _title_generation_locks: set[str] = set()
@@ -84,11 +87,13 @@ CANDIDATE_TITLE_TIMEOUT_SECONDS = 20.0
 
 
 def _resolve_selected_subnode(
-    data: dict, current_node_id: int, current: str
+    data: dict[str, object], current_node_id: int, current: str
 ) -> tuple[int, str]:
-    selected_node_id = data.get("selected_node_id")
+    raw_node_id = data.get("selected_node_id")
+    if not isinstance(raw_node_id, (int, str)):
+        return current_node_id, current
     try:
-        selected_node_id = int(selected_node_id)
+        selected_node_id = int(raw_node_id)
     except TypeError, ValueError:
         return current_node_id, current
 
@@ -101,7 +106,7 @@ def _resolve_selected_subnode(
 
 async def _resolve_active_session(
     user_id: str,
-    session_state: dict | None = None,
+    session_state: dict[str, object] | None = None,
     create: bool = False,
 ) -> ChatSession | None:
     session_id = get_active_session_id(user_id)
@@ -145,7 +150,7 @@ def _fallback_session_title(user_msg: str) -> str:
 
 def _sanitize_session_title(raw_title: object) -> str | None:
     if isinstance(raw_title, list):
-        raw_title = " ".join(str(item) for item in raw_title)
+        raw_title = " ".join(str(item) for item in cast(list[object], raw_title))
 
     title = " ".join(str(raw_title).split()).strip(" \"'")
     if title.lower().startswith("title:"):
@@ -331,13 +336,13 @@ def _purge_expired_title_candidates() -> None:
 def _schedule_session_title(
     user_id: str, session_id: UUID, user_msg: str, ai_response: str
 ) -> None:
-    asyncio.create_task(
+    _ = asyncio.create_task(
         _update_session_title(user_id, session_id, user_msg, ai_response)
     )
 
 
 def _schedule_dynamic_title(user_id: str, session_id: UUID) -> None:
-    asyncio.create_task(_update_session_title_dynamic(user_id, session_id))
+    _ = asyncio.create_task(_update_session_title_dynamic(user_id, session_id))
 
 
 async def _maybe_generate_title(
@@ -380,7 +385,7 @@ async def _store_chat_message(
     session_role = "ai" if role == "ai" else "user"
     redis_role = "assistant" if session_role == "ai" else "user"
 
-    await postgres_store.add_message(user_id, session_id, session_role, content)
+    _ = await postgres_store.add_message(user_id, session_id, session_role, content)
     await redis_store.store_message(
         str(session_id),
         ChatMessage(role=redis_role, message=content),
@@ -418,19 +423,20 @@ async def connect(
 
 
 @sio.event
-async def disconnect(sid, reason=None):
+async def disconnect(sid: str, _reason: str | None = None) -> None:
     user_id = unbind_sid(sid)
     end_session(user_id, sid)
     print(f"⚠ Socket disconnected sid={sid} user={user_id}")
 
 
 @sio.event
-async def send_message(sid, data):
+async def send_message(sid: str, data: dict[str, object]) -> None:
     user_id = sid_connections.get(sid)
     if not user_id:
         return
 
-    user_msg = (data.get("message") or "").strip()
+    raw_message = data.get("message")
+    user_msg = raw_message.strip() if isinstance(raw_message, str) else ""
     if not user_msg:
         return
 
@@ -460,7 +466,7 @@ async def send_message(sid, data):
             trace_name="chat_turn",
         ),
     ):
-        root_span.update(input={"message": user_msg})
+        _ = root_span.update(input={"message": user_msg})
 
         limit = int(config.get("chat_history_limit", 0))
         history_items = await postgres_store.list_messages(
@@ -488,7 +494,7 @@ async def send_message(sid, data):
             "selected_node_id": selected_node_id,
             "selected_subnode": selected_subnode,
         }
-        root_span.update(input=trace_input)
+        _ = root_span.update(input=trace_input)
 
         full_response = ""
 
@@ -522,12 +528,14 @@ async def send_message(sid, data):
                             prefetched,
                             selected_subnode,
                         )
-                        root_span.update(output={"response": full_response})
+                        _ = root_span.update(output={"response": full_response})
                         langfuse.flush()
                         return
 
-                    question = ctx.get("latest_question") or ctx.get(
-                        "previous_question"
+                    question = (
+                        ctx.get("latest_question")
+                        or ctx.get("previous_question")
+                        or user_msg
                     )
                 else:
                     ctx["latest_question"] = user_msg
@@ -562,7 +570,7 @@ async def send_message(sid, data):
                     full_response,
                     selected_subnode,
                 )
-                root_span.update(output={"response": full_response})
+                _ = root_span.update(output={"response": full_response})
                 langfuse.flush()
                 return
 
@@ -609,7 +617,7 @@ async def send_message(sid, data):
         )
         ctx.setdefault("prefetched", {})["root"] = full_response
 
-        root_span.update(output={"response": full_response})
+        _ = root_span.update(output={"response": full_response})
 
         await push_chat_message_stream(user_id, "done", full_response, "root")
 
@@ -617,12 +625,18 @@ async def send_message(sid, data):
 
 
 @sio.event
-async def select_node(sid, data):
+async def select_node(sid: str, data: dict[str, object]) -> None:
     user_id = sid_connections.get(sid)
     if not user_id:
         return
 
-    node_id = int(data.get("node_id", 0))
+    raw_node_id = data.get("node_id", 0)
+    if isinstance(raw_node_id, bool) or not isinstance(raw_node_id, (int, str)):
+        return
+    try:
+        node_id = int(raw_node_id)
+    except ValueError:
+        return
     ctx = user_graph_contexts[user_id]
     question = ctx.get("latest_question")
 
@@ -686,12 +700,15 @@ async def _resolve_title_candidate(
 
 
 @sio.event
-async def session_title_accept(sid, data):
+async def session_title_accept(sid: str, data: dict[str, object]) -> None:
     user_id = sid_connections.get(sid)
     if not user_id:
         return
 
-    candidate_id = data.get("candidate_id") or ""
+    raw_candidate_id = data.get("candidate_id")
+    if not isinstance(raw_candidate_id, str) or not raw_candidate_id:
+        return
+    candidate_id = raw_candidate_id
     candidate = await _resolve_title_candidate(user_id, candidate_id)
     if candidate is None:
         return
@@ -710,12 +727,15 @@ async def session_title_accept(sid, data):
 
 
 @sio.event
-async def session_title_reject(sid, data):
+async def session_title_reject(sid: str, data: dict[str, object]) -> None:
     user_id = sid_connections.get(sid)
     if not user_id:
         return
 
-    candidate_id = data.get("candidate_id") or ""
+    raw_candidate_id = data.get("candidate_id")
+    if not isinstance(raw_candidate_id, str) or not raw_candidate_id:
+        return
+    candidate_id = raw_candidate_id
     candidate = await _resolve_title_candidate(user_id, candidate_id)
     if candidate is None:
         return
@@ -724,14 +744,17 @@ async def session_title_reject(sid, data):
 
 
 @sio.event
-async def session_title_revert(sid, data):
+async def session_title_revert(sid: str, data: dict[str, object]) -> None:
     user_id = sid_connections.get(sid)
     if not user_id:
         return
 
     session_id = parse_session_id(data.get("session_id"))
-    name = (data.get("name") or "").strip()
-    if session_id is None or not name:
+    raw_name = data.get("name")
+    if session_id is None or not isinstance(raw_name, str):
+        return
+    name = raw_name.strip()
+    if not name:
         return
 
     try:

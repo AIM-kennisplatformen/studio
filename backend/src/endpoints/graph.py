@@ -5,6 +5,7 @@ from fastapi import APIRouter, FastAPI, Request
 
 from src.config import subnode_question_prompt
 from src.endpoints.auth import CurrentUser
+from src.models.graph_context import UserGraphContext
 from src.utility.chat_util import (
     push_chat_message_stream,
     stream_agent_events,
@@ -55,23 +56,22 @@ NODE_CLASSIFICATION_FILTERS: dict[int, tuple[list[str] | None, list[str] | None]
 # =====================================================
 
 
-def default_user_graph_context() -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
+def default_user_graph_context() -> UserGraphContext:
     return {
         "selected_subnode": "root",
         "selected_node_id": 1,
         "latest_question": None,
         "previous_question": None,
         "latest_keywords": [],
-        "prefetched": {},  # subnode_name → llm_answer
-        "pending": {},  # subnode_name → asyncio.Task
+        "prefetched": {},
+        "pending": {},
         "dialogue_state_asked": False,
     }
 
 
-user_graph_contexts: defaultdict[str, dict[str, Any]] = defaultdict(  # pyright: ignore[reportExplicitAny]
+user_graph_contexts: defaultdict[str, UserGraphContext] = defaultdict(
     default_user_graph_context
 )
-
 
 # =====================================================
 # Prefetch Logic
