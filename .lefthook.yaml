@@ -10,6 +10,10 @@ pre-commit:
       glob: '*.{py, ipynb}'
       run: ruff format {staged_files}
       stage_fixed: true
+    toml-format:
+      glob: 'backend/pyproject.toml'
+      run: cd backend && tombi format pyproject.toml
+      stage_fixed: true
     clean-jupyter:
       files: git ls-files
       glob: '*.ipynb'
