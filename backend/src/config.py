@@ -162,18 +162,14 @@ def require_env(name: str, default: str | None = None) -> str:
 
 
 def postgres_dsn() -> str:
-    user = os.getenv("STUDIO_POSTGRES_USER")
-    if user:
-        password = require_env("STUDIO_POSTGRES_PASSWORD")
-        database = require_env("STUDIO_POSTGRES_DB")
-        host = os.getenv("STUDIO_POSTGRES_HOST", "studio_postgres")
-        port = os.getenv("STUDIO_POSTGRES_PORT", "5432")
-        return (
-            f"postgresql://{quote(user, safe='')}:{quote(password, safe='')}"
-            f"@{host}:{port}/{quote(database, safe='')}"
-        )
-    return require_env(
-        "POSTGRES_URL", "postgresql://studio:studio@studio_postgres:5432/studio"
+    user = require_env("STUDIO_POSTGRES_USER")
+    password = require_env("STUDIO_POSTGRES_PASSWORD")
+    database = require_env("STUDIO_POSTGRES_DB")
+    host = require_env("STUDIO_POSTGRES_HOST", "studio_postgres")
+    port = require_env("STUDIO_POSTGRES_PORT", "5432")
+    return (
+        f"postgresql://{quote(user, safe='')}:{quote(password, safe='')}"
+        f"@{host}:{port}/{quote(database, safe='')}"
     )
 
 
