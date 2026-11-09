@@ -41,7 +41,14 @@ dependencies = [
 # Dev dependencies (PEP 735 groups)
 # ====================================
 [dependency-groups]
-dev = ["isort>=9.0.2", "mypy>=2.4.0", "nest-asyncio>=1.6.0", "pytest>=9.1.1", "ruff>=0.17.2", "toml-sort>=0.25.0"]
+dev = [
+  "isort>=9.0.2",
+  "mypy>=2.4.0",
+  "nest-asyncio>=1.6.0",
+  "pytest>=9.1.1",
+  "ruff>=0.17.2",
+  "toml-sort>=0.25.0"
+]
 
 # ====================================
 # Build system
