@@ -7,7 +7,6 @@ from loguru import logger
 
 from src.models.session import Session, SessionMessage
 
-
 DEFAULT_SESSION_NAME = "New session"
 
 
@@ -92,7 +91,7 @@ class PostgresStore:
         url = config_dict["postgres_url"]
         self.pool = await asyncpg.create_pool(url)
         await self._init_schema()
-        logger.info(f"✓ Connected to Postgres at {url}")
+        logger.info(f"✓ Connected to Postgres at {url.rsplit('@', 1)[-1]}")
 
     async def close(self) -> None:
         """Close the connection pool if it is open."""

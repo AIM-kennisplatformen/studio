@@ -3,6 +3,7 @@ import re
 import secrets
 from pathlib import Path
 from typing import TypedDict
+from urllib.parse import quote
 
 from loguru import logger
 
@@ -153,11 +154,22 @@ def subnode_repeat_question_prompt(subnode: str, question: str) -> str:
 
 def require_env(name: str, default: str | None = None) -> str:
     value = os.getenv(name, default)
-    if value is None:
+    # For env vars that are not provided and have no default
+    if not value:
         raise RuntimeError(f"Missing required environment variable: {name}")
-    elif value == "":
-        logger.warning(f"Environment variable {name} is empty")
     return value
+
+
+def postgres_dsn() -> str:
+    user = require_env("STUDIO_POSTGRES_USER")
+    password = require_env("STUDIO_POSTGRES_PASSWORD")
+    database = require_env("STUDIO_POSTGRES_DB")
+    host = require_env("STUDIO_POSTGRES_HOST", "studio_postgres")
+    port = require_env("STUDIO_POSTGRES_PORT", "5432")
+    return (
+        f"postgresql://{quote(user, safe='')}:{quote(password, safe='')}"
+        f"@{host}:{port}/{quote(database, safe='')}"
+    )
 
 
 class AppConfig(TypedDict):
@@ -219,10 +231,7 @@ config: AppConfig = {
     "redis_url": require_env("REDIS_URL", "redis://localhost:6379/0"),
     "redis_expiration_time": int(os.getenv("REDIS_EXPIRATION_TIME", "86400")),
     "chat_history_limit": int(os.getenv("CHAT_HISTORY_LIMIT", "10")),
-    "postgres_url": require_env(
-        "POSTGRES_URL",
-        "postgresql://studio:studio@studio_postgres:5432/studio",
-    ),
+    "postgres_url": postgres_dsn(),
 }
 
 

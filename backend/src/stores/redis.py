@@ -1,8 +1,9 @@
-import json
 import dataclasses
+import json
 from typing import List
-from redis.asyncio import Redis
+
 from loguru import logger
+from redis.asyncio import Redis
 
 from src.models.chat_message import ChatMessage
 from src.stores.abstract_store import AbstractStore
@@ -82,7 +83,7 @@ class RedisStore(AbstractStore):
         url = config_dict["redis_url"]
         self.expiration_time = config_dict["redis_expiration_time"]
         self.redis = Redis.from_url(url, decode_responses=True)
-        logger.info(f"✓ Connected to Redis at {url}")
+        logger.info(f"✓ Connected to Redis at {url.rsplit('@', 1)[-1]}")
 
     async def _close_impl(self) -> None:
         """Close the Redis client if it is open."""
