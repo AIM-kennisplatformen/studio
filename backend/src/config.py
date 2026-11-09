@@ -154,10 +154,9 @@ def subnode_repeat_question_prompt(subnode: str, question: str) -> str:
 
 def require_env(name: str, default: str | None = None) -> str:
     value = os.getenv(name, default)
-    if value is None:
+    # For env vars that are not provided and have no default
+    if not value:
         raise RuntimeError(f"Missing required environment variable: {name}")
-    elif value == "":
-        logger.warning(f"Environment variable {name} is empty")
     return value
 
 
