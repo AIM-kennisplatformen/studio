@@ -3,7 +3,7 @@ import pytest
 from src import config
 
 
-def test_postgres_dsn_percent_encodes_components(monkeypatch: pytest.MonkeyPatch)
+def test_postgres_dsn_percent_encodes_components(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("STUDIO_POSTGRES_USER", "studio")
     monkeypatch.setenv("STUDIO_POSTGRES_PASSWORD", "pa@ss:word")
     monkeypatch.setenv("STUDIO_POSTGRES_DB", "studio db")
@@ -25,8 +25,11 @@ def test_postgres_dsn_uses_host_and_port_overrides(monkeypatch: pytest.MonkeyPat
     assert config.postgres_dsn() == "postgresql://u:p@localhost:5433/d"
 
 
-def test_postgres_dsn_falls_back_to_url(monkeypatch: pytest.MonkeyPatch):
+def test_postgres_dsn_requires_components(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv("STUDIO_POSTGRES_USER", raising=False)
-    monkeypatch.setenv("POSTGRES_URL", "postgresql://u:p@h:5/d")
 
-    assert config.postgres_dsn() == "postgresql://u:p@h:5/d"
+    with pytest.raises(
+        RuntimeError,
+        match="STUDIO_POSTGRES_USER",
+    ):
+        _ = config.postgres_dsn()
