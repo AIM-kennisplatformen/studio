@@ -13,6 +13,7 @@ from mcp_use.client.config import load_config_file  # pyright: ignore[reportMiss
 
 from src.config import config
 from src.models.chat_event import AgentEvent
+from src.models.json_value import JsonValue
 
 # =====================================================
 # Socket.IO broker state
@@ -186,11 +187,6 @@ async def stream_agent_events(
             }
     finally:
         langfuse.flush()
-
-
-type JsonValue = (
-    str | int | float | bool | None | list[JsonValue] | dict[str, JsonValue]
-)
 
 
 async def emit_to_user(user_id: str, event: str, payload: dict[str, JsonValue]):

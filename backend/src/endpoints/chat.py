@@ -36,12 +36,12 @@ from src.endpoints.graph import (
 )
 from src.models.auth import AuthentikUser
 from src.models.chat_message import ChatMessage
+from src.models.json_value import JsonValue
 from src.models.session import Session as ChatSession
 from src.models.session import SessionMessage, TitleCandidate
 from src.stores.postgres import DEFAULT_SESSION_NAME, postgres_store
 from src.stores.redis import redis_store
 from src.utility.chat_util import (
-    JsonValue,
     bind_user,
     emit_to_user,
     push_chat_message,
