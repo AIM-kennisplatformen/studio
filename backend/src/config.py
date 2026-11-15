@@ -5,8 +5,6 @@ from pathlib import Path
 from typing import TypedDict
 from urllib.parse import quote
 
-from loguru import logger
-
 backend_root = Path(__file__).resolve().parents[1]
 
 
