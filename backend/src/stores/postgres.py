@@ -1,13 +1,34 @@
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import Literal, TypedDict, cast
 from uuid import UUID, uuid4
 
 import asyncpg
 from loguru import logger
 
 from src.models.session import Session, SessionMessage
+from src.models.store_config import PostgresConfig
 
 DEFAULT_SESSION_NAME = "New session"
+
+
+# classes not in models since these classes only relate to postgres
+class SessionRow(TypedDict):
+    session_id: UUID
+    user_id: str
+    name: str
+    updated_at: datetime
+    message_count: int
+    title_type: Literal["static", "dynamic"]
+    title_overwritten: bool
+    last_title_message_count: int
+
+
+class MessageRow(TypedDict):
+    message_id: UUID
+    role: Literal["ai", "user"]
+    content: str
+    created_at: datetime
+    updated_at: datetime
 
 
 class PostgresStore:
@@ -65,13 +86,13 @@ class PostgresStore:
     def __init__(self) -> None:
         self.pool: asyncpg.Pool | None = None
 
-    async def connect(self, config_dict: dict) -> None:
+    async def connect(self, config: PostgresConfig) -> None:
         """
         Connect to Postgres and initialize the sessions schema.
 
         Parameters
         ----------
-        config_dict
+        config
             Dictionary containing ``postgres_url``, an asyncpg-compatible
             PostgreSQL connection URL.
 
@@ -88,7 +109,7 @@ class PostgresStore:
         if self.pool is not None:
             return
 
-        url = config_dict["postgres_url"]
+        url = config["postgres_url"]
         self.pool = await asyncpg.create_pool(url)
         await self._init_schema()
         logger.info(f"✓ Connected to Postgres at {url.rsplit('@', 1)[-1]}")
@@ -115,7 +136,7 @@ class PostgresStore:
         assert self.pool is not None
 
         async with self.pool.acquire() as conn:
-            await conn.execute(
+            _ = await conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS sessions (
                     session_id UUID PRIMARY KEY,
@@ -125,13 +146,13 @@ class PostgresStore:
                 )
                 """
             )
-            await conn.execute(
+            _ = await conn.execute(
                 """
                 CREATE INDEX IF NOT EXISTS sessions_user_updated_idx
                 ON sessions (user_id, updated_at DESC)
                 """
             )
-            await conn.execute(
+            _ = await conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS session_messages (
                     message_id UUID PRIMARY KEY,
@@ -144,32 +165,32 @@ class PostgresStore:
                 )
                 """
             )
-            await conn.execute(
+            _ = await conn.execute(
                 """
                 CREATE INDEX IF NOT EXISTS session_messages_session_created_idx
                 ON session_messages (session_id, created_at ASC)
                 """
             )
 
-            await conn.execute(
+            _ = await conn.execute(
                 """
                 ALTER TABLE sessions
                 ADD COLUMN IF NOT EXISTS message_count INT NOT NULL DEFAULT 0
                 """
             )
-            await conn.execute(
+            _ = await conn.execute(
                 """
                 ALTER TABLE sessions
                 ADD COLUMN IF NOT EXISTS title_type TEXT NOT NULL DEFAULT 'static'
                 """
             )
-            await conn.execute(
+            _ = await conn.execute(
                 """
                 ALTER TABLE sessions
                 ADD COLUMN IF NOT EXISTS title_overwritten BOOLEAN NOT NULL DEFAULT FALSE
                 """
             )
-            await conn.execute(
+            _ = await conn.execute(
                 """
                 ALTER TABLE sessions
                 ADD COLUMN IF NOT EXISTS last_title_message_count INT NOT NULL DEFAULT 0
@@ -177,26 +198,28 @@ class PostgresStore:
             )
 
     @staticmethod
-    def _row_to_session(row: Any) -> Session:
+    def _row_to_session(row: object) -> Session:
+        data = cast(SessionRow, row)
         return Session(
-            session_id=row["session_id"],
-            user_id=row["user_id"],
-            name=row["name"],
-            updated_at=row["updated_at"],
-            message_count=row["message_count"],
-            title_type=row["title_type"],
-            title_overwritten=row["title_overwritten"],
-            last_title_message_count=row["last_title_message_count"],
+            session_id=data["session_id"],
+            user_id=data["user_id"],
+            name=data["name"],
+            updated_at=data["updated_at"],
+            message_count=data["message_count"],
+            title_type=data["title_type"],
+            title_overwritten=data["title_overwritten"],
+            last_title_message_count=data["last_title_message_count"],
         )
 
     @staticmethod
-    def _row_to_message(row: Any) -> SessionMessage:
+    def _row_to_message(row: object) -> SessionMessage:
+        data = cast(MessageRow, row)
         return SessionMessage(
-            message_id=row["message_id"],
-            role=row["role"],
-            content=row["content"],
-            created_at=row["created_at"],
-            updated_at=row["updated_at"],
+            message_id=data["message_id"],
+            role=data["role"],
+            content=data["content"],
+            created_at=data["created_at"],
+            updated_at=data["updated_at"],
         )
 
     async def create_session(
@@ -363,14 +386,17 @@ class PostgresStore:
         now = datetime.now(UTC)
         async with self.pool.acquire() as conn:
             async with conn.transaction():
-                session_exists = await conn.fetchval(
-                    """
+                session_exists = cast(
+                    bool,
+                    await conn.fetchval(
+                        """
                     SELECT 1
                     FROM sessions
                     WHERE user_id = $1 AND session_id = $2
                     """,
-                    user_id,
-                    session_id,
+                        user_id,
+                        session_id,
+                    ),
                 )
                 if not session_exists:
                     raise ValueError("Session not found")
@@ -389,7 +415,7 @@ class PostgresStore:
                     content,
                     now,
                 )
-                await conn.execute(
+                _ = await conn.execute(
                     """
                     UPDATE sessions
                     SET updated_at = $3
@@ -458,7 +484,7 @@ class PostgresStore:
         self._ensure_connected()
         assert self.pool is not None
 
-        await self.pool.execute(
+        _ = await self.pool.execute(
             """
             UPDATE sessions
             SET message_count = message_count + 1
@@ -482,7 +508,7 @@ class PostgresStore:
         assert self.pool is not None
 
         sets: list[str] = []
-        params: list[Any] = []
+        params: list[str | bool | int] = []
         idx = 3
 
         if name is not None:
