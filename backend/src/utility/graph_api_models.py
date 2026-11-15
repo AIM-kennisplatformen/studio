@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from typing import List, Optional
+
+from src.models.json_value import JsonValue
 
 
 class Node(BaseModel):
@@ -8,7 +9,7 @@ class Node(BaseModel):
     id: int
     type: str = "unknown"
     title: str
-    attributes: dict  # Additional attributes for the node
+    attributes: dict[str, JsonValue]  # Additional attributes for the node
 
 
 class Edge(BaseModel):
@@ -17,10 +18,10 @@ class Edge(BaseModel):
     id: int
     source_id: int
     target_id: int
-    labelToSource: Optional[str] = None
-    labelToTarget: Optional[str] = None
+    labelToSource: str | None
+    labelToTarget: str | None
     type: str = "unknown"
-    attributes: Optional[dict]  # Additional attributes for the edge
+    attributes: dict[str, JsonValue] | None  # Additional attributes for the edge
 
 
 class Source(BaseModel):
@@ -28,37 +29,36 @@ class Source(BaseModel):
 
     title: str
     type: str  # file type for icon, e.g., 'pdf', 'docx', 'url'
-    infoUrl: Optional[str] = None
-    downloadUrl: Optional[str] = None
-    snippet: Optional[str] = None
+    infoUrl: str | None
+    downloadUrl: str | None
+    snippet: str | None
 
 
 class ChatResponse(BaseModel):
     """Response for chat endpoints"""
 
     message: str
-    nodes: List[Node] = []
-    edges: List[Edge] = []
-    sources: List[Source] = []
-    error: Optional[str] = None
+    nodes: list[Node] = []
+    edges: list[Edge] = []
+    sources: list[Source] = []
+    error: str | None
 
 
 class ContextResponse(BaseModel):
     """Response for context endpoints"""
 
-    message: Optional[str] = None
-    nodes: List[Node] = []
-    edges: List[Edge] = []
-    sources: List[Source] = []
-    error: Optional[str] = None
+    message: str | None
+    nodes: list[Node] = []
+    edges: list[Edge] = []
+    sources: list[Source] = []
+    error: str | None
 
 
 class GraphResponse(BaseModel):
     # Added selected subnode to return the currently selected subnode in the graph, which can be used by the frontend to maintain context
     """Response for full graph endpoint"""
 
-    nodes: List[Node] = []
-    edges: List[Edge] = []
-    selected_subnode: Optional[Node] = None
-    # metadata: dict = {}
-    error: Optional[str] = None
+    nodes: list[Node] = []
+    edges: list[Edge] = []
+    selected_subnode: Node | None = None
+    error: str | None
