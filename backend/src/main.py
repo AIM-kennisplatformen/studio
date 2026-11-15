@@ -1,10 +1,9 @@
-from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-from src.config import config
+from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
 
-from src.utility.graph_data_loader import load_knowledge_graph
+from src.config import config
 from src.endpoints.assets import asset_router
 from src.endpoints.auth import auth_router
 from src.endpoints.chat import chat_router, socket_app
@@ -14,6 +13,7 @@ from src.endpoints.sessions import sessions_router
 from src.endpoints.settings import settings_router
 from src.stores.postgres import postgres_store
 from src.stores.redis import redis_store
+from src.utility.graph_data_loader import load_knowledge_graph
 
 
 @asynccontextmanager
