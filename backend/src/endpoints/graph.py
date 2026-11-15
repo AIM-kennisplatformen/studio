@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any, cast
+from typing import cast
 
 from fastapi import APIRouter, FastAPI, Request
 
@@ -162,7 +162,7 @@ async def get_full_graph(request: Request, user: CurrentUser) -> GraphResponse:
             error="not_loaded",
         )
 
-    selected_node_id = cast(int, ctx.get("selected_node_id", 1))
+    selected_node_id = ctx.get("selected_node_id", 1)
     if selected_node_id == 1:
         selected_subnode = None
     else:
