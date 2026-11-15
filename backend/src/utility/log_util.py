@@ -26,7 +26,7 @@ def _log_session_event(
             metadata={"message": message},
         ),
     ):
-        observation.update(
+        _ = observation.update(
             input={"event": event, "user_id": user_id, "sid": sid},
             output={"status": event, "message": message},
         )
