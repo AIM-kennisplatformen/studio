@@ -5,7 +5,6 @@
 name = "MCP-demo"
 description = "MCP demo library"
 readme = "README.md"
-license = { text = "NONE" }
 authors = [
   { name = "RaoulG", email = "Raoul.Grouls@han.nl" },
   { name = "Hoog-V", email = "victor.hogeweij@han.nl" },
