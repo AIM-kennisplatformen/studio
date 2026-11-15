@@ -8,11 +8,18 @@ import os
 import subprocess
 import sys
 import time
+from http.client import HTTPResponse
 from pathlib import Path
+from typing import cast
 from urllib.parse import urlsplit
 from urllib.request import urlopen
 
 root = Path(__file__).resolve().parents[2]
+
+
+def _http_status(url: str, timeout: float | None = None) -> int:
+    with cast(HTTPResponse, urlopen(url, timeout=timeout)) as response:
+        return response.status
 
 
 def load_env(env_file_name: str = ".env") -> None:
@@ -25,7 +32,7 @@ def load_env(env_file_name: str = ".env") -> None:
         line = line.strip()
         if line and not line.startswith("#") and "=" in line:
             k, v = line.split("=", 1)
-            os.environ.setdefault(k, v)
+            _ = os.environ.setdefault(k, v)
 
 
 def docker_ak_shell(script: str) -> str:
@@ -43,9 +50,8 @@ def wait_for_authentik_health() -> None:
     health_url = f"{authentik_base_url()}/-/health/ready/"
     for attempt in range(1, 61):
         try:
-            with urlopen(health_url, timeout=5) as response:
-                if response.status == 200:
-                    return
+            if _http_status(health_url, timeout=5) == 200:
+                return
         except OSError:
             pass
         if attempt == 60:
@@ -162,15 +168,11 @@ def verify_discovery() -> None:
     url = (
         f"{authentik_base_url()}/application/o/studio/.well-known/openid-configuration"
     )
-    try:
-        with urlopen(url) as resp:
-            if resp.status == 200:
-                print("OK: OAuth2 application setup complete!")
-            else:
-                print(f"FAIL: Discovery endpoint returns {resp.status}")
-                sys.exit(1)
-    except Exception as exc:
-        print(f"FAIL: Discovery endpoint error: {exc}")
+    status = _http_status(url)
+    if status == 200:
+        print("OK: OAuth2 application setup complete!")
+    else:
+        print(f"FAIL: Discovery endpoint returns {status}")
         sys.exit(1)
 
 
