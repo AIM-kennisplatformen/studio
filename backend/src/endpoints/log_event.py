@@ -1,10 +1,9 @@
-from typing import Any
-
 from fastapi import APIRouter
 from langfuse import get_client, propagate_attributes
 from pydantic import BaseModel, Field
 
 from src.endpoints.auth import CurrentUser
+from src.models.json_value import JsonValue
 from src.utility.chat_util import user_connections
 from src.utility.log_util import active_trace_ids
 
@@ -13,7 +12,7 @@ log_event_router = APIRouter()
 
 class LogEventPayload(BaseModel):
     name: str
-    metadata: dict[str, Any] = Field(default_factory=dict)  # pyright: ignore[reportExplicitAny]
+    metadata: dict[str, JsonValue] = Field(default_factory=dict)
 
 
 @log_event_router.post("/log_event", status_code=204)
