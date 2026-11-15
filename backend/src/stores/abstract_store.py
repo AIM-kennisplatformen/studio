@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Generic, TypeVar
 
 from src.models.chat_message import ChatMessage
 
+ConfigT = TypeVar("ConfigT")
 
-class AbstractStore(ABC):
+
+class AbstractStore(ABC, Generic[ConfigT]):
     """
     Abstract persistence layer for storing and retrieving ChatMessages.
 
@@ -16,7 +18,7 @@ class AbstractStore(ABC):
         self._connected: bool = False
         self._connecting: bool = False
 
-    async def connect(self, config: dict) -> None:
+    async def connect(self, config: ConfigT) -> None:
         """
         Establish connection to the backend.
 
@@ -40,7 +42,7 @@ class AbstractStore(ABC):
         self._connected = False
 
     @abstractmethod
-    async def _connect_impl(self, config: dict) -> None:
+    async def _connect_impl(self, config: ConfigT) -> None:
         """Backend-specific connection logic."""
         raise NotImplementedError
 
@@ -64,13 +66,13 @@ class AbstractStore(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_history(self, session_id: str, limit: int = 0) -> List[ChatMessage]:
+    async def get_history(self, session_id: str, limit: int = 0) -> list[ChatMessage]:
         """
         Retrieve previous messages.
 
         Returns
         -------
-        List[ChatMessage]
-            List of chronologically ordered messages.
+        list[ChatMessage]
+            list of chronologically ordered messages.
         """
         raise NotImplementedError
