@@ -1,15 +1,33 @@
 import dataclasses
 import json
-from typing import List
+import time
+from typing import cast, override
 
 from loguru import logger
 from redis.asyncio import Redis
 
 from src.models.chat_message import ChatMessage
+from src.models.store_config import RedisConfig
 from src.stores.abstract_store import AbstractStore
 
 
-class RedisStore(AbstractStore):
+def _parse_message(raw: str | bytes) -> ChatMessage:
+    payload = cast(dict[str, object], json.loads(raw))
+    role = payload.get("role")
+    message = payload.get("message")
+    timestamp = payload.get("timestamp", time.time())
+    if role not in ("user", "assistant", "system"):
+        raise ValueError(f"Invalid chat message role: {role!r}")
+    if not isinstance(message, str) or not isinstance(timestamp, int | float):
+        raise ValueError("Invalid chat message payload")
+    return ChatMessage(
+        role=role,
+        message=message,
+        timestamp=float(timestamp),
+    )
+
+
+class RedisStore(AbstractStore[RedisConfig]):
     """
     Redis-backed store for ephemeral chat history.
 
@@ -57,18 +75,20 @@ class RedisStore(AbstractStore):
         self.redis: Redis | None = None
         self.expiration_time: int | None = None
 
+    @override
     def _ensure_connected(self) -> None:
         """Ensure the Redis client has been initialized."""
         super()._ensure_connected()
         assert self.redis is not None
 
-    async def _connect_impl(self, config_dict: dict) -> None:
+    @override
+    async def _connect_impl(self, config: RedisConfig) -> None:
         """
         Connect to Redis using the configured URL and expiration policy.
 
         Parameters
         ----------
-        config_dict
+        config
             Dictionary containing ``redis_url`` and ``redis_expiration_time``.
             Set ``redis_expiration_time`` to None to keep session histories
             indefinitely.
@@ -80,11 +100,12 @@ class RedisStore(AbstractStore):
                     "redis_expiration_time": 86400,
                 }
         """
-        url = config_dict["redis_url"]
-        self.expiration_time = config_dict["redis_expiration_time"]
-        self.redis = Redis.from_url(url, decode_responses=True)
+        url = config["redis_url"]
+        self.expiration_time = config["redis_expiration_time"]
+        self.redis = Redis.from_url(url, decode_responses=True)  # pyright: ignore[reportUnknownMemberType]
         logger.info(f"✓ Connected to Redis at {url.rsplit('@', 1)[-1]}")
 
+    @override
     async def _close_impl(self) -> None:
         """Close the Redis client if it is open."""
         if self.redis:
@@ -95,6 +116,7 @@ class RedisStore(AbstractStore):
         """Return the Redis key used for a session's chat history."""
         return f"chat_history:{session_id}"
 
+    @override
     async def store_message(self, session_id: str, message: ChatMessage) -> None:
         """
         Append a chat message to a session history.
@@ -109,12 +131,13 @@ class RedisStore(AbstractStore):
         new_item = json.dumps(dataclasses.asdict(message))
 
         async with self.redis.pipeline(transaction=True) as pipe:
-            pipe.rpush(key, new_item)
+            _ = pipe.rpush(key, new_item)
             if self.expiration_time is not None:
-                pipe.expire(key, self.expiration_time)
-            await pipe.execute()
+                _ = pipe.expire(key, self.expiration_time)
+            _ = await pipe.execute()
 
-    async def get_history(self, session_id: str, limit: int = 0) -> List[ChatMessage]:
+    @override
+    async def get_history(self, session_id: str, limit: int = 0) -> list[ChatMessage]:
         """
         Retrieve chat history for a session in chronological order.
 
@@ -130,7 +153,7 @@ class RedisStore(AbstractStore):
         if not items:
             return []
 
-        return [ChatMessage(**json.loads(item)) for item in items]
+        return [_parse_message(item) for item in items]
 
 
 redis_store = RedisStore()
