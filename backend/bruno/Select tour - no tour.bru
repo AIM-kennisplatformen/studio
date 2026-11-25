@@ -1,0 +1,27 @@
+meta {
+  name: Select tour - no tour
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/tours/select
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: session={{sessionCookie}}
+}
+
+body:json {
+  {
+    "question": "Wat is energiearmoede?"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.tour_id: isNull
+  res.body.coverage: gt 0.9
+}

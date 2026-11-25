@@ -1,0 +1,27 @@
+meta {
+  name: Select tour - prompting (NL)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/tours/select
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: session={{sessionCookie}}
+}
+
+body:json {
+  {
+    "question": "Hoe stel ik een goede vraag aan ChatEP?"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.tour_id: eq prompting
+  res.body.coverage: gt 0.9
+}

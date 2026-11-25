@@ -1,0 +1,44 @@
+{"question": "How can I navigate through the graph?", "label": "graph-navigation"}
+{"question": "What happens when I click on a node?", "label": "graph-navigation"}
+{"question": "What do the lines between the circles mean?", "label": "graph-navigation"}
+{"question": "How do I go back up a level in the graph?", "label": "graph-navigation"}
+{"question": "Why does the answer change when I select a different node?", "label": "graph-navigation"}
+{"question": "Does the selected topic affect which documents the chat uses?", "label": "graph-navigation"}
+{"question": "How do I expand a category to see its connections?", "label": "graph-navigation"}
+{"question": "What does the active node do?", "label": "graph-navigation"}
+{"question": "How do I limit the answers to grey literature only?", "label": "graph-navigation"}
+{"question": "I'm lost in the graph, how do I move around?", "label": "graph-navigation"}
+{"question": "Hoe navigeer ik door de graaf?", "label": "graph-navigation"}
+{"question": "Wat gebeurt er als ik op een knoop klik?", "label": "graph-navigation"}
+{"question": "Wat betekenen de verbindingen tussen de nodes?", "label": "graph-navigation"}
+{"question": "Hoe ga ik terug naar een hoger niveau in de kennisgraaf?", "label": "graph-navigation"}
+{"question": "Waarom verandert het antwoord als ik een ander onderwerp selecteer?", "label": "graph-navigation"}
+{"question": "Hoe kies ik alleen wetenschappelijke literatuur als bron?", "label": "graph-navigation"}
+{"question": "Wat doet de geselecteerde node met de antwoorden van de chat?", "label": "graph-navigation"}
+{"question": "How do I write a good question for ChatEP?", "label": "prompting"}
+{"question": "Any tips to get better answers from the chatbot?", "label": "prompting"}
+{"question": "The answers I get are too vague, what should I ask differently?", "label": "prompting"}
+{"question": "Should I give background information in my question?", "label": "prompting"}
+{"question": "Can I ask follow-up questions?", "label": "prompting"}
+{"question": "How specific should my prompt be?", "label": "prompting"}
+{"question": "What is the best way to phrase a question?", "label": "prompting"}
+{"question": "How do I get a shorter answer?", "label": "prompting"}
+{"question": "Hoe stel ik een goede vraag aan ChatEP?", "label": "prompting"}
+{"question": "Heb je tips om betere antwoorden te krijgen?", "label": "prompting"}
+{"question": "Mijn antwoorden zijn te algemeen, hoe kan ik mijn vraag beter formuleren?", "label": "prompting"}
+{"question": "Moet ik context meegeven in mijn prompt?", "label": "prompting"}
+{"question": "Kan ik doorvragen op een antwoord?", "label": "prompting"}
+{"question": "Hoe formuleer ik een prompt zo dat ik concrete voorbeelden krijg?", "label": "prompting"}
+{"question": "What is energy poverty?", "label": "none"}
+{"question": "How do I log out?", "label": "none"}
+{"question": "Where can I change my password?", "label": "none"}
+{"question": "How do I rename a chat session?", "label": "none"}
+{"question": "Which measures work best against energy poverty for tenants?", "label": "none"}
+{"question": "Can I switch to dark mode?", "label": "none"}
+{"question": "Who built this application?", "label": "none"}
+{"question": "Wat is energiearmoede?", "label": "none"}
+{"question": "Hoe log ik uit?", "label": "none"}
+{"question": "Waar vind ik mijn eerdere gesprekken?", "label": "none"}
+{"question": "Welke maatregelen helpen huishoudens met hoge energiekosten?", "label": "none"}
+{"question": "Kan ik de taal van de website veranderen?", "label": "none"}
+{"question": "Hoe verwijder ik mijn account?", "label": "none"}

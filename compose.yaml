@@ -20,6 +20,9 @@ services:
       - OPENAI_HOST
       - OPENAI_API_KEY
       - LLM_MODEL
+      - NEBIUS_API_KEY
+      - NEBIUS_BASE_URL=${NEBIUS_BASE_URL:-https://api.tokenfactory.nebius.com/v1/}
+      - NEBIUS_MODEL=${NEBIUS_MODEL:-zai-org/GLM-5.3-Flash}
       - MCP_TOOL_CONFIG_PATH=${MCP_TOOL_CONFIG_PATH:-mcp_tools.json}
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - REDIS_EXPIRATION_TIME=${REDIS_EXPIRATION_TIME:-86400}

@@ -12,6 +12,7 @@ from src.endpoints.graph import graph_router
 from src.endpoints.log_event import log_event_router
 from src.endpoints.sessions import sessions_router
 from src.endpoints.settings import settings_router
+from src.endpoints.tours import tours_router
 from src.stores.postgres import postgres_store
 from src.stores.redis import redis_store
 
@@ -67,3 +68,4 @@ app.include_router(graph_router, prefix="/api")
 app.include_router(log_event_router, prefix="/api")
 app.include_router(sessions_router, prefix="/api")
 app.include_router(settings_router, prefix="/api")
+app.include_router(tours_router, prefix="/api")

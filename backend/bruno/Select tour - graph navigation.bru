@@ -1,0 +1,27 @@
+meta {
+  name: Select tour - graph navigation
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/tours/select
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: session={{sessionCookie}}
+}
+
+body:json {
+  {
+    "question": "How can I navigate through the graph?"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.tour_id: eq graph-navigation
+  res.body.coverage: gt 0.9
+}
