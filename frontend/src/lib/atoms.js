@@ -53,3 +53,8 @@ export const revertTitleEmitAtom = atom(null);
 
 // Whether to post a system message in chat when the session title changes
 export const showTitleNotificationsAtom = atom(false);
+
+export const helpMode = atom(true);
+
+// Incremented each time the graph viewport finishes moving (pan/zoom/animation)
+export const graphMoveEndTriggerAtom = atom(0);

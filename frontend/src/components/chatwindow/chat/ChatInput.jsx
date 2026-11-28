@@ -8,8 +8,18 @@ import {
 import { useAtom, useSetAtom } from "jotai";
 
 import { useChatWebSocket } from "../../../data/chatWebsocket";
-import { newSession, setActiveChatSession } from "../../../data/api";
-import { messagesAtom, textAtom, textStatusAtom } from "@/lib/atoms";
+import {
+  BACKEND_BASE_URL,
+  newSession,
+  setActiveChatSession,
+} from "../../../data/api";
+import {
+  helpMode,
+  messagesAtom,
+  textAtom,
+  textStatusAtom,
+} from "../../../lib/atoms.js";
+import { startTour } from "@/data/user-tours/tourHandler";
 
 export default function ChatInput({
   // setShowFeedback,
@@ -25,6 +35,8 @@ export default function ChatInput({
   const [text, setText] = useAtom(textAtom);
   const [status, setStatus] = useAtom(textStatusAtom);
   const setMessages = useSetAtom(messagesAtom);
+
+  const isHelpModeActive = useAtom(helpMode);
 
   const { send } = useChatWebSocket(setStatus, onTitleUpdate);
 
@@ -73,15 +85,40 @@ export default function ChatInput({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialText, sessionReady, status]);
 
-  const handleSubmit = (e) => {
+  async function chooseTour(question) {
+    const response = await fetch(`${BACKEND_BASE_URL}/tours/select`, {
+      method: "POST",
+      credentials: "include", // send the session cookie
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    });
+    if (!response.ok) {
+      console.error("Tour selection failed:", response.status);
+      return null;
+    }
+    return response.json(); // { tour_id, probability, distribution, coverage }
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!text || status !== "ready") return;
 
-    sendMessage(text);
+    if (isHelpModeActive) {
+      setStatus("thinking");
+      const selection = await chooseTour(text);
+      setStatus("ready");
+
+      if (startTour(selection, text)) {
+        setText("");
+      }
+      return;
+    } else {
+      sendMessage(text);
+    }
   };
 
   return (
-    <div className="w-full p-4">
+    <div className="w-full p-4" data-tour="chat-input">
       <PromptInput onSubmit={handleSubmit} className="flex items-center">
         <PromptInputTextarea
           onChange={(e) => setText(e.target.value)}

@@ -5,7 +5,7 @@ import { CustomNode } from "./nodes/CustomNode";
 import { SolidEdge } from "./nodes/CustomEdge";
 import { getEdgeHandles } from "./graphUtils";
 import { applyDagreLayout } from "./layout/cytoscapeLayout";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
   nodesAtom,
   edgesAtom,
@@ -13,6 +13,7 @@ import {
   centerNodeAtom,
   layoutNodesAtom,
   selectNodeEmitAtom,
+  graphMoveEndTriggerAtom,
 } from "../../lib/atoms";
 
 function getSubgraph(data, nodeId) {
@@ -36,6 +37,11 @@ export default function Graph({ data, width }) {
   const [, setCenterNodeId] = useAtom(centerNodeAtom);
   const [layoutNodes, setLayoutNodes] = useAtom(layoutNodesAtom);
   const emitSelectNode = useAtomValue(selectNodeEmitAtom);
+  const setGraphMoveEnd = useSetAtom(graphMoveEndTriggerAtom);
+  const onMoveEnd = useCallback(
+    () => setGraphMoveEnd((n) => n + 1),
+    [setGraphMoveEnd]
+  );
 
   const { getViewport, setViewport, fitView } = useReactFlow();
   const containerRef = useRef(null);
@@ -229,6 +235,7 @@ export default function Graph({ data, width }) {
         nodeTypes={{ custom: CustomNode }}
         edgeTypes={{ solid: SolidEdge }}
         onNodeClick={onNodeClick}
+        onMoveEnd={onMoveEnd}
         selectNodesOnDrag={false}
         fitView
         attributionPosition="bottom-left"
