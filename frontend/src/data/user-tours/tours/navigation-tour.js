@@ -26,6 +26,8 @@ const DOCUMENT_TYPES = [
 // in case it never fires for some reason
 const GRAPH_SETTLE_TIMEOUT_MS = 1500;
 
+const POPOVER_FADE_MS = 500;
+
 let activeTour = null;
 let anchorEl = null;
 
@@ -110,6 +112,18 @@ function addTourMessage(name, value) {
 function removeTourMessages() {
   store.set(messagesAtom, (prev) =>
     prev.filter((m) => m.name !== TOUR_MESSAGE_NAME)
+  );
+}
+
+/** Lets each step's popover fade and slide in instead of popping up */
+function fadeInPopover(popover) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  popover.wrapper.animate(
+    [
+      { opacity: 0, translate: "0 8px" },
+      { opacity: 1, translate: "0 0" },
+    ],
+    { duration: POPOVER_FADE_MS, easing: "ease-out" }
   );
 }
 
@@ -271,6 +285,7 @@ export function startTour(question = TOUR_QUESTION) {
     allowClose: true,
     disableActiveInteraction: true,
     stagePadding: 6,
+    onPopoverRender: fadeInPopover,
     onHighlightStarted: (_element, step) => {
       showAfterTransition();
       document.body.classList.toggle(

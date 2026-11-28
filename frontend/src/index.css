@@ -208,8 +208,88 @@ body.tour-no-overlay .driver-overlay {
   display: none;
 }
 
-/* Onboarding tour: hide highlight and popover while the graph is moving */
+/* Onboarding tour: fade highlight and popover out while the graph is moving,
+   and back in once it has settled */
+body .driver-overlay,
+body .driver-popover {
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s;
+}
+
 body.tour-transitioning .driver-overlay,
 body.tour-transitioning .driver-popover {
+  opacity: 0 !important;
   visibility: hidden;
+}
+
+/* Onboarding tour: popover in the app palette.
+   The `body` prefix makes these rules win over driver.js's own stylesheet. */
+body .driver-popover {
+  font-family: inherit;
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--primary);
+  border-radius: var(--radius);
+}
+
+body .driver-popover-title {
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--primary);
+}
+
+body .driver-popover-description {
+  font-family: inherit;
+}
+
+body .driver-popover-progress-text {
+  color: var(--muted-foreground);
+}
+
+body .driver-popover-close-btn {
+  color: var(--muted-foreground);
+}
+
+body .driver-popover-close-btn:hover,
+body .driver-popover-close-btn:focus-visible {
+  color: var(--primary);
+  background-color: transparent;
+}
+
+body .driver-popover-footer button.driver-popover-footer-btn {
+  font-family: inherit;
+  text-shadow: none;
+  padding: 6px 12px;
+  border: 1px solid var(--primary);
+  border-radius: calc(var(--radius) - 4px);
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+body .driver-popover-footer button.driver-popover-footer-btn:hover,
+body .driver-popover-footer button.driver-popover-footer-btn:focus-visible {
+  border-color: var(--primary-dark, var(--primary));
+  background-color: var(--primary-dark, var(--primary));
+}
+
+body .driver-popover-footer button.driver-popover-footer-btn:focus-visible,
+body .driver-popover-close-btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* The arrow follows the popover: white, or green where it meets the top edge */
+body .driver-popover-arrow-side-left {
+  border-left-color: var(--popover);
+}
+body .driver-popover-arrow-side-right {
+  border-right-color: var(--popover);
+}
+body .driver-popover-arrow-side-top {
+  border-top-color: var(--popover);
+}
+body .driver-popover-arrow-side-bottom {
+  border-bottom-color: var(--primary);
 }
